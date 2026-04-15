@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: embediq-config
+data:
+  PORT: "3000"
+  NODE_ENV: "production"
+  EMBEDIQ_AUTH_STRATEGY: "none"
+  # Set to "basic", "oidc", or "proxy" and configure corresponding vars
+  # EMBEDIQ_AUTH_USER: ""
+  # EMBEDIQ_AUTH_PASS: ""
+  # EMBEDIQ_OIDC_ISSUER: ""
+  # EMBEDIQ_OIDC_CLIENT_ID: ""
+  # EMBEDIQ_OIDC_ROLES_CLAIM: "roles"
+  # EMBEDIQ_AUDIT_LOG: "/var/log/embediq/audit.jsonl"

@@ -1,0 +1,26 @@
+id: soc2-saas
+name: SOC2 SaaS Baseline
+description: Pre-configured for SOC2 compliance with audit logging and balanced security
+version: "1.0.0"
+organization: ""
+
+prefilledAnswers:
+  STRAT_002:
+    value: saas
+  REG_001:
+    value: true
+  REG_002:
+    value:
+      - soc2
+  REG_005:
+    value: true
+  REG_008:
+    value: balanced
+  REG_014:
+    value: true
+
+lockedQuestions:
+  - REG_001
+  - REG_002
+
+forcedQuestions: []

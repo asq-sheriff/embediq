@@ -1,0 +1,35 @@
+id: hipaa-healthcare
+name: HIPAA Healthcare Baseline
+description: Pre-configured for HIPAA compliance with PHI detection, audit logging, and strict security
+version: "1.0.0"
+organization: ""
+domainPackId: healthcare
+
+prefilledAnswers:
+  STRAT_002:
+    value: healthcare
+  REG_001:
+    value: true
+  REG_002:
+    value:
+      - hipaa
+  REG_003:
+    value: true
+  REG_004:
+    value: true
+  REG_005:
+    value: true
+  REG_008:
+    value: strict
+  REG_012:
+    value: true
+  REG_014:
+    value: true
+
+lockedQuestions:
+  - REG_001
+  - REG_002
+  - REG_003
+  - REG_008
+
+forcedQuestions: []

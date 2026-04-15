@@ -1,0 +1,30 @@
+id: pci-finance
+name: PCI-DSS Finance Baseline
+description: Pre-configured for PCI-DSS compliance with cardholder data protection and strict security
+version: "1.0.0"
+organization: ""
+domainPackId: finance
+
+prefilledAnswers:
+  STRAT_002:
+    value: finance
+  REG_001:
+    value: true
+  REG_002:
+    value:
+      - pci
+  REG_004:
+    value: true
+  REG_007:
+    value: true
+  REG_008:
+    value: strict
+  REG_012:
+    value: true
+
+lockedQuestions:
+  - REG_001
+  - REG_002
+  - REG_008
+
+forcedQuestions: []

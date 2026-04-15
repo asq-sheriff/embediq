@@ -1,0 +1,47 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`SynthesizerOrchestrator > PM (non-technical) profile > snapshot: file list 1`] = `
+[
+  ".claude/.claude_ignore",
+  ".claude/rules/testing.md",
+  ".claude/rules/typescript.md",
+  ".claude/settings.json",
+  ".claude/settings.local.json",
+  ".claudeignore",
+  ".mcp.json.template",
+  "CLAUDE.md",
+]
+`;
+
+exports[`SynthesizerOrchestrator > healthcare HIPAA profile > snapshot: file list 1`] = `
+[
+  ".claude/.claude_ignore",
+  ".claude/hooks/audit-logger.py",
+  ".claude/hooks/command-guard.py",
+  ".claude/hooks/dlp-scanner.py",
+  ".claude/rules/hipaa-compliance.md",
+  ".claude/rules/python.md",
+  ".claude/rules/security.md",
+  ".claude/rules/testing.md",
+  ".claude/rules/typescript.md",
+  ".claude/settings.json",
+  ".claude/settings.local.json",
+  ".claudeignore",
+  ".mcp.json.template",
+  "CLAUDE.md",
+]
+`;
+
+exports[`SynthesizerOrchestrator > minimal developer profile > snapshot: file list 1`] = `
+[
+  ".claude/.claude_ignore",
+  ".claude/hooks/command-guard.py",
+  ".claude/rules/testing.md",
+  ".claude/rules/typescript.md",
+  ".claude/settings.json",
+  ".claude/settings.local.json",
+  ".claudeignore",
+  ".mcp.json.template",
+  "CLAUDE.md",
+]
+`;

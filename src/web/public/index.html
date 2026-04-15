@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EmbedIQ — Claude Code Setup Wizard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Phase indicator -->
+    <header id="header">
+      <div class="brand">EmbedIQ</div>
+      <div class="phase-dots">
+        <span class="dot active" data-phase="0"></span>
+        <span class="dot" data-phase="1"></span>
+        <span class="dot" data-phase="2"></span>
+        <span class="dot" data-phase="3"></span>
+      </div>
+    </header>
+
+    <!-- Phase 0: Welcome -->
+    <section id="phase-welcome" class="phase active">
+      <div class="hero">
+        <h1>Claude Code Setup Wizard</h1>
+        <p class="subtitle">Answer a few questions. We'll generate your ideal configuration.</p>
+        <p class="byline">by Praglogic</p>
+        <button class="btn-primary" onclick="startWizard()">Get Started</button>
+      </div>
+    </section>
+
+    <!-- Phase 1: Q&A -->
+    <section id="phase-qa" class="phase">
+      <div class="qa-container">
+        <div class="dimension-sidebar">
+          <div id="dimension-list"></div>
+        </div>
+        <div class="question-area">
+          <div class="dimension-title" id="current-dimension"></div>
+          <div class="question-card" id="question-card">
+            <div class="question-counter" id="question-counter"></div>
+            <h2 id="question-text"></h2>
+            <p class="help-text" id="help-text"></p>
+            <div id="answer-input"></div>
+            <div class="question-nav">
+              <button class="btn-secondary" id="btn-skip" onclick="skipQuestion()">Skip</button>
+              <button class="btn-primary" id="btn-next" onclick="nextQuestion()">Continue</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Phase 2: Playback -->
+    <section id="phase-playback" class="phase">
+      <div class="playback-container">
+        <h1>Here's what we understand</h1>
+        <p class="subtitle">Review and adjust before we generate your setup.</p>
+        <div id="profile-summary"></div>
+        <div id="priorities-section"></div>
+        <div class="playback-actions">
+          <button class="btn-secondary" onclick="editProfile()">Make Changes</button>
+          <button class="btn-primary" onclick="approveAndGenerate()">Looks Good — Generate</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Phase 3: Generate -->
+    <section id="phase-generate" class="phase">
+      <div class="generate-container">
+        <h1>Setup Complete</h1>
+        <div id="target-dir-input" class="target-input">
+          <label for="targetDir">Target project directory</label>
+          <div class="input-row">
+            <input type="text" id="targetDir" placeholder="/path/to/your/project">
+            <button class="btn-primary" onclick="generateFiles()">Generate Files</button>
+          </div>
+        </div>
+        <div id="file-preview" class="file-preview hidden"></div>
+        <div id="generation-results" class="hidden">
+          <div id="file-list"></div>
+          <div class="completion-message" id="completion-message"></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="session-persistence.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: embediq
+  labels:
+    app: embediq
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: embediq
+  template:
+    metadata:
+      labels:
+        app: embediq
+    spec:
+      containers:
+        - name: embediq
+          image: embediq:latest
+          ports:
+            - containerPort: 3000
+          envFrom:
+            - configMapRef:
+                name: embediq-config
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 3000
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"

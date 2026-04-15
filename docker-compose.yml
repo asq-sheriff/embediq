@@ -1,0 +1,19 @@
+services:
+  embediq:
+    build: .
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      - PORT=3000
+      - EMBEDIQ_AUTH_STRATEGY=${EMBEDIQ_AUTH_STRATEGY:-none}
+      - EMBEDIQ_AUTH_USER=${EMBEDIQ_AUTH_USER:-}
+      - EMBEDIQ_AUTH_PASS=${EMBEDIQ_AUTH_PASS:-}
+      - EMBEDIQ_AUDIT_LOG=${EMBEDIQ_AUDIT_LOG:-}
+      - EMBEDIQ_TLS_CERT=${EMBEDIQ_TLS_CERT:-}
+      - EMBEDIQ_TLS_KEY=${EMBEDIQ_TLS_KEY:-}
+    volumes:
+      - audit-logs:/var/log/embediq
+    restart: unless-stopped
+
+volumes:
+  audit-logs:
