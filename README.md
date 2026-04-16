@@ -157,7 +157,6 @@ Both CLI and Web interfaces share the same core. The web API is stateless — th
 
 See [Architecture Document](docs/ARCHITECTURE.md) for full details.
 See [User Guide](docs/USER_GUIDE.md) for comprehensive usage documentation.
-See [Roadmap](docs/ROADMAP.md) for the product roadmap (v2.0 complete, v2.1-v4.0 planned).
 
 ---
 

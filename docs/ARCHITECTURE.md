@@ -54,8 +54,7 @@ embediq/
 ├── tsconfig.json                 # TypeScript compiler configuration
 ├── docs/
 │   ├── USER_GUIDE.md             # End-user documentation
-│   ├── ARCHITECTURE.md           # This document
-│   └── ROADMAP.md                # Enterprise evolution implementation plan
+│   └── ARCHITECTURE.md           # This document
 ├── templates/                    # Organizational profile templates (YAML)
 │   ├── hipaa-healthcare.yaml     # HIPAA healthcare baseline
 │   ├── pci-finance.yaml          # PCI-DSS finance baseline
