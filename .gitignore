@@ -13,3 +13,8 @@ dist/
 
 # Build outputs
 out/
+
+# Claude Code local settings and plans
+.claude/settings.local.json
+.claude/plans/
+.claude/memory/

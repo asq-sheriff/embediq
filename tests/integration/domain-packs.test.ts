@@ -40,7 +40,7 @@ describe('Healthcare Domain Pack', () => {
     expect(healthcarePack.validationChecks).toHaveLength(5);
   });
 
-  it('integrates with full generation pipeline', () => {
+  it('integrates with full generation pipeline', async () => {
     const answers = buildAnswerMap(HEALTHCARE_DEVELOPER_ANSWERS);
     const pb = new ProfileBuilder();
     const bank = new QuestionBank(healthcarePack);
@@ -49,7 +49,7 @@ describe('Healthcare Domain Pack', () => {
     profile.priorities = analyzer.analyze(answers, bank.getAll());
 
     const config: SetupConfig = { profile, targetDir: '/tmp/test', domainPack: healthcarePack };
-    const { files, validation } = new SynthesizerOrchestrator().generateWithValidation(config);
+    const { files, validation } = await new SynthesizerOrchestrator().generateWithValidation(config);
 
     // Healthcare-specific DLP patterns should be in the scanner
     const dlp = files.find(f => f.relativePath.includes('dlp-scanner'));

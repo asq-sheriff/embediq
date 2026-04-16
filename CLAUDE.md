@@ -14,6 +14,24 @@ A Praglogic product. An adaptive Q&A wizard that interviews users about their pr
 ## Commands
 
 ```bash
+make help                # Show all available targets
+make check               # Type-check + run tests (CI equivalent)
+make build               # Type-check + test + compile to dist/
+make start               # Run CLI wizard
+make start-web           # Run web server (port 3000)
+make dev                 # Watch mode for CLI
+make dev-web             # Watch mode for web server
+make otel-dev            # Web server with OpenTelemetry enabled
+make test                # Run test suite (vitest)
+make test-coverage       # Run tests with coverage report
+make docker              # Build Docker image
+make docker-up           # Start with docker-compose
+make clean               # Remove build artifacts
+```
+
+Or use npm scripts directly:
+
+```bash
 npm install              # Install dependencies
 npm run build            # Compile TypeScript to dist/
 npm start                # Run CLI wizard
@@ -43,7 +61,7 @@ npx tsc --noEmit         # Type-check without emitting
 - `dimension-tracker.ts` — Progress tracking per dimension
 
 ### Layer 3: Synthesizer (`src/synthesizer/`)
-- `orchestrator.ts` — Coordinates 12 generators, role-aware (skips technical generators for BA/PM/Executive). `generateWithValidation()` adds output validation and version stamping.
+- `orchestrator.ts` — Runs 12 generators in parallel via `Promise.all()`, role-aware (skips technical generators for BA/PM/Executive). Both `generate()` and `generateWithValidation()` are async. `generateWithValidation()` adds output validation and version stamping.
 - `generator.ts` — `ConfigGenerator` interface
 - `generators/` — 12 generators producing: CLAUDE.md, settings.json, settings.local.json, rules, commands, agents, skills, hooks (Python), ignore files, MCP config template, association map, document state
 - `output-validator.ts` — Post-generation compliance checks (HIPAA, PCI-DSS, SOC2, GDPR, universal)
@@ -60,11 +78,17 @@ npx tsc --noEmit         # Type-check without emitting
 - **Web** (`src/web/server.ts`) — Express API with 8 routes + health/ready endpoints, pluggable auth middleware, rate limiting, TLS support
 - **Web frontend** (`src/web/public/`) — Vanilla HTML/CSS/JS SPA, no build step, client manages state, encrypted session persistence
 
+### Request Context (`src/context/`)
+- `request-context.ts` — `AsyncLocalStorage`-based per-request context. Each web request carries `requestId`, authenticated user info, and timing data. Call `getRequestContext()` from anywhere in the request chain without parameter threading. Returns `undefined` in CLI mode.
+
+### Observability (`src/observability/`)
+- `telemetry.ts` — OpenTelemetry integration. `initTelemetry()` activates SDK when `EMBEDIQ_OTEL_ENABLED=true` (noop otherwise). `getTracer()` / `getMeter()` return noop instruments when disabled. `withSpan()` helper for async span lifecycle with automatic error recording. SDK packages are optional dependencies loaded via dynamic import.
+
 ### Utilities (`src/util/`)
 - `markdown-builder.ts` — Fluent markdown construction
 - `file-output.ts` — File system writer with error handling
 - `yaml-writer.ts` — YAML serialization
-- `wizard-audit.ts` — Optional JSONL audit logging (noop when `EMBEDIQ_AUDIT_LOG` not set)
+- `wizard-audit.ts` — Optional JSONL audit logging (noop when `EMBEDIQ_AUDIT_LOG` not set). Auto-enriches entries with `userId` and `requestId` from request context in web mode.
 
 ### Authentication (`src/web/middleware/`)
 - `auth.ts` — `AuthStrategy` interface and `createAuthMiddleware()` factory

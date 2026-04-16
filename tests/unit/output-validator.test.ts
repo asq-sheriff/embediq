@@ -20,9 +20,9 @@ function buildConfig(answerEntries: Array<[string, string | string[] | number | 
 
 describe('validateOutput', () => {
   describe('universal checks', () => {
-    it('passes when CLAUDE.md and settings.json are present', () => {
+    it('passes when CLAUDE.md and settings.json are present', async () => {
       const config = buildConfig(MINIMAL_DEVELOPER_ANSWERS);
-      const files = new SynthesizerOrchestrator().generate(config);
+      const files = await new SynthesizerOrchestrator().generate(config);
       const result = validateOutput(files, config.profile);
       expect(result.passed).toBe(true);
     });
@@ -71,9 +71,9 @@ describe('validateOutput', () => {
   });
 
   describe('HIPAA checks', () => {
-    it('validates all HIPAA requirements for healthcare profile', () => {
+    it('validates all HIPAA requirements for healthcare profile', async () => {
       const config = buildConfig(HEALTHCARE_DEVELOPER_ANSWERS);
-      const files = new SynthesizerOrchestrator().generate(config);
+      const files = await new SynthesizerOrchestrator().generate(config);
       const result = validateOutput(files, config.profile);
       const hipaaChecks = result.checks.filter(c => c.name.startsWith('HIPAA:'));
       expect(hipaaChecks.length).toBeGreaterThanOrEqual(4);
@@ -95,9 +95,9 @@ describe('validateOutput', () => {
       expect(result.checks.find(c => c.name === 'HIPAA: DLP scanner present')?.passed).toBe(false);
     });
 
-    it('does not run HIPAA checks for non-healthcare profiles', () => {
+    it('does not run HIPAA checks for non-healthcare profiles', async () => {
       const config = buildConfig(MINIMAL_DEVELOPER_ANSWERS);
-      const files = new SynthesizerOrchestrator().generate(config);
+      const files = await new SynthesizerOrchestrator().generate(config);
       const result = validateOutput(files, config.profile);
       const hipaaChecks = result.checks.filter(c => c.name.startsWith('HIPAA:'));
       expect(hipaaChecks).toHaveLength(0);
@@ -105,32 +105,32 @@ describe('validateOutput', () => {
   });
 
   describe('full generation validation', () => {
-    it('passes for healthcare profile with full generation', () => {
+    it('passes for healthcare profile with full generation', async () => {
       const config = buildConfig(HEALTHCARE_DEVELOPER_ANSWERS);
       const orchestrator = new SynthesizerOrchestrator();
-      const { validation } = orchestrator.generateWithValidation(config);
+      const { validation } = await orchestrator.generateWithValidation(config);
       expect(validation.passed).toBe(true);
     });
 
-    it('passes for minimal developer profile with full generation', () => {
+    it('passes for minimal developer profile with full generation', async () => {
       const config = buildConfig(MINIMAL_DEVELOPER_ANSWERS);
       const orchestrator = new SynthesizerOrchestrator();
-      const { validation } = orchestrator.generateWithValidation(config);
+      const { validation } = await orchestrator.generateWithValidation(config);
       expect(validation.passed).toBe(true);
     });
 
-    it('passes for PM profile with full generation', () => {
+    it('passes for PM profile with full generation', async () => {
       const config = buildConfig(PM_ANSWERS);
       const orchestrator = new SynthesizerOrchestrator();
-      const { validation } = orchestrator.generateWithValidation(config);
+      const { validation } = await orchestrator.generateWithValidation(config);
       expect(validation.passed).toBe(true);
     });
   });
 
   describe('summary', () => {
-    it('reports all checks passed when valid', () => {
+    it('reports all checks passed when valid', async () => {
       const config = buildConfig(MINIMAL_DEVELOPER_ANSWERS);
-      const files = new SynthesizerOrchestrator().generate(config);
+      const files = await new SynthesizerOrchestrator().generate(config);
       const result = validateOutput(files, config.profile);
       expect(result.summary).toContain('passed');
     });

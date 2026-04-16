@@ -102,11 +102,15 @@ embediq/
     │   ├── console.ts            # Terminal I/O primitives
     │   ├── playback.ts           # Profile summary renderer
     │   └── edit-correct.ts       # Correction/approval loop
+    ├── context/
+    │   └── request-context.ts    # AsyncLocalStorage-based request context
+    ├── observability/
+    │   └── telemetry.ts          # OpenTelemetry tracing + metrics (noop when disabled)
     ├── util/
     │   ├── markdown-builder.ts   # Fluent markdown construction
     │   ├── file-output.ts        # File system writer
     │   ├── yaml-writer.ts        # YAML serialization
-    │   └── wizard-audit.ts       # Optional JSONL audit logging
+    │   └── wizard-audit.ts       # JSONL audit logging (auto-enriched from request context)
     └── web/
         ├── server.ts             # Express HTTP server (8 API routes)
         ├── middleware/
@@ -339,19 +343,22 @@ The synthesizer transforms the approved `UserProfile` into 15–40 real, usable 
 
 ### SynthesizerOrchestrator
 
-Coordinates all generators in sequence:
+Runs all applicable generators in parallel via `Promise.all()`, then assembles the results:
 
 ```typescript
 class SynthesizerOrchestrator {
-  generate(config: SetupConfig): GeneratedFile[]
+  async generate(config: SetupConfig): Promise<GeneratedFile[]>
+  async generateWithValidation(config: SetupConfig): Promise<GenerationResult>
 }
 ```
 
+Generators are pure functions — each reads `SetupConfig` and returns `GeneratedFile[]` with no cross-dependencies. This makes parallel execution safe and improves throughput as domain packs add more generators.
+
 **Role-aware adaptation**: For non-technical users (BA, PM, Executive), the orchestrator:
 
-1. Skips exactly 2 technical-only generators: `hooks` and `association-map`
+1. Filters out exactly 2 technical-only generators before parallel execution: `hooks` and `association-map`
 2. All other generators still run (rules, commands, agents, skills, settings, ignore, MCP) — they produce role-appropriate output
-3. After all generators run, the orchestrator replaces the standard `CLAUDE.md` with a coworker-focused version via `generateCoworkerClaudeMd()`
+3. After all generators complete, the orchestrator replaces the standard `CLAUDE.md` with a coworker-focused version via `generateCoworkerClaudeMd()`
 
 The coworker CLAUDE.md is structurally different from the technical version:
 
@@ -959,6 +966,7 @@ npm run dev:web    # Web
 | `EMBEDIQ_PROXY_USER_HEADER` | `X-Forwarded-User` | Header for proxy-authenticated username |
 | `EMBEDIQ_PROXY_ROLES_HEADER` | `X-EmbedIQ-Roles` | Header for proxy-provided roles (comma-separated) |
 | `EMBEDIQ_AUDIT_LOG` | *(not set)* | Path for wizard execution audit log (JSONL) |
+| `EMBEDIQ_OTEL_ENABLED` | *(not set)* | Set to `true` to enable OpenTelemetry tracing and metrics |
 | `EMBEDIQ_TLS_CERT` | *(not set)* | TLS certificate file path (enables HTTPS) |
 | `EMBEDIQ_TLS_KEY` | *(not set)* | TLS private key file path |
 | `EMBEDIQ_TEMPLATES_DIR` | `./templates` | Custom template directory |
@@ -984,8 +992,34 @@ Two RBAC roles: `wizard-user` (answer questions, preview) and `wizard-admin` (ge
 ### Session Persistence
 Client-side encrypted checkpoint using Web Crypto API (AES-256-GCM). The encryption key exists only in JavaScript memory — never persisted to disk or sessionStorage. Survives page refresh, destroyed on tab close.
 
+### OpenTelemetry Observability
+Optional instrumentation behind `EMBEDIQ_OTEL_ENABLED=true`. The `@opentelemetry/api` package provides noop implementations by default — zero overhead when disabled. SDK packages (`@opentelemetry/sdk-node`, exporters) are optional dependencies loaded via dynamic `import()`.
+
+**Traces:**
+- HTTP request spans (method, path, status code, requestId from context)
+- `synthesizer.generate` span with child spans per generator (`generator.CLAUDE.md`, `generator.hooks`, etc.)
+- `synthesizer.generateWithValidation` span with validation pass/fail attributes
+
+**Metrics:**
+- `embediq.files_generated` — counter of total files produced
+- `embediq.generation_runs` — counter per generation with generator count attribute
+- `embediq.validations` — counter with pass/fail attribute
+
+**Configuration:**
+- `EMBEDIQ_OTEL_ENABLED=true` — activates SDK initialization
+- `OTEL_EXPORTER_OTLP_ENDPOINT` — collector URL (default: `http://localhost:4318`)
+- Standard OTEL env vars for endpoint overrides
+
+### Request Context Isolation
+Each web request is wrapped in an `AsyncLocalStorage` context (`src/context/request-context.ts`) carrying:
+- `requestId` — UUID per request, used for log correlation
+- `userId`, `displayName`, `roles` — from authenticated user (if auth is active)
+- `startedAt` — high-resolution timestamp for latency measurement
+
+Any code in the request call chain can call `getRequestContext()` without parameter threading. The context middleware runs after auth, so user info is available. CLI mode has no context — `getRequestContext()` returns `undefined`.
+
 ### Wizard Audit Trail
-Optional JSONL audit logging (`EMBEDIQ_AUDIT_LOG`). Events: session_start, profile_built, validation_result, file_written, session_complete. Noop when not configured.
+Optional JSONL audit logging (`EMBEDIQ_AUDIT_LOG`). Events: session_start, profile_built, validation_result, file_written, session_complete. Noop when not configured. In web server mode, audit entries are auto-enriched with `userId` and `requestId` from the request context — callers no longer need to pass these explicitly.
 
 ### Configuration Templates
 Organizational baselines in YAML format (`templates/` directory). Templates pre-fill answers, lock non-negotiable settings, and optionally activate domain packs. Three shipped templates: HIPAA Healthcare, PCI-DSS Finance, SOC2 SaaS.

@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 import { input, confirm } from '@inquirer/prompts';
 import chalk from 'chalk';
 import { ConsoleUI } from './ui/console.js';
@@ -58,7 +57,7 @@ async function main(): Promise<void> {
   };
 
   const synthesizer = new SynthesizerOrchestrator();
-  const { files, validation } = synthesizer.generateWithValidation(config);
+  const { files, validation } = await synthesizer.generateWithValidation(config);
 
   // Show validation results
   if (validation.checks.length > 0) {

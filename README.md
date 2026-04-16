@@ -108,6 +108,19 @@ Keep these files local (gitignored): `.claude/settings.local.json`, `.mcp.json`,
 
 ## Commands
 
+A Makefile wraps common operations:
+
+```bash
+make help                # Show all targets
+make check               # Type-check + run tests (CI equivalent)
+make build               # Type-check + test + compile
+make start-web           # Run web server (port 3000)
+make otel-dev            # Web server with OpenTelemetry enabled
+make docker-up           # Start with docker-compose
+```
+
+Or use npm scripts directly:
+
 ```bash
 npm install              # Install dependencies
 npm run build            # Compile TypeScript to dist/
@@ -144,7 +157,7 @@ Both CLI and Web interfaces share the same core. The web API is stateless — th
 
 See [Architecture Document](docs/ARCHITECTURE.md) for full details.
 See [User Guide](docs/USER_GUIDE.md) for comprehensive usage documentation.
-See [Roadmap](docs/ROADMAP.md) for the v2.0 enterprise evolution plan.
+See [Roadmap](docs/ROADMAP.md) for the product roadmap (v2.0 complete, v2.1-v4.0 planned).
 
 ---
 
@@ -187,6 +200,20 @@ Pluggable authentication strategies configured via the `EMBEDIQ_AUTH_STRATEGY` e
 - **Proxy Header** — trust upstream proxy headers (e.g., behind an identity-aware proxy)
 
 Role-based access control (RBAC) with two roles: `wizard-user` (run the wizard) and `wizard-admin` (manage templates and domain packs).
+
+### Observability
+
+Optional OpenTelemetry instrumentation for production deployments:
+
+```bash
+# Enable tracing and metrics
+EMBEDIQ_OTEL_ENABLED=true npm run start:web
+
+# Or with a custom collector endpoint
+EMBEDIQ_OTEL_ENABLED=true OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4318 npm run start:web
+```
+
+Traces cover the full generation flow (per-generator spans, validation). Metrics track files generated, generation runs, and validation pass rates. Compatible with any OTLP collector (Jaeger, Grafana, Datadog). Zero overhead when disabled.
 
 ### Deployment
 

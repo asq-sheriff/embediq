@@ -162,14 +162,14 @@ describe('PriorityAnalyzer with domain categories', () => {
 });
 
 describe('Generator integration with domain packs', () => {
-  it('injects domain DLP patterns into DLP scanner', () => {
+  it('injects domain DLP patterns into DLP scanner', async () => {
     const answers = buildAnswerMap(HEALTHCARE_DEVELOPER_ANSWERS);
     const pb = new ProfileBuilder();
     const profile = pb.build(answers);
     profile.priorities = new PriorityAnalyzer().analyze(answers, new QuestionBank().getAll());
 
     const config = { profile, targetDir: '/tmp/test', domainPack: testPack };
-    const files = new SynthesizerOrchestrator().generate(config);
+    const files = await new SynthesizerOrchestrator().generate(config);
 
     const dlp = files.find(f => f.relativePath.includes('dlp-scanner'));
     expect(dlp).toBeDefined();
@@ -177,54 +177,54 @@ describe('Generator integration with domain packs', () => {
     expect(dlp!.content).toContain('Test Domain Pack domain patterns');
   });
 
-  it('does not inject conditional DLP patterns when framework not selected', () => {
+  it('does not inject conditional DLP patterns when framework not selected', async () => {
     const answers = buildAnswerMap(HEALTHCARE_DEVELOPER_ANSWERS);
     const pb = new ProfileBuilder();
     const profile = pb.build(answers);
     profile.priorities = new PriorityAnalyzer().analyze(answers, new QuestionBank().getAll());
 
     const config = { profile, targetDir: '/tmp/test', domainPack: testPack };
-    const files = new SynthesizerOrchestrator().generate(config);
+    const files = await new SynthesizerOrchestrator().generate(config);
     const dlp = files.find(f => f.relativePath.includes('dlp-scanner'));
     // test-framework is not in the healthcare profile's complianceFrameworks
     expect(dlp!.content).not.toContain('COND-');
   });
 
-  it('adds domain rule templates', () => {
+  it('adds domain rule templates', async () => {
     const answers = buildAnswerMap(HEALTHCARE_DEVELOPER_ANSWERS);
     const pb = new ProfileBuilder();
     const profile = pb.build(answers);
     profile.priorities = new PriorityAnalyzer().analyze(answers, new QuestionBank().getAll());
 
     const config = { profile, targetDir: '/tmp/test', domainPack: testPack };
-    const files = new SynthesizerOrchestrator().generate(config);
+    const files = await new SynthesizerOrchestrator().generate(config);
     const rule = files.find(f => f.relativePath === '.claude/rules/test-compliance.md');
     expect(rule).toBeDefined();
     expect(rule!.content).toContain('Test Compliance Rules');
     expect(rule!.content).toContain('globs:');
   });
 
-  it('adds domain ignore patterns without duplicating', () => {
+  it('adds domain ignore patterns without duplicating', async () => {
     const answers = buildAnswerMap(HEALTHCARE_DEVELOPER_ANSWERS);
     const pb = new ProfileBuilder();
     const profile = pb.build(answers);
     profile.priorities = new PriorityAnalyzer().analyze(answers, new QuestionBank().getAll());
 
     const config = { profile, targetDir: '/tmp/test', domainPack: testPack };
-    const files = new SynthesizerOrchestrator().generate(config);
+    const files = await new SynthesizerOrchestrator().generate(config);
     const ignore = files.find(f => f.relativePath === '.claudeignore');
     expect(ignore!.content).toContain('test_data/');
     expect(ignore!.content).toContain('test_records/');
   });
 
-  it('runs domain validation checks', () => {
+  it('runs domain validation checks', async () => {
     const answers = buildAnswerMap(HEALTHCARE_DEVELOPER_ANSWERS);
     const pb = new ProfileBuilder();
     const profile = pb.build(answers);
     profile.priorities = new PriorityAnalyzer().analyze(answers, new QuestionBank().getAll());
 
     const config = { profile, targetDir: '/tmp/test', domainPack: testPack };
-    const { validation } = new SynthesizerOrchestrator().generateWithValidation(config);
+    const { validation } = await new SynthesizerOrchestrator().generateWithValidation(config);
     const domainCheck = validation.checks.find(c => c.name === 'Test: Rule file exists');
     expect(domainCheck).toBeDefined();
     expect(domainCheck!.passed).toBe(true);

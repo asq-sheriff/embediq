@@ -1,6 +1,7 @@
 import type { SetupConfig, GeneratedFile, GenerationResult } from '../types/index.js';
 import { validateOutput } from './output-validator.js';
 import { stampGeneratedFile } from './generation-header.js';
+import { withSpan, getMeter } from '../observability/telemetry.js';
 import type { ConfigGenerator } from './generator.js';
 import { ClaudeMdGenerator } from './generators/claude-md.js';
 import { SettingsJsonGenerator } from './generators/settings-json.js';
@@ -35,43 +36,75 @@ export class SynthesizerOrchestrator {
     ];
   }
 
-  generate(config: SetupConfig): GeneratedFile[] {
-    const allFiles: GeneratedFile[] = [];
+  async generate(config: SetupConfig): Promise<GeneratedFile[]> {
+    return withSpan('synthesizer.generate', {
+      'embediq.role': config.profile.role,
+      'embediq.industry': config.profile.industry,
+    }, async (span) => {
+      // Adapt generators based on user role
+      const isNonTechnical = ['ba', 'pm', 'executive'].includes(config.profile.role);
 
-    // Adapt generators based on user role
-    const isNonTechnical = ['ba', 'pm', 'executive'].includes(config.profile.role);
-    const isTechnical = ['developer', 'devops', 'lead', 'qa', 'data'].includes(config.profile.role);
+      // Filter to applicable generators
+      const applicable = this.generators.filter(
+        g => !(isNonTechnical && this.isTechnicalOnlyGenerator(g.name))
+      );
 
-    for (const generator of this.generators) {
-      // Skip technical-only generators for non-technical users
-      if (isNonTechnical && this.isTechnicalOnlyGenerator(generator.name)) {
-        continue;
+      span.setAttribute('embediq.generator_count', applicable.length);
+
+      // Run all generators in parallel — each is pure (reads config, returns files)
+      const results = await Promise.all(
+        applicable.map(generator =>
+          withSpan(`generator.${generator.name}`, undefined, async () =>
+            generator.generate(config)
+          )
+        )
+      );
+
+      const allFiles = results.flat();
+
+      // For non-technical users, add a coworker-focused CLAUDE.md overlay
+      if (isNonTechnical) {
+        const coworkerClaudeMd = this.generateCoworkerClaudeMd(config);
+        const idx = allFiles.findIndex(f => f.relativePath === 'CLAUDE.md');
+        if (idx >= 0) {
+          allFiles[idx] = coworkerClaudeMd;
+        } else {
+          allFiles.push(coworkerClaudeMd);
+        }
       }
 
-      const files = generator.generate(config);
-      allFiles.push(...files);
-    }
+      span.setAttribute('embediq.files_generated', allFiles.length);
+      this.recordMetrics(allFiles.length, applicable.length);
 
-    // For non-technical users, add a coworker-focused CLAUDE.md overlay
-    if (isNonTechnical) {
-      const coworkerClaudeMd = this.generateCoworkerClaudeMd(config);
-      // Replace the default CLAUDE.md with the coworker version
-      const idx = allFiles.findIndex(f => f.relativePath === 'CLAUDE.md');
-      if (idx >= 0) {
-        allFiles[idx] = coworkerClaudeMd;
-      } else {
-        allFiles.push(coworkerClaudeMd);
-      }
-    }
-
-    return allFiles;
+      return allFiles;
+    });
   }
 
-  generateWithValidation(config: SetupConfig): GenerationResult {
-    const files = this.generate(config);
-    const validation = validateOutput(files, config.profile, config.domainPack);
-    const stampedFiles = files.map(stampGeneratedFile);
-    return { files: stampedFiles, validation };
+  async generateWithValidation(config: SetupConfig): Promise<GenerationResult> {
+    return withSpan('synthesizer.generateWithValidation', {
+      'embediq.role': config.profile.role,
+    }, async (span) => {
+      const files = await this.generate(config);
+      const validation = validateOutput(files, config.profile, config.domainPack);
+      const stampedFiles = files.map(stampGeneratedFile);
+
+      span.setAttribute('embediq.validation_passed', validation.passed);
+      span.setAttribute('embediq.validation_checks', validation.checks.length);
+
+      const meter = getMeter();
+      const validationCounter = meter.createCounter('embediq.validations');
+      validationCounter.add(1, { passed: String(validation.passed) });
+
+      return { files: stampedFiles, validation };
+    });
+  }
+
+  private recordMetrics(fileCount: number, generatorCount: number): void {
+    const meter = getMeter();
+    const filesCounter = meter.createCounter('embediq.files_generated');
+    filesCounter.add(fileCount);
+    const genCounter = meter.createCounter('embediq.generation_runs');
+    genCounter.add(1, { generator_count: generatorCount });
   }
 
   private isTechnicalOnlyGenerator(name: string): boolean {

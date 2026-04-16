@@ -1,4 +1,5 @@
 import express from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import rateLimit from 'express-rate-limit';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -19,6 +20,8 @@ import { OidcAuthStrategy } from './middleware/strategies/oidc.js';
 import { ProxyHeaderStrategy } from './middleware/strategies/header.js';
 import { loadTemplates } from '../bank/profile-templates.js';
 import { domainPackRegistry } from '../domain-packs/registry.js';
+import { createRequestContext, runWithContext, getRequestContext } from '../context/request-context.js';
+import { initTelemetry, withSpan, getTracer } from '../observability/telemetry.js';
 import { DIMENSION_ORDER, type Answer, type SetupConfig } from '../types/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -68,6 +71,35 @@ export function createApp() {
   if (authStrategy) {
     app.use(createAuthMiddleware(authStrategy));
   }
+
+  // ─── Request Context ───
+  // Wraps each request in an AsyncLocalStorage context carrying requestId,
+  // authenticated user info, and timing data. Downstream code can call
+  // getRequestContext() without explicit parameter threading.
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    const ctx = createRequestContext({
+      userId: req.embediqUser?.userId,
+      displayName: req.embediqUser?.displayName,
+      roles: req.embediqUser?.roles,
+    });
+    runWithContext(ctx, () => {
+      // Start a trace span for this request (noop when OTel not enabled)
+      const tracer = getTracer();
+      const span = tracer.startSpan(`${req.method} ${req.path}`, {
+        attributes: {
+          'http.method': req.method,
+          'http.url': req.originalUrl,
+          'embediq.request_id': ctx.requestId,
+          ...(ctx.userId ? { 'embediq.user_id': ctx.userId } : {}),
+        },
+      });
+      res.on('finish', () => {
+        span.setAttribute('http.status_code', res.statusCode);
+        span.end();
+      });
+      next();
+    });
+  });
 
   app.use(express.static(join(__dirname, 'public')));
 
@@ -170,7 +202,7 @@ export function createApp() {
   });
 
   // Generate configuration files
-  app.post('/api/generate', requireRole('wizard-admin'), (req, res) => {
+  app.post('/api/generate', requireRole('wizard-admin'), async (req, res) => {
     const { answers: rawAnswers, targetDir } = req.body as {
       answers: Record<string, { value: unknown; timestamp: string }>;
       targetDir: string;
@@ -181,12 +213,10 @@ export function createApp() {
       return;
     }
 
-    const userId = req.embediqUser?.userId;
-
+    // userId and requestId are auto-enriched from request context by auditLog()
     auditLog({
       timestamp: new Date().toISOString(),
       eventType: 'session_start',
-      userId,
     });
 
     const answers = hydrateAnswers(rawAnswers);
@@ -196,7 +226,6 @@ export function createApp() {
     auditLog({
       timestamp: new Date().toISOString(),
       eventType: 'profile_built',
-      userId,
       profileSummary: {
         role: profile.role,
         industry: profile.industry,
@@ -210,12 +239,11 @@ export function createApp() {
     const domainPack = resolveDomainPack(answers);
     const config: SetupConfig = { profile, targetDir, domainPack };
     const synthesizer = new SynthesizerOrchestrator();
-    const { files, validation } = synthesizer.generateWithValidation(config);
+    const { files, validation } = await synthesizer.generateWithValidation(config);
 
     auditLog({
       timestamp: new Date().toISOString(),
       eventType: 'validation_result',
-      userId,
       validationPassed: validation.passed,
       validationErrorCount: validation.checks.filter(c => c.severity === 'error' && !c.passed).length,
     });
@@ -229,7 +257,6 @@ export function createApp() {
       auditLog({
         timestamp: new Date().toISOString(),
         eventType: 'file_written',
-        userId,
         filePath: path,
         fileSize: file?.content.length,
       });
@@ -238,7 +265,6 @@ export function createApp() {
     auditLog({
       timestamp: new Date().toISOString(),
       eventType: 'session_complete',
-      userId,
       profileSummary: {
         role: profile.role,
         industry: profile.industry,
@@ -262,7 +288,7 @@ export function createApp() {
   });
 
   // Preview generated files (without writing)
-  app.post('/api/preview', (req, res) => {
+  app.post('/api/preview', async (req, res) => {
     const { answers: rawAnswers } = req.body as {
       answers: Record<string, { value: unknown; timestamp: string }>;
     };
@@ -274,7 +300,7 @@ export function createApp() {
     const domainPack = resolveDomainPack(answers);
     const config: SetupConfig = { profile, targetDir: '/preview', domainPack };
     const synthesizer = new SynthesizerOrchestrator();
-    const { files, validation } = synthesizer.generateWithValidation(config);
+    const { files, validation } = await synthesizer.generateWithValidation(config);
 
     res.json({
       files: files.map(f => ({
@@ -287,7 +313,7 @@ export function createApp() {
   });
 
   // Analyze diffs between generated files and existing files at target
-  app.post('/api/diff', (req, res) => {
+  app.post('/api/diff', async (req, res) => {
     const { answers: rawAnswers, targetDir } = req.body as {
       answers: Record<string, { value: unknown; timestamp: string }>;
       targetDir: string;
@@ -304,7 +330,7 @@ export function createApp() {
 
     const config: SetupConfig = { profile, targetDir };
     const synthesizer = new SynthesizerOrchestrator();
-    const { files } = synthesizer.generateWithValidation(config);
+    const { files } = await synthesizer.generateWithValidation(config);
 
     const diff = analyzeDiffs(files, targetDir);
 
@@ -353,6 +379,7 @@ const isDirectRun = process.argv[1] && (
 );
 
 if (isDirectRun) {
+  await initTelemetry();
   const app = createApp();
   const PORT = parseInt(process.env.PORT || '3000', 10);
   const tlsCert = process.env.EMBEDIQ_TLS_CERT;

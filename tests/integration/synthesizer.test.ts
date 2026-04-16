@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { SynthesizerOrchestrator } from '../../src/synthesizer/orchestrator.js';
 import { ProfileBuilder } from '../../src/engine/profile-builder.js';
 import { PriorityAnalyzer } from '../../src/engine/priority-analyzer.js';
@@ -20,8 +20,12 @@ function buildConfig(answerEntries: Array<[string, string | string[] | number | 
 describe('SynthesizerOrchestrator', () => {
   describe('minimal developer profile', () => {
     const config = buildConfig(MINIMAL_DEVELOPER_ANSWERS);
-    const orchestrator = new SynthesizerOrchestrator();
-    const files = orchestrator.generate(config);
+    let files: Awaited<ReturnType<SynthesizerOrchestrator['generate']>>;
+
+    beforeAll(async () => {
+      const orchestrator = new SynthesizerOrchestrator();
+      files = await orchestrator.generate(config);
+    });
 
     it('generates CLAUDE.md', () => {
       expect(files.find(f => f.relativePath === 'CLAUDE.md')).toBeDefined();
@@ -75,11 +79,15 @@ describe('SynthesizerOrchestrator', () => {
 
   describe('healthcare HIPAA profile', () => {
     const config = buildConfig(HEALTHCARE_DEVELOPER_ANSWERS);
-    const orchestrator = new SynthesizerOrchestrator();
-    const files = orchestrator.generate(config);
+    let files: Awaited<ReturnType<SynthesizerOrchestrator['generate']>>;
 
-    it('generates more files than minimal profile', () => {
-      const minimalFiles = new SynthesizerOrchestrator().generate(buildConfig(MINIMAL_DEVELOPER_ANSWERS));
+    beforeAll(async () => {
+      const orchestrator = new SynthesizerOrchestrator();
+      files = await orchestrator.generate(config);
+    });
+
+    it('generates more files than minimal profile', async () => {
+      const minimalFiles = await new SynthesizerOrchestrator().generate(buildConfig(MINIMAL_DEVELOPER_ANSWERS));
       expect(files.length).toBeGreaterThan(minimalFiles.length);
     });
 
@@ -123,8 +131,12 @@ describe('SynthesizerOrchestrator', () => {
 
   describe('PM (non-technical) profile', () => {
     const config = buildConfig(PM_ANSWERS);
-    const orchestrator = new SynthesizerOrchestrator();
-    const files = orchestrator.generate(config);
+    let files: Awaited<ReturnType<SynthesizerOrchestrator['generate']>>;
+
+    beforeAll(async () => {
+      const orchestrator = new SynthesizerOrchestrator();
+      files = await orchestrator.generate(config);
+    });
 
     it('generates CLAUDE.md with coworker setup', () => {
       const claudeMd = files.find(f => f.relativePath === 'CLAUDE.md');

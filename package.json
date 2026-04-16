@@ -1,21 +1,11 @@
 {
   "name": "embediq",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "EmbedIQ by Praglogic — Adaptive wizard that generates ideal Claude Code configurations",
   "type": "module",
   "main": "dist/index.js",
-  "bin": {
-    "embediq": "dist/index.js",
-    "embediq-web": "dist/web/server.js"
-  },
-  "files": [
-    "dist/",
-    "templates/",
-    "plugins/README.md"
-  ],
   "scripts": {
     "build": "tsc",
-    "prepublishOnly": "npm run build",
     "start": "tsx src/index.ts",
     "start:web": "tsx src/web/server.ts",
     "dev": "tsx watch src/index.ts",
@@ -27,32 +17,14 @@
   },
   "keywords": [
     "claude-code",
-    "claude",
-    "ai",
     "setup",
     "wizard",
-    "configuration",
-    "hipaa",
-    "pci-dss",
-    "ferpa",
-    "compliance",
-    "devtools"
+    "configuration"
   ],
-  "author": "Praglogic <aejaz.sheriff@pragmaticlogic.ai>",
-  "homepage": "https://github.com/asq-sheriff/embediq",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/asq-sheriff/embediq.git"
-  },
-  "bugs": {
-    "url": "https://github.com/asq-sheriff/embediq/issues"
-  },
   "license": "MIT",
-  "engines": {
-    "node": ">=18.0.0"
-  },
   "dependencies": {
     "@inquirer/prompts": "^7.0.0",
+    "@opentelemetry/api": "^1.9.1",
     "chalk": "^5.3.0",
     "express": "^5.2.1",
     "express-rate-limit": "^8.3.2",
@@ -67,5 +39,14 @@
     "tsx": "^4.19.0",
     "typescript": "^5.7.0",
     "vitest": "^4.1.4"
+  },
+  "optionalDependencies": {
+    "@opentelemetry/exporter-metrics-otlp-http": "^0.200.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.200.0",
+    "@opentelemetry/resources": "^2.6.1",
+    "@opentelemetry/sdk-metrics": "^2.6.1",
+    "@opentelemetry/sdk-node": "^0.200.0",
+    "@opentelemetry/sdk-trace-node": "^2.6.1",
+    "@opentelemetry/semantic-conventions": "^1.40.0"
   }
 }

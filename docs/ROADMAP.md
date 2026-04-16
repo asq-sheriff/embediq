@@ -1,341 +1,192 @@
-# EmbedIQ Enterprise Evolution — Implementation Roadmap
+# EmbedIQ — Product Roadmap
 
-**Version**: 2.0
-**Date**: April 2026
-**Scope**: Enterprise-readiness improvements, plugin loader infrastructure, and domain pack implementations (Healthcare, Finance, Education)
-**Estimated effort**: 12-16 weeks solo / 6-8 weeks two-person team
+**Version**: 2.1
+**Last updated**: April 2026
+**Maintained by**: Praglogic
 
 ---
 
 ## Overview
 
-EmbedIQ v1.0 is a well-architected Claude Code configuration wizard with a clean three-layer design (Question Bank, Adaptive Engine, Synthesizer), 71 questions across 7 dimensions, 12 generators, and dual CLI/web interfaces. This roadmap adds testing, output validation, config versioning, auth/RBAC, session persistence, audit trails, deployment infrastructure, config templates, a domain pack plugin architecture, and three domain pack implementations (Healthcare, Finance, Education).
+EmbedIQ is an adaptive Q&A wizard that generates production-ready Claude Code configurations. It features a three-layer architecture (Question Bank, Adaptive Engine, Synthesizer), 71 questions across 7 dimensions, 12 generators, dual CLI/web interfaces, and an extensible domain pack plugin system.
 
-The plan is organized into four phases, each building on the previous one. Phase 1 establishes the foundation (testing, validation, versioning). Phase 2 adds enterprise infrastructure (auth, sessions, audit). Phase 3 introduces the domain pack plugin system. Phase 4 delivers the Healthcare, Finance, and Education domain packs.
-
----
-
-## Phase 1 — Foundation (Weeks 1-4)
-
-### 1A. Test Infrastructure
-
-**New files:**
-- `vitest.config.ts` — Vitest config with coverage thresholds (80% on `src/synthesizer/generators/`)
-- `tests/unit/branch-evaluator.test.ts` — All 10 `ConditionOperator` cases against `BranchEvaluator.shouldShow()`
-- `tests/unit/profile-builder.test.ts` — `ProfileBuilder.build()` with fixture answer maps
-- `tests/unit/priority-analyzer.test.ts` — Tag weight scoring, all 8 categories
-- `tests/unit/question-bank.test.ts` — `getAll()`, `getById()`, `getVisibleQuestions()`
-- `tests/unit/markdown-builder.test.ts` — Fluent API: `frontmatter()`, `h1()`, `bullet()`, `build()`
-- `tests/integration/synthesizer.test.ts` — Snapshot tests: fixed `SetupConfig` → deterministic `GeneratedFile[]`
-- `tests/integration/web-api.test.ts` — Supertest against Express app (requires server.ts refactor, see below)
-- `tests/e2e/wizard-flow.test.ts` — Programmatic engine run with fixture answers
-- `tests/fixtures/profiles/` — 4 JSON fixtures: healthcare-developer, finance-lead, solo-saas, ba-coworker
-- `tests/fixtures/answer-maps/` — 3 JSON fixtures: hipaa-full, pci-minimal, non-technical-pm
-- `tests/helpers/test-utils.ts` — `createAnswer()`, `createConfig()` factories
-- `.github/workflows/ci.yml` — GitHub Actions: install → tsc --noEmit → vitest run --coverage
-
-**Modified files:**
-- `package.json` — Add devDeps: `vitest`, `@vitest/coverage-v8`, `supertest`, `@types/supertest`. Add scripts: `test`, `test:watch`, `test:coverage`
-- `src/web/server.ts` — Extract Express app creation into an exported `createApp()` function. Move `app.listen()` behind an `if` guard so tests can import the app without starting a listener.
-
-**Why this first**: Every subsequent change needs test coverage. Locking in current behavior with snapshot tests prevents regressions.
+This roadmap tracks what has been delivered and what comes next.
 
 ---
 
-### 1B. Output Validation
+## Completed: v2.0 — Enterprise Foundation
 
-**New files:**
-- `src/synthesizer/output-validator.ts` — `validateOutput(files, profile): ValidationResult`. Compliance checks: CLAUDE.md present, settings.json present, command-guard for technical roles, HIPAA checks (DLP scanner with SSN/MRN patterns, hipaa-compliance.md, audit logger), PCI-DSS checks (DLP with credit card pattern, pci-compliance.md), SOC2 (audit logging), GDPR (DLP scanner), security rule file when concerns exist, egress guard when requested.
+All items below have been implemented and are in the current codebase.
 
-**Modified files:**
-- `src/types/index.ts` — Add `ValidationCheck`, `ValidationResult`, and `GenerationResult` interfaces
-- `src/synthesizer/orchestrator.ts` — Add `generateWithValidation(config): GenerationResult` method. Keeps existing `generate()` unchanged for backward compat.
-- `src/index.ts` — Use `generateWithValidation()`. Display validation summary before writing.
-- `src/web/server.ts` — `/api/generate` and `/api/preview` include `validation` in response (additive, non-breaking).
+### Phase 1 — Foundation ✅
 
-**Design decision**: Add a new `generateWithValidation()` method rather than changing the `generate()` return type. This avoids breaking the `ConfigGenerator` interface and any code that calls `generate()`.
+#### 1A. Test Infrastructure ✅
+- Vitest config with v8 coverage provider, 80% threshold on generators
+- 15 test files (12 unit, 3 integration), ~2,064 lines of test code
+- Test helpers with preset answer builders (`MINIMAL_DEVELOPER_ANSWERS`, `HEALTHCARE_DEVELOPER_ANSWERS`, `PM_ANSWERS`)
+- GitHub Actions CI workflow with multi-version Node testing (18, 20, 22)
 
----
+**Key files**: `vitest.config.ts`, `tests/`, `.github/workflows/ci.yml`
 
-### 1C. Configuration Versioning and Drift Detection
+#### 1B. Output Validation ✅
+- `OutputValidator` with 8 check categories: universal, HIPAA, PCI-DSS, SOC2, GDPR, security, domain pack custom
+- `generateWithValidation()` on orchestrator returns files + full validation results
+- Backward-compatible — original `generate()` unchanged
 
-**New files:**
-- `src/synthesizer/generation-header.ts` — `stampGeneratedFile(file): GeneratedFile`. Prepends version metadata by file extension: HTML comment for `.md`, `_embediq` key for `.json`, `#` comment for `.py`/`.yaml`.
-- `src/synthesizer/diff-analyzer.ts` — `analyzeDiffs(files, targetDir): DiffSummary`. Categorizes each file as `new | modified | unchanged | conflict`. "Conflict" = file exists but was NOT generated by EmbedIQ.
+**Key files**: `src/synthesizer/output-validator.ts`, `src/synthesizer/orchestrator.ts`
 
-**Modified files:**
-- `src/synthesizer/orchestrator.ts` — Apply `stampGeneratedFile()` after validation in `generateWithValidation()`
-- `src/web/server.ts` — Add `POST /api/diff` route. Update `/api/generate` to accept optional `resolutions` for conflict handling.
-- `src/util/file-output.ts` — `writeAll()` respects resolution decisions (skip or `.bak` backup)
-- `src/web/public/index.html` + `app.js` — Diff summary and conflict resolution UI
+#### 1C. Configuration Versioning and Drift Detection ✅
+- Version stamping per file type (MD, JSON, PY, YAML) with schema version and timestamp
+- Diff analyzer categorizes files as new/modified/unchanged/conflict
+- Conflict detection distinguishes EmbedIQ-managed files from user files
 
----
-
-## Phase 2 — Enterprise Infrastructure (Weeks 5-8)
-
-### 2A. Wizard Audit Trail
-
-**New files:**
-- `src/util/wizard-audit.ts` — `auditLog(entry): void`. Noop when `EMBEDIQ_AUDIT_LOG` env var is not set. Appends JSONL to specified file. Events: `session_start`, `profile_built`, `validation_result`, `generation_started`, `file_written`, `session_complete`, `session_error`.
-
-**Modified files:**
-- `src/web/server.ts` — Call `auditLog()` in `/api/generate` handler
-- `src/util/file-output.ts` — Emit `file_written` per successful write
-- `src/synthesizer/orchestrator.ts` — Emit `validation_result` after validation
+**Key files**: `src/synthesizer/generation-header.ts`, `src/synthesizer/diff-analyzer.ts`
 
 ---
 
-### 2B. Authentication and RBAC
+### Phase 2 — Enterprise Infrastructure ✅
 
-**New files:**
-- `src/web/middleware/auth.ts` — `AuthStrategy` interface, `AuthResult` type, `createAuthMiddleware(strategy)` factory
-- `src/web/middleware/rbac.ts` — `requireRole(role)` middleware. Roles: `wizard-user`, `wizard-admin`
-- `src/web/middleware/strategies/basic.ts` — Migrated from current inline auth, grants both roles
-- `src/web/middleware/strategies/oidc.ts` — Uses `openid-client` v6+. Validates JWT, extracts roles from configurable claim.
-- `src/web/middleware/strategies/header.ts` — Trusts `X-Forwarded-User` and `X-EmbedIQ-Roles` headers
+#### 2A. Wizard Audit Trail ✅
+- JSONL audit logging with 7 event types (`session_start`, `profile_built`, `validation_result`, `generation_started`, `file_written`, `session_complete`, `session_error`)
+- Environment-driven: noop when `EMBEDIQ_AUDIT_LOG` not set
+- Rich metadata capture: userId, profileSummary, filePath, fileSize, diffStatus
 
-**Modified files:**
-- `src/web/server.ts` — Remove inline Basic Auth. Strategy selected via `EMBEDIQ_AUTH_STRATEGY` env var (`none | basic | oidc | proxy`). Default `none`. Backward compat: auto-detect `basic` when `EMBEDIQ_AUTH_USER/PASS` are set without explicit strategy.
-- `package.json` — Add `openid-client` as optional dependency
+**Key files**: `src/util/wizard-audit.ts`
 
-**New environment variables:**
+#### 2B. Authentication and RBAC ✅
+- `AuthStrategy` interface with `createAuthMiddleware()` factory
+- Three strategies: Basic (username/password), OIDC (JWT Bearer), Proxy Header (`X-Forwarded-User`)
+- `requireRole()` middleware with `wizard-user` and `wizard-admin` roles
+- Backward-compatible: auto-detects `basic` when `EMBEDIQ_AUTH_USER/PASS` set
 
-| Variable | Default | Purpose |
-|---|---|---|
-| `EMBEDIQ_AUTH_STRATEGY` | `none` | Auth strategy: `none`, `basic`, `oidc`, `proxy` |
-| `EMBEDIQ_OIDC_ISSUER` | — | OIDC issuer URL |
-| `EMBEDIQ_OIDC_CLIENT_ID` | — | OIDC client ID |
-| `EMBEDIQ_OIDC_CLIENT_SECRET` | — | OIDC client secret |
-| `EMBEDIQ_OIDC_ROLES_CLAIM` | `roles` | JWT claim containing role array |
-| `EMBEDIQ_PROXY_USER_HEADER` | `X-Forwarded-User` | Proxy-authenticated username header |
-| `EMBEDIQ_PROXY_ROLES_HEADER` | `X-EmbedIQ-Roles` | Proxy-provided roles header |
+**Key files**: `src/web/middleware/auth.ts`, `src/web/middleware/rbac.ts`, `src/web/middleware/strategies/`
 
----
+#### 2C. Rate Limiting and TLS ✅
+- `express-rate-limit` on `/api/generate` (10 req/min, 60s window)
+- HTTPS support via `EMBEDIQ_TLS_CERT` + `EMBEDIQ_TLS_KEY` env vars
 
-### 2C. Rate Limiting and TLS
+**Key files**: `src/web/server.ts`
 
-**Modified files:**
-- `package.json` — Add `express-rate-limit`
-- `src/web/server.ts` — Rate limiter (10 req/min) on `/api/generate`. TLS via `EMBEDIQ_TLS_CERT` + `EMBEDIQ_TLS_KEY` env vars.
+#### 2D. Session Persistence ✅
+- Client-side `SecureSessionManager` using Web Crypto API (AES-256-GCM)
+- Encrypted checkpoints in `sessionStorage` — survives refresh, dies on tab close
+- Key held only in JS memory (not extractable, never persisted)
 
----
+**Key files**: `src/web/public/session-persistence.js`
 
-### 2D. Session Persistence
+#### 2E. Configuration Templates ✅
+- `ProfileTemplate` interface with `prefilledAnswers`, `lockedQuestions`, `forcedQuestions`, `domainPackId`
+- Three shipped templates: `hipaa-healthcare.yaml`, `pci-finance.yaml`, `soc2-saas.yaml`
+- Template directory configurable via `EMBEDIQ_TEMPLATES_DIR`
 
-**New files:**
-- `src/web/public/session-persistence.js` — `SecureSessionManager` using Web Crypto API (AES-256-GCM). Key generated in JS memory (not extractable, never persisted). `sessionStorage` holds encrypted checkpoint. Survives refresh, dies on tab close.
+**Key files**: `src/bank/profile-templates.ts`, `templates/`
 
-**Modified files:**
-- `src/web/public/index.html` — Add `<script>` tag for `session-persistence.js`
-- `src/web/public/app.js` — Checkpoint save after each answer, restore prompt on init
+#### 2F. Deployment ✅
+- Multi-stage Dockerfile (Node 22-alpine, non-root user)
+- `docker-compose.yml` with audit log volume, env var passthrough
+- Kubernetes manifests: deployment (liveness/readiness probes), service, configmap, ingress
+- `/health` and `/ready` endpoints
 
----
-
-### 2E. Configuration Templates
-
-**New files:**
-- `src/bank/profile-templates.ts` — `ProfileTemplate` interface with `prefilledAnswers`, `lockedQuestions`, `forcedQuestions`, `domainPackId`
-- `templates/hipaa-healthcare.yaml` — HIPAA healthcare baseline
-- `templates/pci-finance.yaml` — PCI-DSS finance baseline
-- `templates/soc2-saas.yaml` — SOC2 SaaS baseline
-- `templates/README.md` — How to create custom templates
-
-**Modified files:**
-- `src/engine/adaptive-engine.ts` — Inject prefilled answers before Q&A loop
-- `src/ui/edit-correct.ts` — Enforce locked questions (display message, prevent override)
-- `src/web/server.ts` — Add `GET /api/templates` route
-- `src/web/public/app.js` — Template selection screen
+**Key files**: `Dockerfile`, `docker-compose.yml`, `k8s/`
 
 ---
 
-### 2F. Deployment
+### Phase 3 — Domain Pack Plugin Architecture ✅
 
-**New files:**
-- `Dockerfile` — Multi-stage: `node:22-alpine`, non-root user, expose 3000
-- `docker-compose.yml` — Service with port mapping, env vars, audit log volume
-- `.dockerignore`
-- `k8s/deployment.yaml`, `k8s/service.yaml`, `k8s/ingress.yaml`, `k8s/configmap.yaml`
+#### 3A. Core Interface ✅
+- `DomainPack` interface with questions, compliance frameworks, priority categories, DLP patterns, rule templates, ignore patterns, validation checks
+- Supporting types: `ComplianceFrameworkDef`, `DlpPatternDef`, `RuleTemplateDef`, `DomainValidationCheck`
 
-**Modified files:**
-- `src/web/server.ts` — Add `GET /health` and `GET /ready` endpoints
-- `package.json` — Add `sbom` script
+**Key files**: `src/domain-packs/index.ts`
 
----
+#### 3B. Registry ✅
+- `DomainPackRegistry` with `register()`, `loadExternalPlugins()`, `getForIndustry()`
+- External plugin loading via `await import()` from `EMBEDIQ_PLUGINS_DIR` (default `./plugins/`)
+- Industry-to-pack mapping (healthcare, finance, education + variants like fintech, edtech, pharma)
 
-## Phase 3 — Domain Pack Plugin Architecture (Weeks 9-10)
+**Key files**: `src/domain-packs/registry.ts`
 
-### 3A. Core Interface
+#### 3C. Three-Layer Integration ✅
+- Layer 1 (Questions): Domain pack questions merged into QuestionBank, sorted by dimension
+- Layer 2 (Priorities): `PriorityAnalyzer` accepts `additionalCategories` from domain packs
+- Layer 3 (Generators): DLP patterns → hooks, rule templates → rules, ignore patterns → .claudeignore, validation checks → output validator
+- Deduplication: rules by `relativePath`, ignore patterns via `Set<string>`
 
-**New file:** `src/domain-packs/index.ts`
-
-```typescript
-export interface DomainPack {
-  id: string;
-  name: string;
-  version: string;
-  description: string;
-  questions: Question[];
-  complianceFrameworks: ComplianceFrameworkDef[];
-  priorityCategories: Record<string, string[]>;
-  dlpPatterns: DlpPatternDef[];
-  ruleTemplates: RuleTemplateDef[];
-  ignorePatterns: string[];
-  validationChecks: DomainValidationCheck[];
-}
-```
-
-Plus supporting types: `ComplianceFrameworkDef`, `DlpPatternDef`, `RuleTemplateDef`, `DomainValidationCheck`.
-
-### 3B. Registry
-
-**New files:**
-- `src/domain-packs/registry.ts` — `DomainPackRegistry` class. Built-in packs registered statically. External plugins from `plugins/` directory via `await import()` (async, ESM-compatible).
-- `plugins/README.md`
-
-**Design decision**: Use `await import()` instead of `require()` since the project uses ESM (`"type": "module"`). Registry uses `static async create()` factory pattern.
-
-### 3C. Three-Layer Integration
-
-**Modified files (touches all layers):**
-
-1. **`src/types/index.ts`** — Add `domainPack?: DomainPack` to `SetupConfig`
-2. **`src/bank/question-bank.ts`** — Constructor accepts optional `DomainPack`, merges questions, extends REG_002 compliance framework options
-3. **`src/engine/priority-analyzer.ts`** — Convert module-level `PRIORITY_CATEGORIES` to instance field, constructor accepts additional categories
-4. **`src/engine/adaptive-engine.ts`** — Constructor accepts optional `DomainPack`, passes to QuestionBank and PriorityAnalyzer
-5. **`src/synthesizer/generators/hooks.ts`** — Inject domain DLP patterns into `generateDlpScanner()`, filtered by `requiresFramework`
-6. **`src/synthesizer/generators/rules.ts`** — Append domain rule templates, deduplicate by `relativePath`
-7. **`src/synthesizer/generators/ignore.ts`** — Append domain ignore patterns, deduplicate with `Set<string>`
-8. **`src/synthesizer/output-validator.ts`** — Run domain validation checks
-9. **`src/web/server.ts`** — Initialize registry, add `GET /api/domain-packs`, resolve active pack from answers
-
-**Overlap/deduplication strategy:**
-- HIPAA/PCI base rules stay in `RulesGenerator`; domain packs add only non-overlapping files (HITECH, SOX, GLBA, etc.)
-- DLP patterns are additive (no dedup needed)
-- Ignore patterns deduplicated with `Set<string>` (e.g., `patient_data/` appears in both base and healthcare pack)
+**Key files**: `src/bank/question-bank.ts`, `src/engine/priority-analyzer.ts`, `src/synthesizer/generators/hooks.ts`, `src/synthesizer/generators/rules.ts`, `src/synthesizer/generators/ignore.ts`, `src/synthesizer/output-validator.ts`
 
 ---
 
-## Phase 4 — Domain Pack Implementations (Weeks 11-14)
+### Phase 4 — Domain Pack Implementations ✅
 
-All three packs can be developed in parallel once Phase 3 is complete.
-
-### 4A. Healthcare Pack (`src/domain-packs/built-in/healthcare.ts`)
-- 6 questions (HC_001-HC_006): HIPAA identifiers, PHI categories, BAA, HITECH breach notification, HL7 FHIR/interoperability, FDA SaMD
-- 2 compliance frameworks: HITECH, 42 CFR Part 2
-- 3 priority categories: Healthcare Data Governance, Clinical Interoperability, Regulatory Validation
+#### 4A. Healthcare Pack ✅
+- 6 questions (HC_001–HC_006): PHI identifiers, PHI categories, BAA, HITECH breach notification, HL7 FHIR/interoperability, FDA SaMD
+- 3 compliance frameworks: HIPAA, HITECH, 42 CFR Part 2
 - 6 DLP patterns: MRN, Health Plan Beneficiary Number, ICD-10 with patient context, DEA Number, NPI Number, FHIR Patient Resource ID
-- 3 rule templates: hipaa-phi-handling.md, hitech-breach-notification.md, healthcare-interop.md
-- 7 ignore patterns, 5 validation checks
+- 3 rule templates, 7 ignore patterns, 5 validation checks
 
-### 4B. Finance Pack (`src/domain-packs/built-in/finance.ts`)
-- 5 questions (FIN_D001-FIN_D005): Cardholder data, financial data types, SOX, GLBA, cryptocurrency
-- 4 compliance frameworks: SOX, GLBA, AML/BSA, FINRA
-- 2 priority categories: Financial Data Protection, Regulatory Controls
+**Key files**: `src/domain-packs/built-in/healthcare.ts`
+
+#### 4B. Finance Pack ✅
+- 5 questions (FIN_D001–FIN_D005): Cardholder data, financial data types, SOX, GLBA, cryptocurrency
+- 4 compliance frameworks: PCI-DSS, SOX, GLBA, AML/BSA
 - 6 DLP patterns: PAN, ABA routing, SWIFT/BIC, IBAN, EIN, CVV
-- 3 rule templates: pci-dss-cardholder.md, sox-controls.md, glba-privacy.md
-- 6 ignore patterns, 3 validation checks
+- 3 rule templates, 6 ignore patterns, 3 validation checks
 
-### 4C. Education Pack (`src/domain-packs/built-in/education.ts`)
-- 6 questions (EDU_001-EDU_006): FERPA records, student data categories, COPPA, school official vs third-party, inter-institution sharing, state privacy laws
+**Key files**: `src/domain-packs/built-in/finance.ts`
+
+#### 4C. Education Pack ✅
+- 6 questions (EDU_001–EDU_006): FERPA records, student data categories, COPPA, school official roles, inter-institution sharing, state privacy laws
 - 3 compliance frameworks: FERPA, COPPA, State Student Privacy Laws
-- 2 priority categories: Student Data Governance, Child Safety & Privacy
 - 6 DLP patterns: Student ID, GPA, FAFSA/Financial Aid ID, Course Section with student, IEP/504, Minor DOB
-- 2 rule templates: ferpa-compliance.md, coppa-child-privacy.md
-- 7 ignore patterns, 5 validation checks
+- 2 rule templates, 7 ignore patterns, 5 validation checks
+
+**Key files**: `src/domain-packs/built-in/education.ts`
 
 ---
 
-## PR Strategy
+## Completed: v2.1 — Performance and Observability
 
-| PR | Phase | Scope | Files | Risk |
-|----|-------|-------|-------|------|
-| 1 | 1A | Test infrastructure + vitest config | ~5 new | Low |
-| 2 | 1A | Unit + integration tests | ~10 new | Low |
-| 3 | 1B | Output validation | ~3 new, ~4 mod | Medium |
-| 4 | 1C | Config versioning + drift | ~2 new, ~3 mod | Low |
-| 5 | 2A | Wizard audit trail | ~1 new, ~3 mod | Low |
-| 6 | 2B | Auth refactor + RBAC | ~5 new, ~2 mod | Medium |
-| 7 | 2C | Rate limiting + TLS | ~2 mod | Low |
-| 8 | 2D | Session persistence | ~1 new, ~2 mod | Low |
-| 9 | 2E | Config templates | ~5 new, ~4 mod | Medium |
-| 10 | 2F | Deployment (Docker/K8s) | ~7 new, ~2 mod | Low |
-| 11 | 3A | Domain pack interface | ~1 new | Low |
-| 12 | 3B | Domain pack registry | ~2 new | Low |
-| 13 | 3C | Domain pack integration | ~8 mod | **High** |
-| 14 | 4A | Healthcare pack + tests | ~2 new | Low |
-| 15 | 4B | Finance pack + tests | ~2 new | Low |
-| 16 | 4C | Education pack + tests | ~2 new | Low |
-| 17 | — | Final E2E tests + docs | ~3 new | Low |
+### 5A. Parallel Generator Execution ✅
 
----
+The 12 generators in `SynthesizerOrchestrator.generate()` now run in parallel via `Promise.all()`. Both `generate()` and `generateWithValidation()` are async. Each generator's `generate()` method is pure — reads `SetupConfig`, returns `GeneratedFile[]` — making parallel execution safe. All callers (CLI, web server generate/preview/diff routes) updated to await.
 
-## Risks and Mitigations
+**Key files**: `src/synthesizer/orchestrator.ts`, `src/index.ts`, `src/web/server.ts`
 
-| # | Risk | Impact | Mitigation |
-|---|------|--------|------------|
-| 1 | `generate()` return type change | Breaks CLI + web callers | Add `generateWithValidation()` instead; keep `generate()` unchanged |
-| 2 | ESM + `require()` for plugins | Runtime crash | Use `await import()` with async factory pattern for registry |
-| 3 | `PRIORITY_CATEGORIES` module-level const | Can't inject domain categories | Convert to instance field in PriorityAnalyzer constructor |
-| 4 | HIPAA/PCI rules overlap with domain packs | Duplicate generated files | Deduplicate by `relativePath` in RulesGenerator |
-| 5 | Ignore patterns overlap | Duplicate lines in .claudeignore | Use `Set<string>` before joining |
-| 6 | server.ts not testable (app + listen coupled) | Can't import for supertest | Extract `createApp()` function, guard `listen()` |
-| 7 | OIDC library not specified | Wrong dependency | Use `openid-client` v6+ (ESM-native) |
-| 8 | Auth backward compat | `EMBEDIQ_AUTH_USER/PASS` users break | Auto-detect `basic` when those vars set without explicit strategy |
+### 5B. Request Context Isolation ✅
+
+Each Express request is now wrapped in an `AsyncLocalStorage` context carrying `requestId` (UUID), authenticated user info, and request timing. Downstream code calls `getRequestContext()` without parameter threading. Audit logging auto-enriches entries with `userId` and `requestId` from context — the `/api/generate` route no longer manually passes `userId` into every `auditLog()` call.
+
+**Key files**: `src/context/request-context.ts`, `src/web/server.ts` (middleware), `src/util/wizard-audit.ts` (auto-enrichment)
+
+### 5C. OpenTelemetry Instrumentation ✅
+
+Optional OpenTelemetry integration behind `EMBEDIQ_OTEL_ENABLED=true` env var. Uses `@opentelemetry/api` for instrumentation (noop by default — zero overhead when disabled). SDK packages are optional dependencies loaded via dynamic import.
+
+Traces: per-request HTTP spans (method, path, status, requestId), `synthesizer.generate` span with per-generator child spans, `synthesizer.generateWithValidation` span with validation results. Metrics: `embediq.files_generated`, `embediq.generation_runs`, `embediq.validations` (pass/fail). Exports via OTLP HTTP — compatible with any collector (Jaeger, Grafana, Datadog).
+
+**Key files**: `src/observability/telemetry.ts`, `src/synthesizer/orchestrator.ts`, `src/web/server.ts`
 
 ---
 
-## File Inventory
+## What's Next
 
-### New Files by Phase
+### v3.0 — Enterprise Runtime
+- Event bus with real-time WebSocket progress for the web UI
+- Server-side session backends (JSON, Redis) for multi-server deployments
+- Interrupt and resume for long wizard flows across devices
+- Evaluation framework for measuring adaptive logic quality
+- Scheduled regeneration and drift detection
+- Composable skills system — granular, reusable configuration units that evolve beyond monolithic domain packs
 
-**Phase 1** (~16 files): Test infrastructure, fixtures, CI pipeline, output-validator.ts, generation-header.ts, diff-analyzer.ts
+### v4.0 — AI-Augmented Generation
+- Provider abstraction layer (Claude, OpenAI, Ollama) with token usage tracking
+- Optional AI-assisted config enhancement for complex edge cases
+- AI planning for multi-compliance, multi-team enterprise scenarios
 
-**Phase 2** (~14 files): wizard-audit.ts, middleware/auth.ts, middleware/rbac.ts, 3 auth strategies, session-persistence.js, profile-templates.ts, 3 YAML templates, Dockerfile, docker-compose.yml, .dockerignore, k8s manifests
-
-**Phase 3** (~3 files): domain-packs/index.ts, domain-packs/registry.ts, plugins/README.md
-
-**Phase 4** (~3 files): healthcare.ts, finance.ts, education.ts
-
-### Modified Files by Phase
-
-**Phase 1**: package.json, src/types/index.ts, src/synthesizer/orchestrator.ts, src/index.ts, src/web/server.ts, src/util/file-output.ts, src/web/public/index.html, src/web/public/app.js
-
-**Phase 2**: src/web/server.ts, src/util/file-output.ts, src/synthesizer/orchestrator.ts, package.json, src/web/public/index.html, src/web/public/app.js, src/engine/adaptive-engine.ts, src/ui/edit-correct.ts
-
-**Phase 3**: src/types/index.ts, src/bank/question-bank.ts, src/engine/priority-analyzer.ts, src/engine/adaptive-engine.ts, src/synthesizer/generators/hooks.ts, src/synthesizer/generators/rules.ts, src/synthesizer/generators/ignore.ts, src/synthesizer/output-validator.ts, src/web/server.ts
-
-**Phase 4**: src/domain-packs/registry.ts (register built-in packs)
+All future features are opt-in and backward-compatible. EmbedIQ will always work as a fully deterministic, zero-LLM wizard.
 
 ---
 
-## Verification Plan
+## Migration Notes
 
-### Per-PR
-- Every PR includes tests for changed functionality
-- CI: `tsc --noEmit` → `vitest run --coverage`
-- Coverage threshold: 80% on `src/synthesizer/generators/`
-
-### End-to-End (after all PRs)
-1. **CLI flow**: `npm start` → healthcare profile → verify HIPAA rules, DLP scanner, validation
-2. **Web flow**: complete wizard → verify template selection, session persistence, validation, diff analysis
-3. **Auth**: Test all 4 strategies (none, basic, oidc mock, proxy-header)
-4. **Domain packs**: Generate for each industry → verify questions, DLP, rules, validation
-5. **Backward compat**: No new env vars → identical to v1.0
-6. **Docker**: `docker build` → `docker run` → `/health` → complete wizard
-7. **Drift detection**: Generate, modify file, re-generate → verify conflict detection
-
-### Snapshot Testing
-- Committed snapshots for: healthcare-hipaa, solo-developer, enterprise-team profiles
-- Generator changes must update snapshots explicitly (`npm run test:snapshots`)
-
----
-
-## Migration Guide
-
-EmbedIQ v2.0 is backward-compatible with v1.0:
-- No breaking changes to CLI or web interface flow
-- New features (templates, domain packs, session persistence) are additive and optional
-- New environment variables are all opt-in (defaults match v1.0 behavior)
-- Generated files now include version headers (existing v1.0 files flagged as "conflicts" in diff analyzer)
-- Test suite is additive (`npm test` requires new devDependencies, installed automatically)
-- Domain packs loaded automatically but only active when matching industry is selected
+- **v2.0 → v2.1**: No breaking changes. All additions are optional and behind env vars. Parallel generators are an internal optimization with no API change.
