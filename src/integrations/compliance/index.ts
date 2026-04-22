@@ -1,10 +1,13 @@
 export {
   ComplianceAdapterError,
   ComplianceAdapterRegistry,
+  signingSecretEnvVar,
   type ComplianceAdapterInput,
   type ComplianceEvent,
   type ComplianceEventAdapter,
+  type SignatureVerifyInput,
 } from './compliance-adapter.js';
+export { hmacSha256Hex, timingSafeCompare } from './hmac.js';
 
 export { DrataAdapter, drataAdapter } from './drata-adapter.js';
 export { VantaAdapter, vantaAdapter } from './vanta-adapter.js';

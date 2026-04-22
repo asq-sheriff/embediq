@@ -2,7 +2,9 @@ import type {
   ComplianceAdapterInput,
   ComplianceEvent,
   ComplianceEventAdapter,
+  SignatureVerifyInput,
 } from './compliance-adapter.js';
+import { hmacSha256Hex, timingSafeCompare } from './hmac.js';
 
 /**
  * Translator for Vanta's outbound webhooks. Vanta's schema keys events
@@ -21,6 +23,18 @@ import type {
 export class VantaAdapter implements ComplianceEventAdapter {
   readonly id = 'vanta';
   readonly name = 'Vanta';
+
+  /**
+   * Vanta signs webhooks with `X-Vanta-Signature`, a lowercase hex
+   * HMAC-SHA256 of the raw request body under the secret Vanta
+   * displays when the webhook is registered in their admin UI.
+   */
+  verifySignature(input: SignatureVerifyInput): boolean {
+    const presented = input.headers['x-vanta-signature'];
+    if (!presented) return false;
+    const expected = hmacSha256Hex(input.secret, input.rawBody);
+    return timingSafeCompare(expected, presented);
+  }
 
   translate(input: ComplianceAdapterInput): ComplianceEvent | null {
     if (!isObject(input.body)) return null;

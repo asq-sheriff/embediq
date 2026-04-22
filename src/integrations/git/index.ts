@@ -8,7 +8,9 @@ export {
   type GitPullRequestRef,
 } from './git-platform.js';
 
+export { BitbucketAdapter } from './bitbucket-adapter.js';
 export { GitHubAdapter } from './github-adapter.js';
+export { GitLabAdapter } from './gitlab-adapter.js';
 
 export {
   buildPrTemplate,

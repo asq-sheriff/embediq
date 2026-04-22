@@ -12,7 +12,7 @@ Windsurf), see
 > **Interim page.** The human-readable tour of each file's purpose —
 > `CLAUDE.md`, `.claude/settings.json`, rules, commands, agents,
 > skills, hooks — lives in the combined
-> [`USER_GUIDE.md`](../USER_GUIDE.md#generated-file-structure).
+> [`USER_GUIDE.md`](../USER_GUIDE.md#what-gets-generated).
 > This stub points you there until the comprehensive USER_GUIDE.md
 > split is done.
 

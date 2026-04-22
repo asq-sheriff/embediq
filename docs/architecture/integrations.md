@@ -64,13 +64,52 @@ available) or `GitConfigurationError` (bad config). Both are
 exported so CLI callers can distinguish "fix the env var" from
 "GitHub is down."
 
-### Why GitHub only in v1
+### Provider coverage
 
-GitLab and Bitbucket adapters are roadmap items. The interface is
-already platform-agnostic — adding an adapter is a ~300-line file.
-GitHub covers the dominant share of the target market; shipping
-GitHub first + a clean interface beats shipping three half-done
-adapters.
+GitHub, GitLab, and Bitbucket are all first-class. The
+`GitPlatform` interface (createBranchWithFiles + openPullRequest)
+is platform-agnostic — each adapter is a ~300-line file that
+translates the two operations into the platform's REST API.
+
+Per-platform mechanics worth noting:
+
+**GitHub** — Git Data API: separate blob/tree/commit primitives;
+new branch via `POST /git/refs`, existing branch via
+`PATCH /git/refs/heads/<name>`.
+
+**GitLab** —
+- Atomic multi-file commit via `POST /repository/commits` with a
+  single `actions[]` array (no separate blob/tree/commit calls).
+- Per-action mode is `create` or `update` (no upsert), so the
+  adapter pre-walks the base-branch tree once and classifies each
+  file accordingly. Empty repo / missing base ref → all `create`.
+- Branch idempotency is delete-then-recreate to mirror GitHub's
+  ref-move semantic; without that, a second commit on the same
+  branch name would stack on top of the previous one rather than
+  reset to base.
+- Project path is URL-encoded once at construction so callers can
+  pass the human-readable `group/sub-group/project` form rather
+  than numeric project ids.
+- Self-hosted GitLab honours `EMBEDIQ_GIT_API_BASE_URL`
+  (e.g. `https://gitlab.example.com`) the same way the GitHub
+  adapter handles GitHub Enterprise.
+
+**Bitbucket** —
+- Atomic multi-file commit via `POST /2.0/repositories/.../src`
+  with `multipart/form-data` where each form field's **name is the
+  file path** and its value is the file content. Branch creation
+  and the commit happen in the same call when the branch doesn't
+  yet exist.
+- Branch idempotency uses the same delete-then-recreate pattern as
+  the GitLab adapter so that a re-run of PR mode against an
+  existing autopilot branch resets to base rather than appending.
+- Base-branch HEAD is fetched once via the `refs/branches/<name>`
+  endpoint and threaded through as the `parents` field on the
+  `/src` call.
+- Auth is Bearer with a Bitbucket Repository Access Token or
+  Workspace Access Token. App-password Basic auth is legacy and
+  not supported — Bearer keeps the auth-header convention
+  identical across all three adapters.
 
 ## Outbound webhooks (`src/integrations/webhooks/`)
 
@@ -171,9 +210,16 @@ string.
 
 ## Security posture (shared across all integrations)
 
-- **Shared-secret auth.** `EMBEDIQ_AUTOPILOT_WEBHOOK_SECRET` gates
-  both autopilot and compliance webhooks via the
-  `X-EmbedIQ-Autopilot-Secret` header. Outbound webhook URLs
+- **Inbound-webhook auth (two layers, independently configurable).**
+  `EMBEDIQ_AUTOPILOT_WEBHOOK_SECRET` gates both autopilot and
+  compliance routes via the `X-EmbedIQ-Autopilot-Secret` header.
+  In addition, each compliance adapter can verify the platform's
+  own HMAC-SHA256 signature when its
+  `EMBEDIQ_COMPLIANCE_SECRET_<ADAPTER>` env var is set — Drata's
+  `X-Drata-Signature`, Vanta's `X-Vanta-Signature`, the generic
+  adapter's `X-EmbedIQ-Signature`. Constant-time compare, raw body
+  captured by `express.json({ verify })`. Mismatch → 401. Both
+  layers must pass when both are configured. Outbound webhook URLs
   carry their own secret path components (Slack/Teams incoming
   webhook URLs are credentials by design — treat them like any
   secret).

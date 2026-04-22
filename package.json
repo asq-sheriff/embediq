@@ -1,7 +1,7 @@
 {
   "name": "embediq",
   "version": "3.2.0",
-  "description": "EmbedIQ by Praglogic — Adaptive wizard that generates ideal AI coding agent configurations (Claude Code today; Cursor, Copilot, Gemini, Windsurf, and AGENTS.md in v3.1)",
+  "description": "EmbedIQ by Praglogic — Adaptive wizard that generates production-ready AI coding agent configurations across Claude Code, Cursor, GitHub Copilot, Gemini, Windsurf, and AGENTS.md from a single interview.",
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
@@ -17,7 +17,8 @@
     "evaluate": "tsx src/evaluation/cli.ts",
     "benchmark": "tsx src/evaluation/cli.ts --mode benchmark",
     "drift": "tsx src/autopilot/cli.ts",
-    "sanitize-public": "tsx scripts/sanitize-for-public.ts"
+    "sanitize-public": "tsx scripts/sanitize-for-public.ts",
+    "docs-lint": "tsx scripts/docs-lint.ts"
   },
   "keywords": [
     "claude-code",

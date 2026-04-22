@@ -138,10 +138,19 @@ describe('resolveGitConfigFromEnv', () => {
     expect(platform.providerId).toBe('github');
   });
 
-  it('buildPlatform throws a clear error for gitlab/bitbucket (deferred)', () => {
+  it('buildPlatform returns a GitLabAdapter when provider=gitlab', () => {
     process.env.EMBEDIQ_GIT_PROVIDER = 'gitlab';
-    process.env.EMBEDIQ_GIT_REPO = 'acme/project';
+    process.env.EMBEDIQ_GIT_REPO = 'group/project';
     process.env.EMBEDIQ_GIT_TOKEN = 'tkn';
-    expect(() => buildPlatform()).toThrow(/not supported/);
+    const platform = buildPlatform();
+    expect(platform.providerId).toBe('gitlab');
+  });
+
+  it('buildPlatform returns a BitbucketAdapter when provider=bitbucket', () => {
+    process.env.EMBEDIQ_GIT_PROVIDER = 'bitbucket';
+    process.env.EMBEDIQ_GIT_REPO = 'workspace/repo';
+    process.env.EMBEDIQ_GIT_TOKEN = 'tkn';
+    const platform = buildPlatform();
+    expect(platform.providerId).toBe('bitbucket');
   });
 });

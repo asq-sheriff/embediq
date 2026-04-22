@@ -1,7 +1,7 @@
 .PHONY: help install build check test test-watch test-coverage typecheck \
        start start-web dev dev-web \
        docker docker-up docker-down \
-       otel-dev evaluate benchmark drift sanitize-public clean
+       otel-dev evaluate benchmark drift sanitize-public docs-lint clean
 
 # ─── Default ─────────────────────────────────────────────────────────
 help: ## Show this help
@@ -60,6 +60,10 @@ drift: ## Run drift detection (requires --target and --answers or --archetype)
 # ─── Public-release overlay ──────────────────────────────────────────
 sanitize-public: ## Dry-run the public-release overlay (writes nothing). Add -- --out <dir> to materialize.
 	npm run sanitize-public
+
+# ─── Docs hygiene ─────────────────────────────────────────────────────
+docs-lint: ## Lint markdown: audience frontmatter, leak markers in public files, broken links.
+	npm run docs-lint
 
 # ─── Docker ──────────────────────────────────────────────────────────
 docker: ## Build Docker image

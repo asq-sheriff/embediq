@@ -43,21 +43,52 @@ A custom adapter can be registered programmatically — see
 
 ## Authentication
 
-Inbound compliance webhooks share the **autopilot webhook secret**:
+Two layers of trust are available; configure either, both, or neither.
+They check independently — when both are configured, both must pass.
+
+### Layer 1 — shared-secret header (gateway guard)
+
+Inbound compliance webhooks honour the **autopilot webhook secret**:
 
 ```bash
 export EMBEDIQ_AUTOPILOT_WEBHOOK_SECRET=$(openssl rand -hex 32)
 ```
 
-Every request must carry:
+Every request then must carry:
 
 ```
 X-EmbedIQ-Autopilot-Secret: <value>
 ```
 
-Requests without the header (when a secret is configured) return
-`401 Unauthorized`. Tokens aren't rotated automatically — treat the
-secret like any other shared credential.
+Requests without the header (when the env var is configured) return
+`401 Unauthorized`. Treat the secret like any other shared credential —
+rotation is manual.
+
+### Layer 2 — per-adapter HMAC signature
+
+Each compliance platform that signs its webhooks gets a dedicated
+HMAC-SHA256 verifier. Opt in by setting the adapter's signing-secret
+env var:
+
+| Adapter | Env var | Header EmbedIQ verifies |
+|---|---|---|
+| Drata   | `EMBEDIQ_COMPLIANCE_SECRET_DRATA`   | `X-Drata-Signature` (lowercase hex) |
+| Vanta   | `EMBEDIQ_COMPLIANCE_SECRET_VANTA`   | `X-Vanta-Signature` (lowercase hex) |
+| Generic | `EMBEDIQ_COMPLIANCE_SECRET_GENERIC` | `X-EmbedIQ-Signature` (`<hex>` or `sha256=<hex>`) |
+
+EmbedIQ recomputes `HMAC-SHA256(secret, raw-request-body)` and compares
+the result against the header value with a constant-time comparison.
+Mismatches return `401 Unauthorized`. When the env var is unset the
+verifier is skipped entirely (preserves backwards compatibility — the
+legacy gateway-only setup keeps working).
+
+The signature is computed over the **raw bytes** of the body. Don't
+re-serialize through a JSON parser before signing or you'll change key
+ordering and whitespace and break the digest.
+
+Custom adapters that implement the `verifySignature` method follow the
+same env-var convention: `EMBEDIQ_COMPLIANCE_SECRET_<ADAPTER_ID_UPPERCASED>`,
+with non-alphanumerics rewritten to underscores.
 
 ## Matching rules
 

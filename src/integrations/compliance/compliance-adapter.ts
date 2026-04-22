@@ -50,6 +50,18 @@ export interface ComplianceAdapterInput {
 }
 
 /**
+ * Input to a signature verifier. The raw body must be the exact bytes
+ * the client sent — JSON-parsing reorders keys and strips whitespace,
+ * both of which break HMACs. Express's `json()` parser is configured
+ * to stash the raw body on `req.rawBody` so we can reach it here.
+ */
+export interface SignatureVerifyInput {
+  rawBody: Buffer;
+  headers: Record<string, string>;
+  secret: string;
+}
+
+/**
  * Translates a platform's webhook payload into a canonical
  * `ComplianceEvent`. Returns `null` when the payload is well-formed but
  * not one this adapter cares about (e.g. a Drata system-info webhook)
@@ -62,6 +74,27 @@ export interface ComplianceEventAdapter {
   readonly name: string;
   /** Parse the payload; return `null` to silently skip. */
   translate(input: ComplianceAdapterInput): ComplianceEvent | null;
+  /**
+   * Optional HMAC signature verifier. Present adapters validate the
+   * inbound request against a shared secret using the platform's own
+   * signature convention (header name + encoding).
+   *
+   * Return `true` on a valid signature, `false` on mismatch or missing
+   * header. The caller only invokes this when the secret env var for
+   * this adapter is set — when unset, signature verification is
+   * skipped entirely, preserving backwards compatibility with the
+   * original shared-secret-header guard.
+   */
+  verifySignature?(input: SignatureVerifyInput): boolean;
+}
+
+/**
+ * Build the env var name that holds an adapter's signing secret.
+ * Convention: `EMBEDIQ_COMPLIANCE_SECRET_<ADAPTER_ID_UPPERCASED>`.
+ * Custom adapters plugging into the registry follow the same rule.
+ */
+export function signingSecretEnvVar(adapterId: string): string {
+  return `EMBEDIQ_COMPLIANCE_SECRET_${adapterId.toUpperCase().replace(/[^A-Z0-9]/g, '_')}`;
 }
 
 export class ComplianceAdapterError extends Error {

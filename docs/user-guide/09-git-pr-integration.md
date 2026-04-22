@@ -25,8 +25,14 @@ protection and review rules they already have.
 - The `main` (or other) branch existing in the repo.
 
 GitHub Enterprise is supported via the `EMBEDIQ_GIT_API_BASE_URL`
-override. GitLab and Bitbucket adapters are on the roadmap — the
-`GitPlatform` interface is already platform-agnostic.
+override. GitLab (cloud and self-hosted) is also supported — set
+`EMBEDIQ_GIT_PROVIDER=gitlab`, use the project path as
+`EMBEDIQ_GIT_REPO` (`group/project` or
+`parent-group/sub-group/project`), and supply a personal access
+token with the `api` scope. Bitbucket Cloud is supported as well —
+set `EMBEDIQ_GIT_PROVIDER=bitbucket`, use `workspace/repo` as the
+repo identifier, and supply a Repository Access Token or Workspace
+Access Token (Bearer auth, not app-password Basic auth).
 
 ## Enable it
 
@@ -228,14 +234,14 @@ for the full options surface.
   files. Check the `--targets` flag and the role (non-technical roles
   emit fewer files per target).
 
-## Known limitations (v3.2)
+## Known limitations
 
-- **GitHub only.** GitLab and Bitbucket adapters are follow-ups.
-- **No `addComment` yet.** The `GitPlatform` interface allows it but
-  v1 adapters don't implement it. Use the PR body for all context.
-- **No per-target PR splitting.** All targets land in one PR. If your
-  team wants separate PRs per target (e.g. Claude vs. Cursor), open
-  the wizard twice with different `--targets` sets.
+- **No `addComment` yet.** The `GitPlatform` interface allows it
+  but none of the three adapters implement it today. Use the
+  PR/MR body for all context.
+- **No per-target PR splitting.** All targets land in one PR/MR.
+  If your team wants separate PRs per target (e.g. Claude vs.
+  Cursor), open the wizard twice with different `--targets` sets.
 
 ## See also
 

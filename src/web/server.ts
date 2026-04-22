@@ -58,6 +58,7 @@ import {
 } from '../autopilot/index.js';
 import {
   defaultComplianceRegistry,
+  signingSecretEnvVar,
   type ComplianceAdapterRegistry,
   type ComplianceEvent,
 } from '../integrations/compliance/index.js';
@@ -128,7 +129,15 @@ export function createApp(opts: CreateAppOptions = {}) {
           dir: process.env.EMBEDIQ_DUMP_DIR?.trim() || './.embediq/dumps',
         }));
   const app = express();
-  app.use(express.json());
+  // `verify` callback stashes the raw request body on `req.rawBody` so
+  // downstream routes that need byte-exact payloads (HMAC signature
+  // verification on compliance webhooks) can reach it. JSON-parsing
+  // reorders keys and strips whitespace, both of which break HMACs.
+  app.use(express.json({
+    verify: (req, _res, buf) => {
+      (req as express.Request & { rawBody?: Buffer }).rawBody = buf;
+    },
+  }));
 
   // ─── Authentication ───
   const authStrategy = selectAuthStrategy();
@@ -602,6 +611,25 @@ function mountAutopilotRoutes(
     for (const [k, v] of Object.entries(req.headers)) {
       if (typeof v === 'string') headers[k.toLowerCase()] = v;
       else if (Array.isArray(v) && v.length > 0) headers[k.toLowerCase()] = v[0];
+    }
+
+    // Per-adapter HMAC signature verification. Opt-in by setting the
+    // adapter's signing-secret env var. Unset → skip (backwards-
+    // compatible with the shared-secret-header-only guard above). Set
+    // but adapter doesn't implement verifySignature → accept (custom
+    // adapter without HMAC support).
+    const hmacSecret = process.env[signingSecretEnvVar(adapter.id)];
+    if (hmacSecret && adapter.verifySignature) {
+      const rawBody = (req as express.Request & { rawBody?: Buffer }).rawBody;
+      if (!rawBody) {
+        res.status(400).json({ error: 'Raw body unavailable for signature verification' });
+        return;
+      }
+      const ok = adapter.verifySignature({ rawBody, headers, secret: hmacSecret });
+      if (!ok) {
+        res.status(401).json({ error: 'Invalid webhook signature' });
+        return;
+      }
     }
 
     let event: ComplianceEvent | null;

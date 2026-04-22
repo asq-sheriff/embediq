@@ -2,7 +2,9 @@ import type {
   ComplianceAdapterInput,
   ComplianceEvent,
   ComplianceEventAdapter,
+  SignatureVerifyInput,
 } from './compliance-adapter.js';
+import { hmacSha256Hex, timingSafeCompare } from './hmac.js';
 
 /**
  * Translator for Drata's outbound webhooks. Drata's public webhook
@@ -25,6 +27,18 @@ import type {
 export class DrataAdapter implements ComplianceEventAdapter {
   readonly id = 'drata';
   readonly name = 'Drata';
+
+  /**
+   * Drata signs webhooks with `X-Drata-Signature`, a lowercase hex
+   * HMAC-SHA256 of the raw request body under the secret configured
+   * in the Drata admin UI.
+   */
+  verifySignature(input: SignatureVerifyInput): boolean {
+    const presented = input.headers['x-drata-signature'];
+    if (!presented) return false;
+    const expected = hmacSha256Hex(input.secret, input.rawBody);
+    return timingSafeCompare(expected, presented);
+  }
 
   translate(input: ComplianceAdapterInput): ComplianceEvent | null {
     if (!isObject(input.body)) return null;

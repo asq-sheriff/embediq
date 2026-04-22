@@ -277,14 +277,30 @@ Or fix the URL to the real Slack webhook URL (`hooks.slack.com/services/…`).
 
 ### Symptom: compliance webhook returns 401
 
-Missing or mismatched `X-EmbedIQ-Autopilot-Secret` header. Regenerate
-the secret and update both sides:
+Two possible causes — the response body distinguishes them.
+
+**`{"error":"Invalid autopilot webhook secret"}`** — missing or
+mismatched `X-EmbedIQ-Autopilot-Secret` header. Regenerate the
+gateway secret and update both sides:
 
 ```bash
 NEW_SECRET=$(openssl rand -hex 32)
 # Set EMBEDIQ_AUTOPILOT_WEBHOOK_SECRET=$NEW_SECRET on the server.
 # Update Drata/Vanta webhook header to match.
 ```
+
+**`{"error":"Invalid webhook signature"}`** — per-adapter HMAC check
+failed. Either the platform's signing secret on EmbedIQ
+(`EMBEDIQ_COMPLIANCE_SECRET_DRATA` / `_VANTA` / `_GENERIC`) doesn't
+match what the platform was configured with, or a proxy is mutating
+the body between the platform and EmbedIQ (re-serializing JSON
+breaks the digest). Verify the secret matches the platform's admin
+UI, then capture the raw inbound body and recompute the digest by
+hand to confirm it agrees with the header value the platform sent.
+
+To temporarily disable HMAC verification while diagnosing, unset the
+adapter's signing-secret env var — the legacy gateway-only check
+(layer 1) will continue to apply.
 
 ---
 

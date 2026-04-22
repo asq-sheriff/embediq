@@ -1,5 +1,7 @@
 import type { GeneratedFile, UserProfile, ValidationResult } from '../../types/index.js';
+import { BitbucketAdapter } from './bitbucket-adapter.js';
 import { GitHubAdapter } from './github-adapter.js';
+import { GitLabAdapter } from './gitlab-adapter.js';
 import {
   GitConfigurationError,
   GitIntegrationError,
@@ -91,10 +93,9 @@ export function buildPlatform(
     case 'github':
       return new GitHubAdapter(platformOptions);
     case 'gitlab':
+      return new GitLabAdapter(platformOptions);
     case 'bitbucket':
-      throw new GitConfigurationError(
-        `Provider "${provider}" is not supported yet. GitHub is the only v1 adapter; GitLab and Bitbucket are v3.2 follow-ups.`,
-      );
+      return new BitbucketAdapter(platformOptions);
   }
 }
 

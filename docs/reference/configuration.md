@@ -62,6 +62,11 @@ See [operator-guide/session-backends.md](../operator-guide/session-backends.md).
 | `EMBEDIQ_AUTOPILOT_DIR` | `./.embediq/autopilot` | path | JSON store directory (schedules + run history). Mount a persistent volume in production. |
 | `EMBEDIQ_AUTOPILOT_TICK_MS` | `60000` | integer | Scheduler poll interval. |
 | `EMBEDIQ_AUTOPILOT_WEBHOOK_SECRET` | — | string **(secret)** | Shared secret required on `X-EmbedIQ-Autopilot-Secret` header for autopilot + compliance webhooks. |
+| `EMBEDIQ_COMPLIANCE_SECRET_DRATA` | — | string **(secret)** | HMAC-SHA256 signing secret for the Drata adapter. Header `X-Drata-Signature` is verified against `HMAC(secret, raw-body)`. Unset → verification skipped. |
+| `EMBEDIQ_COMPLIANCE_SECRET_VANTA` | — | string **(secret)** | Same scheme for Vanta — header `X-Vanta-Signature`. |
+| `EMBEDIQ_COMPLIANCE_SECRET_GENERIC` | — | string **(secret)** | Same scheme for the generic adapter — header `X-EmbedIQ-Signature` (accepts bare hex or `sha256=<hex>`). |
+
+Custom adapters follow the same convention: `EMBEDIQ_COMPLIANCE_SECRET_<ADAPTER_ID_UPPERCASED>`.
 
 See [user-guide/08-autopilot.md](../user-guide/08-autopilot.md) and
 [user-guide/11-compliance-webhooks.md](../user-guide/11-compliance-webhooks.md).
@@ -78,11 +83,11 @@ See [user-guide/05-multi-agent-targets.md](../user-guide/05-multi-agent-targets.
 
 | Env var | Default | Type | Purpose |
 |---|---|---|---|
-| `EMBEDIQ_GIT_PROVIDER` | `github` | enum | `github` (only supported provider today). GitLab / Bitbucket are roadmap items. |
-| `EMBEDIQ_GIT_REPO` | — | string | `owner/repo` slug identifying the target repository. Required when `--git-pr` is used. |
-| `EMBEDIQ_GIT_TOKEN` | — | string **(secret)** | GitHub PAT or fine-grained token. Scopes: `contents: write`, `pull_requests: write`. |
-| `EMBEDIQ_GIT_BASE_BRANCH` | `main` | string | Branch the new branch is forked from and the PR targets. |
-| `EMBEDIQ_GIT_API_BASE_URL` | — | URL | Override the REST API base (e.g. GitHub Enterprise: `https://git.example.com/api/v3`). |
+| `EMBEDIQ_GIT_PROVIDER` | `github` | enum | `github`, `gitlab`, or `bitbucket`. |
+| `EMBEDIQ_GIT_REPO` | — | string | Repository identifier. GitHub: `owner/repo`. GitLab: full project path `group/project` (or `parent-group/sub-group/project`). Bitbucket: `workspace/repo`. Required when `--git-pr` is used. |
+| `EMBEDIQ_GIT_TOKEN` | — | string **(secret)** | GitHub PAT/fine-grained token (`contents: write`, `pull_requests: write`); GitLab PAT/group/project token (`api` scope); or Bitbucket Repository/Workspace Access Token (Bearer auth — app-password Basic is not supported). |
+| `EMBEDIQ_GIT_BASE_BRANCH` | `main` | string | Branch the new branch is forked from and the PR/MR targets. |
+| `EMBEDIQ_GIT_API_BASE_URL` | — | URL | Override the API base for self-hosted instances. GitHub Enterprise: `https://git.example.com/api/v3`. Self-hosted GitLab: `https://gitlab.example.com` (the adapter appends `/api/v4`). Bitbucket Cloud always uses `https://api.bitbucket.org`; override only for proxies. |
 
 See [user-guide/09-git-pr-integration.md](../user-guide/09-git-pr-integration.md).
 

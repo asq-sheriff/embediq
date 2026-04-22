@@ -2,7 +2,9 @@ import type {
   ComplianceAdapterInput,
   ComplianceEvent,
   ComplianceEventAdapter,
+  SignatureVerifyInput,
 } from './compliance-adapter.js';
+import { hmacSha256Hex, timingSafeCompare } from './hmac.js';
 
 /**
  * Pass-through adapter for any compliance platform that can POST a
@@ -25,6 +27,19 @@ import type {
 export class GenericComplianceAdapter implements ComplianceEventAdapter {
   readonly id = 'generic';
   readonly name = 'Generic';
+
+  /**
+   * Generic platforms expose `X-EmbedIQ-Signature` as a lowercase hex
+   * HMAC-SHA256 of the raw body. Accepts either a bare hex digest or
+   * a `sha256=<hex>` prefixed form so callers can use whichever their
+   * webhook poster generates.
+   */
+  verifySignature(input: SignatureVerifyInput): boolean {
+    const presented = input.headers['x-embediq-signature'];
+    if (!presented) return false;
+    const expected = hmacSha256Hex(input.secret, input.rawBody);
+    return timingSafeCompare(expected, presented);
+  }
 
   translate(input: ComplianceAdapterInput): ComplianceEvent | null {
     if (!isObject(input.body)) return null;

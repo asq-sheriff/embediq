@@ -150,9 +150,22 @@ Two routes, both opt-in via `EMBEDIQ_AUTOPILOT_ENABLED=true`:
 | `POST /api/autopilot/webhook/:scheduleId` | Direct manual trigger / CI pipeline. |
 | `POST /api/autopilot/compliance/:adapterId` | External compliance platform (Drata, Vanta, generic). |
 
-Shared secret guard: when `EMBEDIQ_AUTOPILOT_WEBHOOK_SECRET` is set,
-both routes require `X-EmbedIQ-Autopilot-Secret`. No HMAC signature
-check on body yet — roadmap item.
+Two independent trust layers, configurable separately:
+
+- **Gateway guard** — when `EMBEDIQ_AUTOPILOT_WEBHOOK_SECRET` is set,
+  both routes require the matching value on
+  `X-EmbedIQ-Autopilot-Secret`. Cheap, opaque to the platform.
+- **Per-adapter HMAC** — when `EMBEDIQ_COMPLIANCE_SECRET_<ADAPTER>`
+  is set (Drata, Vanta, generic, or custom), the route recomputes
+  `HMAC-SHA256(secret, raw-request-body)` and checks the result with
+  a constant-time compare against the adapter's signature header
+  (`X-Drata-Signature`, `X-Vanta-Signature`,
+  `X-EmbedIQ-Signature`). Mismatch → 401. Unset → skipped, so
+  legacy gateway-only deployments keep working.
+
+Both checks run when both are configured; both must pass.
+The raw-body buffer comes from `express.json({ verify })` which
+stashes the unparsed bytes on `req.rawBody` before JSON parsing.
 
 ### Compliance route — framework matching
 

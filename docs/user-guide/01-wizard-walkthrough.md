@@ -9,7 +9,7 @@ brand new to EmbedIQ, start with
 this chapter is the longer reference for each phase.
 
 > **Interim page.** The comprehensive wizard walkthrough lives in the
-> combined [`USER_GUIDE.md`](../USER_GUIDE.md#usage) — sections
+> combined [`USER_GUIDE.md`](../USER_GUIDE.md#getting-started--step-by-step) — sections
 > **Usage**, **CLI Walkthrough**, **Web Walkthrough**, and **After
 > Generation**. A future release splits that content into this
 > numbered chapter format; today this stub points you at the
