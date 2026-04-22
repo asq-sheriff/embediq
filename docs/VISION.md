@@ -134,7 +134,7 @@ Raw answers are folded into a structured `UserProfile`. Priorities are auto-deri
 
 ### 3. Multi-agent Synthesizer
 
-Today: 12 generators produce a complete Claude Code harness. Next: per-format generators (`AGENTS.md`, Cursor `.mdc`, Copilot `.instructions.md`, Gemini, Windsurf) produce configuration for every agent the team uses, all from the same profile. Target selection via `EMBEDIQ_OUTPUT_TARGETS` env var (default `claude`, preserving current behavior; `all` generates every format).
+Seventeen generators produce configuration for every agent the team uses from a single profile: 12 Claude-Code generators (`CLAUDE.md`, `settings.json`, permissions, rules, commands, agents, skills, Python hooks, ignore files, MCP config, association map, document state) plus 5 multi-agent generators (`AGENTS.md`, Cursor `.mdc`, Copilot `.instructions.md` + scoped instructions, `GEMINI.md`, `.windsurfrules`). Target selection via `EMBEDIQ_OUTPUT_TARGETS` env var (default `claude`, preserving current behavior; `all` generates every format) or `--targets` CLI flag.
 
 ### 4. Multi-layer security defense
 
@@ -150,7 +150,7 @@ All three layers stay local — nothing is sent to the LLM, nothing is stored by
 
 ### 6. Measurable quality
 
-An evaluation framework replays recorded answer sets, scores generated configs against golden reference configs, and measures question efficiency. Every generator, every domain pack, every skill is scored. Community-published skills surface their quality score at import time. Competitor output can be scored against the same golden configs — so "our HIPAA config is better than `/init`'s" becomes a data-driven claim, not a qualitative one.
+An evaluation framework replays recorded answer sets, scores generated configs against golden reference configs, and measures question efficiency. Every generator, every domain pack, every skill is scored. Community-published skills surface their quality score at import time. Externally-produced configurations can be scored against the same golden references, enabling data-driven quality comparison rather than qualitative assertions.
 
 ### 7. Observability and persistence (opt-in)
 
@@ -163,72 +163,54 @@ Every one of these is opt-in behind an environment variable. Default remains zer
 
 ### 8. Enterprise-fit integration layer
 
-The generated configuration doesn't stop at the filesystem. A Git platform integration (GitHub, GitLab, Bitbucket) pushes generated output to a branch and opens a PR with evaluation scores, validation results, and contributor attribution in the PR body. Outbound webhooks notify Slack, Teams, or PagerDuty on generation, drift, regression, or validation failure. Inbound webhooks from compliance platforms (Drata, Vanta) trigger regeneration when controls change. The human coordination happens in the tools the team already uses.
+The generated configuration doesn't stop at the filesystem. A platform-agnostic Git integration (GitHub today; the `GitPlatform` interface is ready for additional adapters) pushes generated output to a branch and opens a PR with evaluation scores, validation results, and contributor attribution in the PR body. Outbound webhooks notify Slack, Microsoft Teams, or any generic webhook endpoint on generation, validation, session, and drift events. Inbound webhooks from compliance platforms (Drata, Vanta, or any generic adapter) trigger regeneration when controls change. The human coordination happens in the tools the team already uses.
 
 ---
 
-## Strategic Horizons
+## What Ships Today
 
-### Now (shipped, production-ready)
+v3.2.0 is the current release. A complete capability inventory:
 
-- Adaptive wizard, 71 questions, 12 generators, role-adaptive configuration for Claude Code.
-- Three built-in domain packs (Healthcare, Finance, Education) with a typed plugin interface for external packs.
-- Dual CLI + Web interface with vanilla-JS frontend (under 20 KB).
-- Pluggable authentication and RBAC (no-auth, Basic, OIDC, reverse-proxy header).
-- Event bus with WebSocket real-time progress streaming.
-- Server-side session persistence (JSON file for dev, SQLite for single-node production) with optional at-rest encryption and async dump exports.
-- OpenTelemetry instrumentation (traces, metrics).
-- Configuration validation against universal and domain-specific rules.
-- Full Docker / Kubernetes deployment manifests.
+**Adaptive wizard**
+- 71 questions across seven dimensions, 40 with conditional branching
+- Eight role profiles (developer, DevOps, tech lead, QA, data, BA, PM, executive) with role-adaptive output
+- Three built-in domain packs — Healthcare (HIPAA/HITECH/42 CFR Part 2), Finance (PCI-DSS/SOX/GLBA/AML-BSA), Education (FERPA/COPPA) — plus a typed plugin interface for external packs
+- Composable skills system with a registry, typed skill interface, and external loading from `EMBEDIQ_SKILLS_DIR`
 
-### Next — v3.1 Strategic Differentiation
+**Synthesis and validation**
+- 17 deterministic generators (12 Claude-Code + 5 multi-agent: `AGENTS.md`, Cursor, Copilot, Gemini, Windsurf)
+- `OutputValidator` with eight check categories (universal, HIPAA, PCI-DSS, SOC2, GDPR, security, domain-pack custom)
+- Evaluation framework with golden-config scoring, CLI (`npm run evaluate`, `npm run benchmark`), and competitive benchmarking mode
 
-Ordered by strategic value; each widens the gap between EmbedIQ and every competing tool while mitigating specific threats from the landscape.
+**Interfaces**
+- CLI wizard (`npm start`) and Express web server (`npm run start:web`) sharing the same core
+- Vanilla-JS web frontend under 20 KB, no build step
+- Pluggable authentication (no-auth, Basic, OIDC, reverse-proxy header) with RBAC
 
-1. **Evaluation Framework** — golden reference configs per archetype, replay harness, diff-based scoring, competitive benchmarking mode. Turns "trust us" into provable quality. Gates and validates every downstream feature.
-2. **Multi-Agent Output Targeting** — `AGENTS.md` (universal standard) plus tool-specific generators for Cursor, Copilot, Gemini, Windsurf. Transforms the addressable market from "Claude Code users" to "any AI coding agent users."
-3. **Composable Skills System** — fine-grained, reusable units that compose across compliance frameworks and industries. Enterprise teams author custom skills; a registry enables sharing. Quality scored by the evaluation framework. Network effects create a moat that funded competitors cannot replicate with product improvements alone.
+**Enterprise operations**
+- Session persistence across backends (none, JSON file, SQLite database) with optional AES-256-GCM at-rest encryption and async dump exports
+- Interrupt-and-resume session URLs with per-contributor answer attribution
+- Drift detection CLI (`npm run drift`) with CI-gated exit codes
+- Autopilot scheduler — `@hourly`/`@daily`/`@weekly`/`@monthly` UTC cadences plus webhook-triggered runs
+- GitHub platform integration opens PRs with evaluation scores, validation results, and contributor attribution
+- Outbound webhooks to Slack, Microsoft Teams, or any generic endpoint for generation, validation, session, and drift events
+- Inbound compliance webhooks from Drata, Vanta, or any generic adapter trigger regeneration when controls change
+- Typed event bus with six subscribers (audit, metrics, status, OpenTelemetry, WebSocket, outbound webhook)
 
-### Next — v3.2 Enterprise Operations and Integration
+**Deployment and observability**
+- OpenTelemetry instrumentation (traces + three metrics) behind `EMBEDIQ_OTEL_ENABLED`
+- Full Docker / Kubernetes manifests with health and readiness probes
+- Stateless API by default; zero-persistence, zero-telemetry unless explicitly opted in
 
-4. **Interrupt and Resume** — shareable session URLs so a 71-question wizard can span multiple days and multiple contributors. Answers attributed by contributor for compliance audit trails.
-5. **Autopilot and Drift Detection** — drift detection ships first as a standalone CLI (`embediq drift --target ./my-project`). Scheduled regeneration and webhook-triggered regeneration follow once session infrastructure is deeper.
-6. **Git Platform Integration** — GitHub/GitLab/Bitbucket adapters. Generated output flows into a PR with evaluation scores and validation results in the body. The collaboration happens where teams already review code.
-7. **Outbound Notification Webhooks** — Slack, Teams, PagerDuty, and generic webhook support. Connects EmbedIQ's event bus to the team's communication tools without building OAuth flows or marketplace integrations.
-8. **Compliance Platform Inbound Webhooks** — Drata, Vanta, and generic adapters that translate compliance-platform findings into regeneration triggers. Closes the loop: compliance gap detected → EmbedIQ regenerates → PR opened → team reviews → gap closed.
-
-### Later — v4.0 AI-Augmented Generation
-
-Gated on evaluation-framework data. AI enhancement only ships once the evaluation framework can prove it improves output quality over the deterministic baseline. A provider abstraction supports Claude, OpenAI, Ollama, and a default noop that preserves template-only behavior. Token usage tracked per run. Always opt-in; deterministic baseline always available.
-
-### Future horizons — trigger-gated
-
-- **Cluster deployment** — cross-node event fan-out, shared rate limits, distributed job queues, shared storage for exports. Postgres dialect, Redis pub/sub, job queue abstraction — all part of one initiative when multi-replica demand appears.
-- **Multi-workspace SaaS** — UUID-scoped workspaces with owner/admin/member roles for hosted multi-tenant deployment.
-- **Agent-to-agent protocols** — A2A Agent Cards when EmbedIQ is discoverable by enterprise agent ecosystems; ACP multi-agent workflows if AI enhancement evolves beyond single LLM calls.
-- **Quick mode** — lightweight five-question wizard serving the "better than `/init` but don't need 71 questions" segment. Triggered if a polished competitor UX threatens non-regulated market share.
-- **Deep Cursor/Copilot generator parity** — expand non-Claude-Code generators to match Claude Code's configuration depth. Triggered if Claude Code mindshare declines measurably.
-
-Each trigger is documented in the roadmap so the team monitors leading indicators without prematurely investing.
+Version-level history is in [`../CHANGELOG.md`](../CHANGELOG.md).
 
 ---
 
-## Competitive Threat Landscape
+## Looking Forward
 
-The vision is informed by six identified threat vectors. The roadmap sequences mitigations so the highest-probability threats ship first.
+AI-assisted configuration enhancement is a planned capability, gated on evaluation-framework evidence that it improves output quality over the deterministic baseline. When it ships, it will be opt-in; the deterministic core will remain fully available and always wins if the AI-enhanced output doesn't score higher.
 
-| Threat | Primary Mitigation |
-|---|---|
-| Anthropic improves Claude Code's `/init` | Evaluation framework — quantitative comparison turns a threat into a sales asset |
-| GitHub Spec Kit extends to configuration | Role adaptation (non-technical users) + determinism (audit-compatible output) |
-| AWS/Kiro adds compliance-aware steering | Air-gap compatibility + multi-agent generation (Kiro is IDE-proprietary) |
-| `AGENTS.md` consolidation | Tool-specific deep features not expressible in the universal format (hooks, scoped Cursor rules, Copilot scoped instructions) |
-| Niche players add compliance templates | Depth of compliance enforcement (DLP patterns, validation, hooks) vs. advisory markdown |
-| Funded cloud-native LLM-powered competitor | Composable skills ecosystem — network effects create a moat money can't easily replicate |
-
-Two acknowledged vulnerabilities — UX/distribution gap (triggers "quick mode" investment) and Claude Code market-share dependency (triggers deep Cursor/Copilot parity investment) — have explicit monitoring indicators rather than pre-emptive investment.
-
-Determinism, air-gap compatibility, zero-persistence, role adaptation, and compliance depth are not just design tenets — they are the structural moats that make EmbedIQ defensible against each threat.
+Everything else we build is an extension of the design tenets above: more industries, more agent formats, more deployment topologies, more integration surfaces — all downstream of the same deterministic, role-adaptive, compliance-aware core.
 
 ---
 
@@ -244,7 +226,7 @@ Equally important as what the product does is what it refuses to do. These are n
 - **Not a real-time collaborative editor.** Would require CRDTs and a fundamentally different architecture. Interrupt and resume with shareable session URLs is the right level for sequential Q&A.
 - **Not a project manager.** No issue tracking, no boards, no tickets. Integrations with project-management tools are consumers of generated configs, not features of the wizard.
 - **Not a database-backed application by default.** Zero-persistence is the default. Persistence is explicitly opt-in.
-- **Not multi-user by default.** The wizard is a single-user flow. Multi-workspace SaaS is a trigger-gated future horizon.
+- **Not multi-user by default.** The wizard is a single-user flow. Multi-workspace SaaS is a planned future capability rather than part of the current product.
 - **Not format-locked to any one agent.** Today's output is Claude-Code-focused; the architecture is agent-agnostic and v3.1 delivers multi-agent generation as the primary strategic capability.
 
 ---

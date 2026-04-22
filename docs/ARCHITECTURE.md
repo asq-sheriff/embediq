@@ -132,7 +132,7 @@ embediq/
     │   ├── yaml-writer.ts        # YAML serialization
     │   └── wizard-audit.ts       # JSONL audit logging (auto-enriched from request context)
     └── web/
-        ├── server.ts             # Express HTTP server (8 API routes)
+        ├── server.ts             # Express HTTP server (generation, preview, diff, sessions, skills, autopilot, compliance webhooks, health — see reference/rest-api.md for the full surface)
         ├── middleware/
         │   ├── auth.ts           # AuthStrategy interface + factory
         │   ├── rbac.ts           # Role-based access control
