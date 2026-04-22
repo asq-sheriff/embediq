@@ -16,11 +16,13 @@ the result. If you're comfortable at the end, jump to the
 ## 1. Install
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/asq-sheriff/embediq.git
 cd embediq
 npm install
-make check        # optional sanity run: type-check + 731+ tests
 ```
+
+Optional: `make check` runs the full type-check + test suite to confirm
+your local environment is clean before you start.
 
 ## 2. Run the CLI wizard
 

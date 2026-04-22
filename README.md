@@ -2,28 +2,30 @@
 
 # EmbedIQ
 
-**An adaptive AI coding agent configuration wizard by [Praglogic](https://praglogic.com).**
+**One adaptive interview → production-ready configs for six AI coding agents.**
+A [Praglogic](https://praglogic.com) project.
 
-EmbedIQ interviews you about your project, team, and compliance obligations,
-then generates a complete agent harness — 15–40 files — tailored to your
-role, industry, tech stack, and security posture. Everything is
-**deterministic, offline, and audit-ready**: no LLM calls, no telemetry,
-no database. The same interview produces configuration for Claude Code,
-Cursor, GitHub Copilot, Gemini CLI, Windsurf, and cross-agent `AGENTS.md`
-from a single answer set.
+EmbedIQ interviews you about your project, team, and compliance
+obligations, then generates a complete agent harness — 15–40 files —
+tailored to your role, industry, tech stack, and security posture.
+Same answer set produces output for **Claude Code, Cursor, GitHub
+Copilot, Gemini CLI, Windsurf, and cross-agent `AGENTS.md`**.
 
-> **Status:** v3.2 shipped. The full v3.1 and v3.2 feature sets
-> (evaluation framework, multi-agent targets, composable skills,
-> interrupt-and-resume, autopilot, GitHub PR integration, outbound
-> webhooks, compliance inbound webhooks) are production-ready today.
-> See [CHANGELOG.md](CHANGELOG.md).
+Everything is **deterministic, offline, and audit-ready**: no LLM calls,
+no telemetry, no database. Same answers in → byte-identical files out.
+
+[Latest release: **v3.2.0**](https://github.com/asq-sheriff/embediq/releases/latest) ·
+[Full changelog](CHANGELOG.md) ·
+[Security model](SECURITY.md)
+
+![EmbedIQ demo — drift detection and evaluation in 60 seconds](docs/assets/demo.gif)
 
 ---
 
 ## 60-second quickstart
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/asq-sheriff/embediq.git
 cd embediq
 npm install
 
@@ -41,8 +43,7 @@ npm run evaluate           # replay answer sets against golden references
 npm run benchmark -- --candidate ./other-tool-output --candidate-label claude-init
 ```
 
-See [`docs/getting-started.md`](docs/getting-started.md) for a guided
-ten-minute tour.
+Guided 10-minute tour: [`docs/getting-started.md`](docs/getting-started.md).
 
 ---
 
