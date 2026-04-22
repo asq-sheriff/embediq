@@ -3,7 +3,7 @@
 # EmbedIQ
 
 **One adaptive interview → production-ready configs for six AI coding agents.**
-A [Praglogic](https://praglogic.com) project.
+A [Praglogic](https://pragmaticlogic.ai) project.
 
 EmbedIQ interviews you about your project, team, and compliance
 obligations, then generates a complete agent harness — 15–40 files —

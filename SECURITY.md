@@ -5,7 +5,7 @@
 ## Reporting a Vulnerability
 
 Please report security vulnerabilities privately rather than filing a public
-GitHub issue. Email the Praglogic security team at **security@praglogic.com**
+GitHub issue. Email the Praglogic security team at **aejaz.sheriff@pragmaticlogic.ai**
 with the following, if known:
 
 - A description of the issue and its impact.
