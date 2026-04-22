@@ -1,14 +1,19 @@
-# EmbedIQ — Claude Code Setup Wizard
+<!-- audience: public -->
+
+
+# EmbedIQ — AI Coding Agent Setup Wizard
 
 ## User Guide
+
+> **Scope note:** This guide is a single-file legacy reference covering the v2.0 output — a complete Claude Code harness. Multi-agent output targeting (`AGENTS.md`, Cursor, Copilot, Gemini, Windsurf) shipped in v3.1; see [`user-guide/05-multi-agent-targets.md`](user-guide/05-multi-agent-targets.md). For per-feature walkthroughs across the v3.1 + v3.2 surface, see the [`user-guide/`](user-guide/) chapter index. For shipped-feature history, see [`../CHANGELOG.md`](../CHANGELOG.md).
 
 ---
 
 ## What Is This?
 
-EmbedIQ, by Praglogic, is an intelligent configuration wizard that interviews you about your project, team, and goals — then generates a complete, production-ready Claude Code environment tailored to your specific needs.
+EmbedIQ, by Praglogic, is an intelligent configuration wizard that interviews you about your project, team, and goals — then generates a complete, production-ready AI coding agent harness tailored to your specific needs.
 
-It adapts to who you are. A solo developer building a SaaS app gets a lean, productivity-focused setup. A healthcare enterprise team gets HIPAA compliance hooks, PHI detection, audit trails, and security-hardened permissions. A business analyst gets a "Claude coworker" setup optimized for research, analysis, and documentation — not code.
+It adapts to who you are. A solo developer building a SaaS app gets a lean, productivity-focused setup. A healthcare enterprise team gets HIPAA compliance hooks, PHI detection, audit trails, and security-hardened permissions. A business analyst gets an "agent as intelligent coworker" setup optimized for research, analysis, and documentation — not code.
 
 ---
 

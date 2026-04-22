@@ -1,7 +1,7 @@
 .PHONY: help install build check test test-watch test-coverage typecheck \
        start start-web dev dev-web \
        docker docker-up docker-down \
-       otel-dev clean
+       otel-dev evaluate benchmark drift sanitize-public clean
 
 # ─── Default ─────────────────────────────────────────────────────────
 help: ## Show this help
@@ -46,6 +46,20 @@ dev-web: ## Watch mode for web server
 
 otel-dev: ## Run web server with OpenTelemetry enabled
 	EMBEDIQ_OTEL_ENABLED=true npm run dev:web
+
+# ─── Evaluation ──────────────────────────────────────────────────────
+evaluate: ## Run evaluation harness against golden configs
+	npm run evaluate
+
+benchmark: ## Run benchmark mode (requires --candidate/--candidate-label args)
+	npm run benchmark
+
+drift: ## Run drift detection (requires --target and --answers or --archetype)
+	npm run drift
+
+# ─── Public-release overlay ──────────────────────────────────────────
+sanitize-public: ## Dry-run the public-release overlay (writes nothing). Add -- --out <dir> to materialize.
+	npm run sanitize-public
 
 # ─── Docker ──────────────────────────────────────────────────────────
 docker: ## Build Docker image

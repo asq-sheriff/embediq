@@ -112,6 +112,11 @@ export interface SetupConfig {
   profile: UserProfile;
   targetDir: string;
   domainPack?: import('../domain-packs/index.js').DomainPack;
+  /**
+   * Output targets to generate for (e.g. Claude Code, Cursor, Copilot).
+   * Omitted means "Claude only" — preserves the v2.x default.
+   */
+  targets?: import('../synthesizer/target-format.js').TargetFormat[];
 }
 
 export interface GeneratedFile {

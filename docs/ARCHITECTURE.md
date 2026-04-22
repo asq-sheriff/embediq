@@ -1,12 +1,33 @@
-# EmbedIQ — Claude Code Setup Wizard
+<!-- audience: public -->
 
-## Architecture Document
+# EmbedIQ — Architecture (legacy single-file reference)
+
+> **Looking for the modular chapter view?** See
+> [`architecture/overview.md`](architecture/overview.md) and the
+> chapter links below. This single-file reference is preserved for
+> deep historical detail; new readers should start with the
+> modular chapters.
+
+## Architecture chapters (modular)
+
+| Layer / concern | Chapter |
+|---|---|
+| Three-layer overview + design tenets | [architecture/overview.md](architecture/overview.md) |
+| Layer 1 — Question bank | [architecture/question-bank.md](architecture/question-bank.md) |
+| Layer 2 — Adaptive engine | [architecture/adaptive-engine.md](architecture/adaptive-engine.md) |
+| Layer 3 — Synthesizer | [architecture/synthesizer.md](architecture/synthesizer.md) |
+| Domain packs + skills | [architecture/domain-packs-and-skills.md](architecture/domain-packs-and-skills.md) |
+| Server-side sessions | [architecture/sessions.md](architecture/sessions.md) |
+| Evaluation + drift | [architecture/evaluation.md](architecture/evaluation.md) |
+| Autopilot | [architecture/autopilot.md](architecture/autopilot.md) |
+| Integrations (git, webhooks, compliance) | [architecture/integrations.md](architecture/integrations.md) |
+| Event bus | [architecture/event-bus.md](architecture/event-bus.md) |
 
 ---
 
 ## Overview
 
-EmbedIQ, by Praglogic, is a three-layer adaptive system that transforms an interactive conversation into a complete Claude Code configuration. The architecture is derived from Praglogic's Adaptive Architecture Specifications framework — a "framework of frameworks" that synthesizes elements from BABOK, TOGAF, PESTLE, and context engineering principles into a modular, domain-agnostic question-and-answer system.
+EmbedIQ, by Praglogic, is a three-layer adaptive system that transforms an interactive conversation into a complete Claude Code configuration. The architecture follows Praglogic's adaptive specifications methodology — a layered question-and-answer system that adapts its branching, profile-building, and synthesis to the user's role, industry, and compliance posture.
 
 The system serves two interfaces (CLI and web) from a single shared core, adapts its behavior based on user role and technical proficiency, and generates 15–40 configuration files tailored to the user's specific domain, stack, compliance requirements, and team structure.
 

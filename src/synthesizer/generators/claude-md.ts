@@ -1,9 +1,11 @@
 import type { ConfigGenerator } from '../generator.js';
+import { TargetFormat } from '../target-format.js';
 import type { SetupConfig, GeneratedFile, UserProfile } from '../../types/index.js';
 import { MarkdownBuilder } from '../../util/markdown-builder.js';
 
 export class ClaudeMdGenerator implements ConfigGenerator {
   name = 'CLAUDE.md';
+  target = TargetFormat.CLAUDE;
 
   generate(config: SetupConfig): GeneratedFile[] {
     const { profile } = config;

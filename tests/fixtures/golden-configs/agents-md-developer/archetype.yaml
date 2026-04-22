@@ -1,0 +1,11 @@
+id: agents-md-developer
+title: AGENTS.md Developer (universal format only)
+description: |
+  Smallest answer set that exercises the `AGENTS.md` multi-agent target
+  end-to-end — solo TypeScript developer on a SaaS project with no
+  compliance obligations. The archetype runs with targets=[agents-md]
+  so the evaluator sees a single generated file and scores it against
+  the corresponding golden.
+minimumFloor: 8
+targets:
+  - agents-md

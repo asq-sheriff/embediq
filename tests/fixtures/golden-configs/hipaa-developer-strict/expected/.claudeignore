@@ -1,0 +1,63 @@
+# Dependencies
+node_modules/
+vendor/
+.venv/
+venv/
+__pycache__/
+
+# Build outputs
+dist/
+build/
+target/
+.next/
+out/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Environment and secrets
+.env
+.env.*
+*.pem
+*.key
+*.p12
+
+# PHI data (HIPAA)
+patient_data/
+phi/
+health_records/
+**/phi/**
+
+# PII data
+pii/
+personal_data/
+
+# Large binary files
+*.zip
+*.tar.gz
+*.pkl
+*.h5
+*.onnx
+*.pt
+*.bin
+
+# Healthcare (HIPAA/HITECH) exclusions
+# Healthcare domain — protected health information and clinical data
+phi_data/
+patient_records/
+clinical_data/
+hipaa_audit/
+*.hl7
+*.fhir.json
+test_patients/

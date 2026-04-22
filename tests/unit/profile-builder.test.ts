@@ -1,8 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { ProfileBuilder } from '../../src/engine/profile-builder.js';
+import { InMemoryEventBus, type EventEnvelope } from '../../src/events/index.js';
 import { buildAnswerMap, MINIMAL_DEVELOPER_ANSWERS, HEALTHCARE_DEVELOPER_ANSWERS, PM_ANSWERS } from '../helpers/test-utils.js';
 
 const builder = new ProfileBuilder();
+
+function flushMicrotasks(): Promise<void> {
+  return new Promise((resolve) => setImmediate(resolve));
+}
 
 describe('ProfileBuilder', () => {
   describe('minimal developer profile', () => {
@@ -114,6 +119,41 @@ describe('ProfileBuilder', () => {
     it('defaults to moderate budget with empty answers', () => {
       const profile = builder.build(new Map());
       expect(profile.budgetTier).toBe('moderate');
+    });
+  });
+
+  describe('event emission', () => {
+    it('emits profile:built with a profileSummary projection', async () => {
+      const bus = new InMemoryEventBus();
+      const received: EventEnvelope<'profile:built'>[] = [];
+      bus.on('profile:built', (env) => received.push(env));
+
+      const injected = new ProfileBuilder(bus);
+      injected.build(buildAnswerMap(HEALTHCARE_DEVELOPER_ANSWERS));
+      await flushMicrotasks();
+
+      expect(received).toHaveLength(1);
+      expect(received[0].payload.profileSummary).toMatchObject({
+        role: 'developer',
+        industry: 'healthcare',
+        teamSize: 'medium',
+        complianceFrameworks: ['hipaa'],
+        securityLevel: 'strict',
+        fileCount: 0,
+      });
+    });
+
+    it('reports securityLevel=standard when strict_permissions is absent', async () => {
+      const bus = new InMemoryEventBus();
+      let summary: EventEnvelope<'profile:built'>['payload']['profileSummary'] | undefined;
+      bus.on('profile:built', (env) => {
+        summary = env.payload.profileSummary;
+      });
+
+      new ProfileBuilder(bus).build(buildAnswerMap(MINIMAL_DEVELOPER_ANSWERS));
+      await flushMicrotasks();
+
+      expect(summary?.securityLevel).toBe('standard');
     });
   });
 });

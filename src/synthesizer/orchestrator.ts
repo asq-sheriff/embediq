@@ -1,8 +1,10 @@
 import type { SetupConfig, GeneratedFile, GenerationResult } from '../types/index.js';
 import { validateOutput } from './output-validator.js';
 import { stampGeneratedFile } from './generation-header.js';
-import { withSpan, getMeter } from '../observability/telemetry.js';
+import { withSpan } from '../observability/telemetry.js';
+import { getEventBus, type EventBus } from '../events/bus.js';
 import type { ConfigGenerator } from './generator.js';
+import { TargetFormat, DEFAULT_TARGETS } from './target-format.js';
 import { ClaudeMdGenerator } from './generators/claude-md.js';
 import { SettingsJsonGenerator } from './generators/settings-json.js';
 import { SettingsLocalGenerator } from './generators/settings-local.js';
@@ -15,12 +17,20 @@ import { IgnoreGenerator } from './generators/ignore.js';
 import { McpJsonGenerator } from './generators/mcp-json.js';
 import { AssociationMapGenerator } from './generators/association-map.js';
 import { DocumentStateGenerator } from './generators/document-state.js';
+import { AgentsMdGenerator } from './generators/agents-md.js';
+import { CursorRulesGenerator } from './generators/cursor-rules.js';
+import { CopilotInstructionsGenerator } from './generators/copilot-instructions.js';
+import { GeminiMdGenerator } from './generators/gemini-md.js';
+import { WindsurfRulesGenerator } from './generators/windsurf-rules.js';
 
 export class SynthesizerOrchestrator {
   private generators: ConfigGenerator[];
+  private bus: EventBus;
 
-  constructor() {
+  constructor(bus: EventBus = getEventBus()) {
+    this.bus = bus;
     this.generators = [
+      // Claude Code — the native target; preserves v2.x behavior.
       new ClaudeMdGenerator(),
       new SettingsJsonGenerator(),
       new SettingsLocalGenerator(),
@@ -33,6 +43,12 @@ export class SynthesizerOrchestrator {
       new McpJsonGenerator(),
       new AssociationMapGenerator(),
       new DocumentStateGenerator(),
+      // Multi-agent targets — opt-in via `config.targets` / EMBEDIQ_OUTPUT_TARGETS.
+      new AgentsMdGenerator(),
+      new CursorRulesGenerator(),
+      new CopilotInstructionsGenerator(),
+      new GeminiMdGenerator(),
+      new WindsurfRulesGenerator(),
     ];
   }
 
@@ -44,26 +60,52 @@ export class SynthesizerOrchestrator {
       // Adapt generators based on user role
       const isNonTechnical = ['ba', 'pm', 'executive'].includes(config.profile.role);
 
-      // Filter to applicable generators
-      const applicable = this.generators.filter(
-        g => !(isNonTechnical && this.isTechnicalOnlyGenerator(g.name))
-      );
+      // Target selection — defaults to Claude only, which preserves the v2.x
+      // behavior for callers that don't supply `targets`.
+      const targets = config.targets && config.targets.length > 0
+        ? new Set<TargetFormat>(config.targets)
+        : new Set<TargetFormat>(DEFAULT_TARGETS);
+
+      span.setAttribute('embediq.targets', Array.from(targets).sort().join(','));
+
+      // Filter by target first, then drop technical-only Claude generators
+      // when the active role is non-technical. Non-Claude targets already
+      // render role-appropriate output internally.
+      const applicable = this.generators.filter((g) => {
+        if (!targets.has(g.target)) return false;
+        if (isNonTechnical && g.target === TargetFormat.CLAUDE && this.isTechnicalOnlyGenerator(g.name)) {
+          return false;
+        }
+        return true;
+      });
 
       span.setAttribute('embediq.generator_count', applicable.length);
+      this.bus.emit('generation:started', { generatorCount: applicable.length });
 
-      // Run all generators in parallel — each is pure (reads config, returns files)
+      // Run all generators in parallel — each is pure (reads config, returns files).
+      // Emit file:generated per file as each generator completes so subscribers
+      // see progress while others are still running.
       const results = await Promise.all(
         applicable.map(generator =>
-          withSpan(`generator.${generator.name}`, undefined, async () =>
-            generator.generate(config)
-          )
+          withSpan(`generator.${generator.name}`, undefined, async () => {
+            const files = await generator.generate(config);
+            for (const file of files) {
+              this.bus.emit('file:generated', {
+                relativePath: file.relativePath,
+                size: file.content.length,
+              });
+            }
+            return files;
+          })
         )
       );
 
       const allFiles = results.flat();
 
-      // For non-technical users, add a coworker-focused CLAUDE.md overlay
-      if (isNonTechnical) {
+      // For non-technical users with the Claude target active, overlay a
+      // coworker-focused CLAUDE.md. Other targets emit their own role-aware
+      // copy, so no equivalent overlay is needed there.
+      if (isNonTechnical && targets.has(TargetFormat.CLAUDE)) {
         const coworkerClaudeMd = this.generateCoworkerClaudeMd(config);
         const idx = allFiles.findIndex(f => f.relativePath === 'CLAUDE.md');
         if (idx >= 0) {
@@ -74,7 +116,6 @@ export class SynthesizerOrchestrator {
       }
 
       span.setAttribute('embediq.files_generated', allFiles.length);
-      this.recordMetrics(allFiles.length, applicable.length);
 
       return allFiles;
     });
@@ -91,20 +132,14 @@ export class SynthesizerOrchestrator {
       span.setAttribute('embediq.validation_passed', validation.passed);
       span.setAttribute('embediq.validation_checks', validation.checks.length);
 
-      const meter = getMeter();
-      const validationCounter = meter.createCounter('embediq.validations');
-      validationCounter.add(1, { passed: String(validation.passed) });
+      this.bus.emit('validation:completed', {
+        passCount: validation.checks.filter(c => c.passed).length,
+        failCount: validation.checks.filter(c => !c.passed && c.severity === 'error').length,
+        checks: validation.checks,
+      });
 
       return { files: stampedFiles, validation };
     });
-  }
-
-  private recordMetrics(fileCount: number, generatorCount: number): void {
-    const meter = getMeter();
-    const filesCounter = meter.createCounter('embediq.files_generated');
-    filesCounter.add(fileCount);
-    const genCounter = meter.createCounter('embediq.generation_runs');
-    genCounter.add(1, { generator_count: generatorCount });
   }
 
   private isTechnicalOnlyGenerator(name: string): boolean {

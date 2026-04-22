@@ -1,0 +1,23 @@
+STRAT_000: developer
+STRAT_000a: advanced
+STRAT_001: Patient portal
+STRAT_002: healthcare
+OPS_001: medium
+TECH_001:
+  - typescript
+  - python
+TECH_004:
+  - vscode
+TECH_005:
+  - npm
+TECH_007: github_actions
+FIN_001: enterprise
+REG_001: true
+REG_002:
+  - hipaa
+REG_003: true
+REG_004: true
+REG_005: true
+REG_008: strict
+REG_012: true
+REG_014: true

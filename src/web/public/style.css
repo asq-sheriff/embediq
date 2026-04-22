@@ -110,6 +110,18 @@ body {
   max-width: 480px;
 }
 
+.resume-banner {
+  margin: 16px auto 24px;
+  max-width: 520px;
+  padding: 12px 16px;
+  background: var(--surface, #f4f8ff);
+  border: 1px solid var(--accent, #2566ff);
+  border-radius: 8px;
+  color: var(--text, #1a1a1a);
+  font-size: 14px;
+  text-align: center;
+}
+
 /* ─── Buttons ─── */
 
 .btn-primary {
@@ -506,6 +518,24 @@ body {
 }
 
 .hidden { display: none; }
+
+.live-progress {
+  margin: 16px 0;
+  padding: 12px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border, #eaeaea);
+  border-radius: 6px;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.progress-line {
+  color: var(--text-secondary);
+  animation: fadeIn 0.15s ease;
+}
 
 /* ─── Responsive ─── */
 

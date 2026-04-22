@@ -1,6 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import request from 'supertest';
+import { existsSync, readFileSync, rmSync, mkdirSync } from 'node:fs';
+import { join } from 'node:path';
 import { createApp } from '../../src/web/server.js';
+import { getEventBus, registerDefaultSubscribers } from '../../src/events/index.js';
+import type { WizardAuditEntry } from '../../src/util/wizard-audit.js';
 
 const app = createApp();
 
@@ -145,6 +149,128 @@ describe('Web API', () => {
         .send({ answers: {} });
       expect(res.status).toBe(400);
       expect(res.body.error).toContain('targetDir');
+    });
+  });
+
+  describe('POST /api/generate audit stream (event-driven)', () => {
+    const TMP_BASE = join(process.cwd(), 'tests', '.tmp-web-audit');
+    const LOG_PATH = join(TMP_BASE, 'audit.jsonl');
+    const TARGET_DIR = join(TMP_BASE, 'target');
+    let teardown: () => void = () => {};
+
+    const minimalAnswers = {
+      STRAT_000: { value: 'developer', timestamp: '2026-01-01T00:00:00Z' },
+      STRAT_002: { value: 'saas', timestamp: '2026-01-01T00:00:00Z' },
+      TECH_001: { value: ['typescript'], timestamp: '2026-01-01T00:00:00Z' },
+      FIN_001: { value: 'moderate', timestamp: '2026-01-01T00:00:00Z' },
+      REG_001: { value: false, timestamp: '2026-01-01T00:00:00Z' },
+    };
+
+    function readEntries(): WizardAuditEntry[] {
+      if (!existsSync(LOG_PATH)) return [];
+      return readFileSync(LOG_PATH, 'utf-8')
+        .split('\n')
+        .filter((line) => line.length > 0)
+        .map((line) => JSON.parse(line) as WizardAuditEntry);
+    }
+
+    beforeEach(() => {
+      if (existsSync(TMP_BASE)) rmSync(TMP_BASE, { recursive: true });
+      mkdirSync(TARGET_DIR, { recursive: true });
+      process.env.EMBEDIQ_AUDIT_LOG = LOG_PATH;
+      ({ teardown } = registerDefaultSubscribers(getEventBus(), { enableAudit: true }));
+    });
+
+    afterEach(() => {
+      teardown();
+      delete process.env.EMBEDIQ_AUDIT_LOG;
+      if (existsSync(TMP_BASE)) rmSync(TMP_BASE, { recursive: true });
+    });
+
+    it('emits session/profile/generation/validation/file/session events via the bus', async () => {
+      const res = await request(app)
+        .post('/api/generate')
+        .send({ answers: minimalAnswers, targetDir: TARGET_DIR });
+
+      expect(res.status).toBe(200);
+      expect(res.body.totalWritten).toBeGreaterThan(0);
+
+      // The event bus dispatches on queueMicrotask; flush before reading.
+      await new Promise((r) => setImmediate(r));
+
+      const entries = readEntries();
+      const types = entries.map((e) => e.eventType);
+
+      // Expected sequence: session_start, profile_built, generation_started,
+      // N × file_written (emitted by orchestrator as each generator completes),
+      // validation_result, session_complete.
+      expect(types[0]).toBe('session_start');
+      expect(types[1]).toBe('profile_built');
+      expect(types[2]).toBe('generation_started');
+      expect(types[types.length - 1]).toBe('session_complete');
+      expect(types[types.length - 2]).toBe('validation_result');
+      expect(types.filter((t) => t === 'file_written').length).toBeGreaterThan(0);
+
+      // All file_written entries fall between generation_started and validation_result
+      const generationIdx = types.indexOf('generation_started');
+      const validationIdx = types.indexOf('validation_result');
+      expect(validationIdx).toBeGreaterThan(generationIdx);
+      for (let i = generationIdx + 1; i < validationIdx; i++) {
+        expect(types[i]).toBe('file_written');
+      }
+    });
+
+    it('auto-enriches audit entries with requestId from context', async () => {
+      await request(app)
+        .post('/api/generate')
+        .send({ answers: minimalAnswers, targetDir: TARGET_DIR });
+      await new Promise((r) => setImmediate(r));
+
+      const entries = readEntries();
+      expect(entries.length).toBeGreaterThan(0);
+      for (const entry of entries) {
+        expect(entry.requestId).toMatch(
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
+        );
+      }
+    });
+
+    it('profile_built entry carries the profileSummary payload', async () => {
+      await request(app)
+        .post('/api/generate')
+        .send({ answers: minimalAnswers, targetDir: TARGET_DIR });
+      await new Promise((r) => setImmediate(r));
+
+      const entries = readEntries();
+      const profileBuilt = entries.find((e) => e.eventType === 'profile_built');
+      expect(profileBuilt?.profileSummary).toMatchObject({
+        role: 'developer',
+        industry: 'saas',
+      });
+    });
+
+    it('file_written entries carry relativePath and size', async () => {
+      await request(app)
+        .post('/api/generate')
+        .send({ answers: minimalAnswers, targetDir: TARGET_DIR });
+      await new Promise((r) => setImmediate(r));
+
+      const fileEntries = readEntries().filter((e) => e.eventType === 'file_written');
+      for (const entry of fileEntries) {
+        expect(entry.filePath).toBeTruthy();
+        expect(entry.fileSize).toBeGreaterThan(0);
+      }
+    });
+
+    it('does not write audit entries when EMBEDIQ_AUDIT_LOG is unset', async () => {
+      delete process.env.EMBEDIQ_AUDIT_LOG;
+
+      await request(app)
+        .post('/api/generate')
+        .send({ answers: minimalAnswers, targetDir: TARGET_DIR });
+      await new Promise((r) => setImmediate(r));
+
+      expect(existsSync(LOG_PATH)).toBe(false);
     });
   });
 });

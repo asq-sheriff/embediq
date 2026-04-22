@@ -1,8 +1,17 @@
+<!-- audience: public -->
+
 # EmbedIQ External Domain Packs
 
-Place custom domain pack files (`.js` or `.mjs`) in this directory. They are loaded automatically at startup.
+Drop directory for custom domain packs. Place `.js` or `.mjs` files
+here (or set `EMBEDIQ_PLUGINS_DIR` to a different path) and they are
+loaded automatically at startup.
 
-Each file must export a default object conforming to the `DomainPack` interface:
+> **Authoring guide:** for the full `DomainPack` interface, the
+> three built-in packs as worked examples, testing recipe, and
+> publish-on-npm guidance, see
+> [`docs/extension-guide/writing-domain-packs.md`](../docs/extension-guide/writing-domain-packs.md).
+
+Minimal shape:
 
 ```javascript
 export default {
@@ -20,6 +29,4 @@ export default {
 };
 ```
 
-Override the plugin directory with `EMBEDIQ_PLUGINS_DIR` env var.
-
-See `src/domain-packs/index.ts` for the full interface definition.
+Interface source of truth: [`src/domain-packs/index.ts`](../src/domain-packs/index.ts).

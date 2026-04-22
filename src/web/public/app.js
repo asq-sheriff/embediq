@@ -8,7 +8,116 @@ const state = {
   answers: {},
   profile: null,
   currentValue: null,
+  sessionId: null,
+  eventWs: null,
+  filesStreamed: new Set(),
+  serverBackend: null, // null = unknown, false = disabled, true = enabled
 };
+
+const SESSION_STORAGE_KEY = 'embediq_session_id';
+
+// ─── Server-Side Session Helpers ───
+
+async function loadSessionsConfig() {
+  try {
+    const res = await fetch('/api/sessions/config');
+    if (!res.ok) return { enabled: false };
+    return await res.json();
+  } catch {
+    return { enabled: false };
+  }
+}
+
+async function mintServerSession() {
+  try {
+    const res = await fetch('/api/sessions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: '{}',
+    });
+    if (!res.ok) return null;
+    const body = await res.json();
+    return body.sessionId;
+  } catch {
+    return null;
+  }
+}
+
+async function loadServerSession(sessionId) {
+  try {
+    const res = await fetch(`/api/sessions/${encodeURIComponent(sessionId)}`, {
+      credentials: 'same-origin',
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+async function loadResumeView(sessionId) {
+  try {
+    const res = await fetch(`/api/sessions/${encodeURIComponent(sessionId)}/resume`, {
+      credentials: 'same-origin',
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+async function patchSession(sessionId, body) {
+  try {
+    await fetch(`/api/sessions/${encodeURIComponent(sessionId)}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify(body),
+    });
+  } catch {
+    // Best-effort — failing to persist a single PATCH should not block
+    // wizard progression. The next answer's PATCH will catch up.
+  }
+}
+
+function readSessionFromUrl() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('session');
+  } catch {
+    return null;
+  }
+}
+
+function writeSessionToUrl(sessionId) {
+  try {
+    const url = new URL(window.location.href);
+    if (sessionId) url.searchParams.set('session', sessionId);
+    else url.searchParams.delete('session');
+    window.history.replaceState({}, '', url.toString());
+  } catch {
+    // history API unavailable — degrade gracefully
+  }
+}
+
+function storeSessionId(sessionId) {
+  try {
+    if (sessionId) sessionStorage.setItem(SESSION_STORAGE_KEY, sessionId);
+    else sessionStorage.removeItem(SESSION_STORAGE_KEY);
+  } catch {
+    // sessionStorage may be unavailable (private mode); degrade gracefully
+  }
+}
+
+function readStoredSessionId() {
+  try {
+    return sessionStorage.getItem(SESSION_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
 
 // ─── Phase Navigation ───
 
@@ -33,12 +142,40 @@ function showPhase(id) {
 // ─── Phase 0: Welcome ───
 
 async function startWizard() {
+  if (state.serverBackend && !state.sessionId) {
+    const sessionId = await mintServerSession();
+    if (sessionId) {
+      state.sessionId = sessionId;
+      storeSessionId(sessionId);
+      writeSessionToUrl(sessionId);
+    }
+  }
+
   const res = await fetch('/api/dimensions');
   state.dimensions = await res.json();
-  state.currentDimIndex = 0;
+
+  // When resuming, jump to the coordinates the server computed so the
+  // wizard lands at the next unanswered visible question rather than
+  // starting from dimension 0.
+  const resume = state.resumeView;
+  const startDimension = resume ? Math.max(0, resume.nextDimensionIndex) : 0;
+  state.currentDimIndex = startDimension;
 
   renderDimensionSidebar();
-  await loadDimension(0);
+  await loadDimension(startDimension);
+
+  if (resume) {
+    const idx = Math.min(
+      resume.nextQuestionIndex,
+      Math.max(0, state.currentQuestions.length - 1),
+    );
+    if (idx > 0) {
+      state.currentQuestionIndex = idx;
+      renderQuestion();
+    }
+    state.resumeView = null; // consume — only honored on first start after init
+  }
+
   showPhase('phase-qa');
 }
 
@@ -217,7 +354,18 @@ async function nextQuestion() {
 
   // Store answer
   if (value !== null && value !== undefined && value !== '') {
-    state.answers[q.id] = { value, timestamp: new Date().toISOString() };
+    const answerEntry = { value, timestamp: new Date().toISOString() };
+    state.answers[q.id] = answerEntry;
+    // Best-effort persist to server-side session for interrupt/resume.
+    // The server stamps `contributedBy` from the request context — the
+    // client cannot supply attribution. The current dimension is patched
+    // alongside so resume lands at the right spot.
+    if (state.serverBackend && state.sessionId) {
+      patchSession(state.sessionId, {
+        answers: { [q.id]: { questionId: q.id, ...answerEntry } },
+        currentDimension: state.dimensions[state.currentDimIndex]?.name,
+      });
+    }
   }
 
   // Next question or next dimension
@@ -436,6 +584,43 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
+// ─── Live Event Stream ───
+
+function openEventStream(sessionId) {
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const ws = new WebSocket(`${proto}//${location.host}/ws/events`);
+  ws.onopen = () => ws.send(JSON.stringify({ type: 'subscribe', sessionId }));
+  ws.onmessage = (m) => {
+    try {
+      dispatchEnvelope(JSON.parse(m.data));
+    } catch { /* ignore malformed frames */ }
+  };
+  return ws;
+}
+
+function dispatchEnvelope(env) {
+  const progress = document.getElementById('live-progress');
+  if (!progress) return;
+  if (env.name === 'generation:started') {
+    progress.innerHTML = `<div class="progress-line">Starting ${env.payload.generatorCount} generators…</div>`;
+  } else if (env.name === 'file:generated') {
+    if (state.filesStreamed.has(env.payload.relativePath)) return;
+    state.filesStreamed.add(env.payload.relativePath);
+    const line = document.createElement('div');
+    line.className = 'progress-line';
+    line.textContent = `✓ ${env.payload.relativePath}`;
+    progress.appendChild(line);
+  } else if (env.name === 'validation:completed') {
+    const { passCount, failCount } = env.payload;
+    const line = document.createElement('div');
+    line.className = 'progress-line';
+    line.textContent = failCount === 0
+      ? `✓ Validation passed (${passCount} checks)`
+      : `⚠ Validation: ${passCount} passed, ${failCount} failed`;
+    progress.appendChild(line);
+  }
+}
+
 async function generateFiles() {
   const targetDir = document.getElementById('targetDir').value.trim();
   if (!targetDir) {
@@ -447,10 +632,21 @@ async function generateFiles() {
   btn.disabled = true;
   btn.textContent = 'Generating...';
 
+  if (!state.sessionId) {
+    state.sessionId = crypto.randomUUID();
+  }
+  state.filesStreamed = new Set();
+  const progress = document.getElementById('live-progress');
+  if (progress) {
+    progress.classList.remove('hidden');
+    progress.innerHTML = '';
+  }
+  state.eventWs = openEventStream(state.sessionId);
+
   const res = await fetch('/api/generate', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ answers: state.answers, targetDir }),
+    body: JSON.stringify({ answers: state.answers, targetDir, sessionId: state.sessionId }),
   });
   const result = await res.json();
 
@@ -479,7 +675,64 @@ async function generateFiles() {
   `;
 
   btn.textContent = 'Done';
+
+  if (state.eventWs && state.eventWs.readyState === WebSocket.OPEN) {
+    state.eventWs.close();
+  }
+  state.eventWs = null;
 }
 
 // ─── Init ───
-showPhase('phase-welcome');
+
+async function initWizard() {
+  showPhase('phase-welcome');
+  const config = await loadSessionsConfig();
+  state.serverBackend = !!config.enabled;
+  if (!state.serverBackend) return;
+
+  // URL-supplied session id takes precedence over sessionStorage so a
+  // shared bookmark always wins over whatever the local browser knows.
+  const fromUrl = readSessionFromUrl();
+  const stored = fromUrl || readStoredSessionId();
+  if (!stored) return;
+
+  const resume = await loadResumeView(stored);
+  if (!resume) {
+    storeSessionId(null);
+    if (fromUrl) writeSessionToUrl(null);
+    return;
+  }
+
+  state.sessionId = resume.session.sessionId;
+  state.answers = resume.session.answers || {};
+  storeSessionId(state.sessionId);
+  writeSessionToUrl(state.sessionId);
+  state.resumeView = resume;
+  renderResumeBanner(resume);
+}
+
+function renderResumeBanner(resume) {
+  const banner = document.getElementById('resume-banner');
+  if (!banner) return; // index.html doesn't have the slot — no-op gracefully
+  const { totals, contributors, complete } = resume;
+  const contributorCount = Object.keys(contributors || {}).length;
+  const parts = [];
+  parts.push(`Welcome back — <strong>${totals.answered}</strong> of ${totals.visible} answered`);
+  if (contributorCount > 1) {
+    parts.push(`across ${contributorCount} contributors`);
+  } else if (contributorCount === 1) {
+    const [only] = Object.keys(contributors);
+    parts.push(`by <strong>${escapeHtml(only)}</strong>`);
+  }
+  if (complete) parts.push('— ready to generate');
+  banner.innerHTML = parts.join(' ');
+  banner.style.display = 'block';
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  })[c]);
+}
+
+initWizard();

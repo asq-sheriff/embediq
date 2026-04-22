@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+vendor/
+.venv/
+venv/
+__pycache__/
+
+# Build outputs
+dist/
+build/
+target/
+.next/
+out/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Environment and secrets
+.env
+.env.*
+*.pem
+*.key
+*.p12
+
+# Large binary files
+*.zip
+*.tar.gz
+*.pkl
+*.h5
+*.onnx
+*.pt
+*.bin

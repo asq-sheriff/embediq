@@ -1,0 +1,6 @@
+// MCP Server Configuration Template
+// Copy to .mcp.json and fill in API keys
+// .mcp.json is gitignored — credentials stay local
+{
+  "mcpServers": {}
+}

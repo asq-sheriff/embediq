@@ -1,6 +1,14 @@
+<!-- audience: public -->
+
 # EmbedIQ Configuration Templates
 
-Templates provide organizational baselines that pre-answer compliance and security questions, so individual projects only configure the project-specific parts.
+Drop directory for organizational baseline templates. Templates pre-answer
+compliance and security questions so individual projects only configure
+project-specific parts.
+
+> **Authoring guide:** for the full template schema, locking semantics,
+> recipes for org-specific baselines, and testing instructions, see
+> [`docs/extension-guide/writing-templates.md`](../docs/extension-guide/writing-templates.md).
 
 ## Using Templates
 

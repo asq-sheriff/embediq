@@ -1,8 +1,10 @@
 import type { ConfigGenerator } from '../generator.js';
+import { TargetFormat } from '../target-format.js';
 import type { SetupConfig, GeneratedFile } from '../../types/index.js';
 
 export class McpJsonGenerator implements ConfigGenerator {
   name = 'mcp-json';
+  target = TargetFormat.CLAUDE;
 
   generate(config: SetupConfig): GeneratedFile[] {
     const { profile } = config;

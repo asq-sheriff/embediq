@@ -1,7 +1,14 @@
 import type { Answer, UserProfile, TeamSize, BudgetTier, DevOpsProfile, UserRole, TechnicalProficiency } from '../types/index.js';
 import { createEmptyProfile } from '../types/index.js';
+import { getEventBus, type EventBus } from '../events/bus.js';
 
 export class ProfileBuilder {
+  private bus: EventBus;
+
+  constructor(bus: EventBus = getEventBus()) {
+    this.bus = bus;
+  }
+
   build(answers: Map<string, Answer>): UserProfile {
     const profile = createEmptyProfile();
     profile.answers = answers;
@@ -19,6 +26,17 @@ export class ProfileBuilder {
     profile.budgetTier = this.resolveBudget(answers);
     profile.securityConcerns = this.resolveSecurityConcerns(answers);
     profile.hardwareProfile = this.resolveHardware(answers);
+
+    this.bus.emit('profile:built', {
+      profileSummary: {
+        role: profile.role,
+        industry: profile.industry,
+        teamSize: profile.teamSize,
+        complianceFrameworks: profile.complianceFrameworks,
+        securityLevel: profile.securityConcerns.includes('strict_permissions') ? 'strict' : 'standard',
+        fileCount: 0,
+      },
+    });
 
     return profile;
   }

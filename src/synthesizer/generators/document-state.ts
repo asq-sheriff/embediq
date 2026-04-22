@@ -1,9 +1,11 @@
 import type { ConfigGenerator } from '../generator.js';
+import { TargetFormat } from '../target-format.js';
 import type { SetupConfig, GeneratedFile } from '../../types/index.js';
 import { toYaml } from '../../util/yaml-writer.js';
 
 export class DocumentStateGenerator implements ConfigGenerator {
   name = 'document-state';
+  target = TargetFormat.CLAUDE;
 
   generate(config: SetupConfig): GeneratedFile[] {
     const wantsDocState = config.profile.answers.get('INNOV_002')?.value === true;

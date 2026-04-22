@@ -3,8 +3,13 @@ import { SynthesizerOrchestrator } from '../../src/synthesizer/orchestrator.js';
 import { ProfileBuilder } from '../../src/engine/profile-builder.js';
 import { PriorityAnalyzer } from '../../src/engine/priority-analyzer.js';
 import { QuestionBank } from '../../src/bank/question-bank.js';
+import { InMemoryEventBus, type EventEnvelope } from '../../src/events/index.js';
 import { buildAnswerMap, MINIMAL_DEVELOPER_ANSWERS, HEALTHCARE_DEVELOPER_ANSWERS, PM_ANSWERS } from '../helpers/test-utils.js';
 import type { SetupConfig } from '../../src/types/index.js';
+
+function flushMicrotasks(): Promise<void> {
+  return new Promise((resolve) => setImmediate(resolve));
+}
 
 const profileBuilder = new ProfileBuilder();
 const priorityAnalyzer = new PriorityAnalyzer();
@@ -156,6 +161,88 @@ describe('SynthesizerOrchestrator', () => {
     it('snapshot: file list', () => {
       const paths = files.map(f => f.relativePath).sort();
       expect(paths).toMatchSnapshot();
+    });
+  });
+
+  describe('event emission', () => {
+    it('emits generation:started once with the applicable generator count', async () => {
+      const bus = new InMemoryEventBus();
+      const started: EventEnvelope<'generation:started'>[] = [];
+      bus.on('generation:started', (env) => started.push(env));
+
+      const orchestrator = new SynthesizerOrchestrator(bus);
+      await orchestrator.generate(buildConfig(MINIMAL_DEVELOPER_ANSWERS));
+      await flushMicrotasks();
+
+      expect(started).toHaveLength(1);
+      expect(started[0].payload.generatorCount).toBeGreaterThan(0);
+    });
+
+    it('emits file:generated once per generated file', async () => {
+      const bus = new InMemoryEventBus();
+      const fileEvents: EventEnvelope<'file:generated'>[] = [];
+      bus.on('file:generated', (env) => fileEvents.push(env));
+
+      const orchestrator = new SynthesizerOrchestrator(bus);
+      const files = await orchestrator.generate(buildConfig(MINIMAL_DEVELOPER_ANSWERS));
+      await flushMicrotasks();
+
+      expect(fileEvents).toHaveLength(files.length);
+      const eventPaths = fileEvents.map((e) => e.payload.relativePath).sort();
+      const filePaths = files.map((f) => f.relativePath).sort();
+      expect(eventPaths).toEqual(filePaths);
+      for (const event of fileEvents) {
+        expect(event.payload.size).toBeGreaterThan(0);
+      }
+    });
+
+    it('generateWithValidation emits validation:completed with check counts', async () => {
+      const bus = new InMemoryEventBus();
+      const completed: EventEnvelope<'validation:completed'>[] = [];
+      bus.on('validation:completed', (env) => completed.push(env));
+
+      const orchestrator = new SynthesizerOrchestrator(bus);
+      const { validation } = await orchestrator.generateWithValidation(
+        buildConfig(MINIMAL_DEVELOPER_ANSWERS),
+      );
+      await flushMicrotasks();
+
+      expect(completed).toHaveLength(1);
+      const payload = completed[0].payload;
+      expect(payload.passCount).toBe(validation.checks.filter((c) => c.passed).length);
+      expect(payload.failCount).toBe(
+        validation.checks.filter((c) => !c.passed && c.severity === 'error').length,
+      );
+      expect(payload.checks).toEqual(validation.checks);
+    });
+
+    it('orders generation:started first and validation:completed last across the run', async () => {
+      const bus = new InMemoryEventBus();
+      const timeline: string[] = [];
+      bus.onAny((env) => timeline.push(env.name));
+
+      const orchestrator = new SynthesizerOrchestrator(bus);
+      await orchestrator.generateWithValidation(buildConfig(MINIMAL_DEVELOPER_ANSWERS));
+      await flushMicrotasks();
+
+      expect(timeline[0]).toBe('generation:started');
+      expect(timeline[timeline.length - 1]).toBe('validation:completed');
+      // All file:generated events land between the two brackets
+      const middle = timeline.slice(1, -1);
+      expect(middle.every((n) => n === 'file:generated')).toBe(true);
+      expect(middle.length).toBeGreaterThan(0);
+    });
+
+    it('plain generate() does not emit validation:completed', async () => {
+      const bus = new InMemoryEventBus();
+      const validationEvents: EventEnvelope<'validation:completed'>[] = [];
+      bus.on('validation:completed', (env) => validationEvents.push(env));
+
+      const orchestrator = new SynthesizerOrchestrator(bus);
+      await orchestrator.generate(buildConfig(MINIMAL_DEVELOPER_ANSWERS));
+      await flushMicrotasks();
+
+      expect(validationEvents).toHaveLength(0);
     });
   });
 });

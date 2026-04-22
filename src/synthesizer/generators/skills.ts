@@ -1,9 +1,11 @@
 import type { ConfigGenerator } from '../generator.js';
+import { TargetFormat } from '../target-format.js';
 import type { SetupConfig, GeneratedFile } from '../../types/index.js';
 import { MarkdownBuilder } from '../../util/markdown-builder.js';
 
 export class SkillsGenerator implements ConfigGenerator {
   name = 'skills';
+  target = TargetFormat.CLAUDE;
 
   generate(config: SetupConfig): GeneratedFile[] {
     const { profile } = config;

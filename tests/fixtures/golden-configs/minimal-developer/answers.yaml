@@ -1,0 +1,9 @@
+STRAT_000: developer
+STRAT_000a: intermediate
+STRAT_001: Web application
+STRAT_002: saas
+OPS_001: solo
+TECH_001:
+  - typescript
+FIN_001: moderate
+REG_001: false

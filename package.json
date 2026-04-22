@@ -1,7 +1,7 @@
 {
   "name": "embediq",
   "version": "2.1.0",
-  "description": "EmbedIQ by Praglogic — Adaptive wizard that generates ideal Claude Code configurations",
+  "description": "EmbedIQ by Praglogic — Adaptive wizard that generates ideal AI coding agent configurations (Claude Code today; Cursor, Copilot, Gemini, Windsurf, and AGENTS.md in v3.1)",
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
@@ -13,7 +13,11 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "test:snapshots": "vitest run --update"
+    "test:snapshots": "vitest run --update",
+    "evaluate": "tsx src/evaluation/cli.ts",
+    "benchmark": "tsx src/evaluation/cli.ts --mode benchmark",
+    "drift": "tsx src/autopilot/cli.ts",
+    "sanitize-public": "tsx scripts/sanitize-for-public.ts"
   },
   "keywords": [
     "claude-code",
@@ -28,12 +32,15 @@
     "chalk": "^5.3.0",
     "express": "^5.2.1",
     "express-rate-limit": "^8.3.2",
+    "ws": "^8.20.0",
     "yaml": "^2.6.0"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
     "@types/express": "^5.0.6",
     "@types/node": "^22.0.0",
     "@types/supertest": "^7.2.0",
+    "@types/ws": "^8.18.1",
     "@vitest/coverage-v8": "^4.1.4",
     "supertest": "^7.2.2",
     "tsx": "^4.19.0",
@@ -47,6 +54,7 @@
     "@opentelemetry/sdk-metrics": "^2.6.1",
     "@opentelemetry/sdk-node": "^0.200.0",
     "@opentelemetry/sdk-trace-node": "^2.6.1",
-    "@opentelemetry/semantic-conventions": "^1.40.0"
+    "@opentelemetry/semantic-conventions": "^1.40.0",
+    "better-sqlite3": "^12.9.0"
   }
 }

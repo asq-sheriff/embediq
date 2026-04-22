@@ -1,0 +1,8 @@
+id: hipaa-developer-strict
+title: HIPAA Developer (strict security tier)
+description: |
+  Healthcare developer with full HIPAA obligations — PHI, PII, audit
+  logging, strict permissions, DLP, session audit trail. Exercises the
+  Healthcare domain pack end-to-end and locks in the strict-tier
+  permission envelope for settings.local.json and hooks.
+minimumFloor: 18

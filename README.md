@@ -1,138 +1,115 @@
+<!-- audience: public -->
+
 # EmbedIQ
 
-**An intelligent Claude Code configuration wizard by [Praglogic](https://praglogic.com).**
+**An adaptive AI coding agent configuration wizard by [Praglogic](https://praglogic.com).**
 
-EmbedIQ interviews you about your project, team, and goals — then generates a complete, production-ready Claude Code environment (15-40 files) tailored to your specific needs. It adapts to your role, industry, compliance requirements, and tech stack.
+EmbedIQ interviews you about your project, team, and compliance obligations,
+then generates a complete agent harness — 15–40 files — tailored to your
+role, industry, tech stack, and security posture. Everything is
+**deterministic, offline, and audit-ready**: no LLM calls, no telemetry,
+no database. The same interview produces configuration for Claude Code,
+Cursor, GitHub Copilot, Gemini CLI, Windsurf, and cross-agent `AGENTS.md`
+from a single answer set.
+
+> **Status:** v3.2 shipped. The full v3.1 and v3.2 feature sets
+> (evaluation framework, multi-agent targets, composable skills,
+> interrupt-and-resume, autopilot, GitHub PR integration, outbound
+> webhooks, compliance inbound webhooks) are production-ready today.
+> See [CHANGELOG.md](CHANGELOG.md).
 
 ---
 
-## What It Does
+## 60-second quickstart
 
-Answer 25-40 adaptive questions. Get a fully configured Claude Code setup:
+```bash
+git clone <repo-url>
+cd embediq
+npm install
 
-- **CLAUDE.md** with your tech stack, conventions, and security requirements
-- **Rules** scoped to your languages and compliance frameworks (HIPAA, PCI-DSS, SOC2, GDPR)
-- **Hooks** for DLP scanning, command guarding, audit logging, and network egress control
-- **Agents** for security review, compliance checking, code review, and test generation
-- **Commands** with model routing (`/quick` on Haiku, `/code` on Sonnet, `/think` on Opus)
-- **Skills** for memory synchronization and impact analysis
-- **MCP server templates** pre-configured for your toolchain
-- **Permission tiers** from Permissive to Lockdown
-- **Domain packs** — industry-specific configurations for Healthcare, Finance, and Education with compliance-aware DLP patterns and rules
-- **Output validation** — post-generation compliance checks for HIPAA, PCI-DSS, SOC2, and GDPR before files are written
-- **Configuration templates** — organizational baselines that pre-fill compliance settings for common regulatory profiles
+# Interactive CLI wizard
+npm start
 
-Non-technical roles (Business Analyst, Product Manager, Executive) get a "Claude coworker" setup focused on research, analysis, and documentation instead of code.
+# Or web UI
+npm run start:web          # http://localhost:3000
+
+# Already generated once? Drift-check a project
+npm run drift -- --target ./my-project --archetype minimal-developer
+
+# Scoring + benchmarking
+npm run evaluate           # replay answer sets against golden references
+npm run benchmark -- --candidate ./other-tool-output --candidate-label claude-init
+```
+
+See [`docs/getting-started.md`](docs/getting-started.md) for a guided
+ten-minute tour.
+
+---
+
+## What it generates
+
+Pick one or more output targets via `EMBEDIQ_OUTPUT_TARGETS` or
+`--targets`:
+
+| Target          | Files produced                                                                                     |
+| --------------- | -------------------------------------------------------------------------------------------------- |
+| `claude` (default) | `CLAUDE.md`, `.claude/settings.json`, `.claude/rules/*`, `.claude/commands/*`, `.claude/agents/*`, `.claude/skills/*`, `.claude/hooks/*` (Python), `.claudeignore`, `.mcp.json.template`, `.claude/association_map.yaml`, `.claude/document_state.yaml` |
+| `agents-md`     | `AGENTS.md` (cross-agent universal format)                                                         |
+| `cursor`        | `.cursor/rules/*.mdc` with MDC frontmatter (`alwaysApply`, `globs`)                                |
+| `copilot`       | `.github/copilot-instructions.md` + glob-scoped `.github/instructions/*.instructions.md`           |
+| `gemini`        | `GEMINI.md`                                                                                         |
+| `windsurf`      | `.windsurfrules`                                                                                    |
+
+Non-technical roles (Business Analyst, Product Manager, Executive) get
+coworker-shaped variants focused on research, analysis, and documentation
+instead of code.
+
+## Feature matrix
+
+| Area                           | What ships today                                                                                    |
+| ------------------------------ | --------------------------------------------------------------------------------------------------- |
+| **Adaptive Q&A**               | 71 questions · 7 dimensions · 40 with conditional branching                                         |
+| **Role adaptation**            | 8 roles (developer, devops, lead, BA, PM, executive, QA, data); role-specific output variants       |
+| **Domain packs**               | Built-in Healthcare / Finance / Education; external packs via `EMBEDIQ_PLUGINS_DIR`                 |
+| **Composable skills**          | `SKILL.md` format for granular composition; external skills via `EMBEDIQ_SKILLS_DIR`                |
+| **Output validation**          | Pre-write compliance checks (HIPAA, PCI-DSS, SOC2, GDPR, universal)                                 |
+| **Multi-agent targets**        | Claude, AGENTS.md, Cursor, Copilot, Gemini, Windsurf from one interview                             |
+| **Evaluation framework**       | Golden-config replay scoring, benchmark mode vs. competing tools, CI-gatekeeping exit codes        |
+| **Drift detection**            | `npm run drift` classifies files as match / missing / modified / stale / version-mismatch / extra |
+| **Autopilot**                  | `@hourly` / `@daily` / `@weekly` / `@monthly` scheduled drift scans + webhook triggers              |
+| **Interrupt & resume**         | Shareable `?session=<id>` URLs; per-answer attribution for multi-stakeholder workflows              |
+| **GitHub PR integration**      | `--git-pr` opens a PR with the generated files via the Git Data API (atomic multi-file commit)      |
+| **Outbound notifications**     | Slack Block Kit / Teams MessageCard / generic JSON formatters via `EMBEDIQ_WEBHOOK_URLS`            |
+| **Compliance webhooks**        | Drata / Vanta / generic adapters translate external findings into autopilot runs                    |
+| **Authentication**             | Basic / OIDC / reverse-proxy header; RBAC with `wizard-user` + `wizard-admin`                       |
+| **Session persistence**        | Null (default) / JSON file / SQLite backends; AES-256-GCM optional payload encryption               |
+| **Observability**              | Optional OpenTelemetry (`EMBEDIQ_OTEL_ENABLED=true`); JSONL audit log                               |
+| **Deployment**                 | Docker, docker-compose, Kubernetes manifests with health/readiness probes                           |
 
 ---
 
 ## Requirements
 
-### To Run EmbedIQ
+**To run EmbedIQ**
 
-| Requirement | Minimum Version | Check |
-|---|---|---|
-| Node.js | 18+ | `node --version` |
-| npm | 8+ (ships with Node) | `npm --version` |
+| Requirement | Minimum   | Check             |
+| ----------- | --------- | ----------------- |
+| Node.js     | 18+       | `node --version`  |
+| npm         | 8+        | `npm --version`   |
 
-No Anthropic account or API key is needed to run the wizard.
+No Anthropic account or API key is needed to run the wizard itself —
+EmbedIQ is 100% offline.
 
-### To Use the Generated Output
+**To use the generated Claude Code output**
 
 | Requirement | Details |
-|---|---|
+| --- | --- |
 | Claude Code | `npm install -g @anthropic-ai/claude-code` |
 | Anthropic subscription | Pro ($20/mo), Max ($100-200/mo), Team ($30/user/mo), Enterprise, or API (BYOK) |
 | Python 3.8+ | Required if hook scripts are generated (DLP, audit, egress) |
 
-The free Claude.ai plan does not include Claude Code. The minimum paid plan is **Pro ($20/month)**.
-
----
-
-## Quick Start
-
-```bash
-# Clone and install
-git clone <repo-url>
-cd embediq
-npm install
-
-# Launch web UI (recommended)
-npm run start:web
-# Open http://localhost:3000
-
-# Or launch CLI
-npm start
-```
-
----
-
-## How It Works
-
-EmbedIQ runs through four phases:
-
-### 1. Discovery
-The wizard asks 25-40 questions (from a bank of 71) across seven dimensions: Strategic Intent, Problem Definition, Operational Reality, Technology Requirements, Regulatory Compliance, Financial Constraints, and Innovation. Adaptive branching means you only see questions relevant to your profile.
-
-### 2. Playback
-The wizard summarizes your profile and derived priorities with confidence scores (e.g., "Security & Compliance: 95%"). Priorities are computed from semantic tags on your answers using a weighted scoring system.
-
-### 3. Edit & Approve
-Correct any field, adjust priority ordering, or add items the wizard missed. This loop repeats until you approve.
-
-### 4. Generate
-Specify a target project directory. EmbedIQ writes 15-40 configuration files directly into that directory, creating the complete `.claude/` structure.
-
----
-
-## After Generation
-
-```bash
-# 1. Set up MCP servers (if generated)
-cp .mcp.json.template .mcp.json
-# Edit .mcp.json — add your API keys
-
-# 2. Start Claude Code
-cd /path/to/your/project
-claude
-
-# 3. Commit shared config
-git add CLAUDE.md .claude/settings.json .claude/rules/ .claude/commands/ \
-       .claude/agents/ .claude/skills/ .claudeignore .mcp.json.template
-git commit -m "Add Claude Code configuration generated by EmbedIQ"
-```
-
-Keep these files local (gitignored): `.claude/settings.local.json`, `.mcp.json`, `.claude/logs/`
-
----
-
-## Commands
-
-A Makefile wraps common operations:
-
-```bash
-make help                # Show all targets
-make check               # Type-check + run tests (CI equivalent)
-make build               # Type-check + test + compile
-make start-web           # Run web server (port 3000)
-make otel-dev            # Web server with OpenTelemetry enabled
-make docker-up           # Start with docker-compose
-```
-
-Or use npm scripts directly:
-
-```bash
-npm install              # Install dependencies
-npm run build            # Compile TypeScript to dist/
-npm start                # Run CLI wizard
-npm run start:web        # Run web server (port 3000, override with PORT=, auth via EMBEDIQ_AUTH_STRATEGY)
-npm run dev              # Watch mode for CLI
-npm run dev:web          # Watch mode for web server
-npx tsc --noEmit         # Type-check without emitting
-npm test                 # Run test suite
-npm run test:coverage    # Run tests with coverage report
-docker compose up        # Run via Docker
-```
+Output for other targets (Cursor, Copilot, Gemini, Windsurf, `AGENTS.md`)
+has no tool-specific runtime requirement beyond the agent itself.
 
 ---
 
@@ -143,116 +120,89 @@ Three-layer design:
 ```
 ┌────────────────────────────────────────────────────┐
 │  Layer 1: Universal Question Bank                  │
-│  71 questions, 7 dimensions, 40 with branching     │
+│  71 questions · 7 dimensions · 40 with branching   │
 ├────────────────────────────────────────────────────┤
 │  Layer 2: Adaptive Logic Engine                    │
-│  Branch evaluation, profile building, priorities   │
+│  Branch evaluation · profile building · priorities │
 ├────────────────────────────────────────────────────┤
-│  Layer 3: Unified Specification Synthesizer        │
-│  12 generators + Output Validation + Domain Packs  │
+│  Layer 3: Unified Synthesizer                      │
+│  Target-aware generators · validation · stamping   │
 └────────────────────────────────────────────────────┘
 ```
 
-Both CLI and Web interfaces share the same core. The web API is stateless — the browser holds the answer map and sends it with each request.
-
-See [Architecture Document](docs/ARCHITECTURE.md) for full details.
-See [User Guide](docs/USER_GUIDE.md) for comprehensive usage documentation.
-
----
-
-## Enterprise Features
-
-### Domain Packs
-
-Industry-specific configuration packs that auto-activate based on your industry selection during the wizard:
-
-- **Healthcare** — HIPAA/HITECH-compliant DLP patterns, PHI scanning hooks, audit logging rules
-- **Finance** — PCI-DSS, SOX, and GLBA controls with cardholder data detection and access restrictions
-- **Education** — FERPA and COPPA safeguards for student data protection
-
-Domain packs are extensible. Add custom packs via the `plugins/` directory.
-
-### Configuration Templates
-
-Pre-built organizational baselines that pre-fill compliance settings:
-
-- **HIPAA Healthcare** — full PHI protection stack with audit trail and minimum-necessary access
-- **PCI Finance** — cardholder data environment controls with network segmentation rules
-- **SOC2 SaaS** — trust services criteria mapped to Claude Code permissions and monitoring
-
-Custom templates can be added via the `templates/` directory.
-
-### Output Validation
-
-Compliance checks run automatically after generation and before files are written to disk. The validator scans generated configuration for:
-
-- Missing required rules for the selected compliance framework
-- Overly permissive settings that conflict with the declared security tier
-- DLP pattern coverage gaps for the selected industry
-
-### Authentication
-
-Pluggable authentication strategies configured via the `EMBEDIQ_AUTH_STRATEGY` environment variable:
-
-- **Basic** — HTTP Basic Auth (default when credentials are set)
-- **OIDC** — OpenID Connect for SSO integration
-- **Proxy Header** — trust upstream proxy headers (e.g., behind an identity-aware proxy)
-
-Role-based access control (RBAC) with two roles: `wizard-user` (run the wizard) and `wizard-admin` (manage templates and domain packs).
-
-### Observability
-
-Optional OpenTelemetry instrumentation for production deployments:
-
-```bash
-# Enable tracing and metrics
-EMBEDIQ_OTEL_ENABLED=true npm run start:web
-
-# Or with a custom collector endpoint
-EMBEDIQ_OTEL_ENABLED=true OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4318 npm run start:web
-```
-
-Traces cover the full generation flow (per-generator spans, validation). Metrics track files generated, generation runs, and validation pass rates. Compatible with any OTLP collector (Jaeger, Grafana, Datadog). Zero overhead when disabled.
-
-### Deployment
-
-- **Docker** — single-container image with health and readiness probes
-- **Docker Compose** — multi-service configuration for development and staging
-- **Kubernetes** — manifests with liveness/readiness probes, resource limits, and horizontal scaling
+Both CLI and web interfaces share the same core. The web API is
+stateless by default — the browser holds the answer map and sends it
+with each request. Opt-in server-side sessions add interrupt-and-resume
+without compromising the zero-persistence baseline.
 
 ---
 
-## Data Privacy
+## Documentation map
 
-EmbedIQ is built on a **zero-persistence, zero-telemetry** architecture:
+| I want to… | Go to |
+| --- | --- |
+| Take a guided 10-minute tour | [`docs/getting-started.md`](docs/getting-started.md) |
+| Run the wizard end-to-end | [`docs/user-guide/01-wizard-walkthrough.md`](docs/user-guide/01-wizard-walkthrough.md) |
+| Understand every generated file | [`docs/user-guide/02-generated-files.md`](docs/user-guide/02-generated-files.md) |
+| Generate for Cursor / Copilot / Gemini / Windsurf | [`docs/user-guide/05-multi-agent-targets.md`](docs/user-guide/05-multi-agent-targets.md) |
+| Score my output against golden configs | [`docs/user-guide/06-evaluation-and-drift.md`](docs/user-guide/06-evaluation-and-drift.md) |
+| Resume a wizard session on another device | [`docs/user-guide/07-session-and-resume.md`](docs/user-guide/07-session-and-resume.md) |
+| Schedule nightly drift scans | [`docs/user-guide/08-autopilot.md`](docs/user-guide/08-autopilot.md) |
+| Open a PR instead of writing to disk | [`docs/user-guide/09-git-pr-integration.md`](docs/user-guide/09-git-pr-integration.md) |
+| Wire Slack / Teams notifications | [`docs/user-guide/10-notification-webhooks.md`](docs/user-guide/10-notification-webhooks.md) |
+| Trigger runs from Drata or Vanta | [`docs/user-guide/11-compliance-webhooks.md`](docs/user-guide/11-compliance-webhooks.md) |
+| Deploy to Docker or Kubernetes | [`docs/operator-guide/deployment.md`](docs/operator-guide/deployment.md) |
+| Wire authentication | [`docs/operator-guide/authentication.md`](docs/operator-guide/authentication.md) |
+| Set up OpenTelemetry | [`docs/operator-guide/observability.md`](docs/operator-guide/observability.md) |
+| Look up every env var | [`docs/reference/configuration.md`](docs/reference/configuration.md) |
+| Look up every HTTP endpoint | [`docs/reference/rest-api.md`](docs/reference/rest-api.md) |
+| Write my own domain pack / skill / adapter | [`docs/extension-guide/`](docs/extension-guide/) |
+| Read the architecture | [`docs/architecture/overview.md`](docs/architecture/overview.md) |
+| Evaluate EmbedIQ vs. competitors | [`docs/evaluators/competitive-comparison.md`](docs/evaluators/competitive-comparison.md) |
+| Contribute code or docs | [`CONTRIBUTING.md`](CONTRIBUTING.md) |
+| Report a security issue | [`SECURITY.md`](SECURITY.md) |
 
-- **No database** — answers live only in volatile memory (process heap or browser JS)
-- **No server-side sessions** — the web API is fully stateless
-- **No telemetry or analytics** — EmbedIQ never phones home
-- **No LLM calls** — the wizard is 100% deterministic; no answers are sent to any AI service
-- **No logging of user data** — server logs contain only startup messages
+---
 
-In regulated domains (healthcare, finance), wizard answers about PHI/PII handling and DLP patterns are classified as **sensitive metadata**. EmbedIQ processes them in memory and discards them — they never reach disk, network, or an LLM.
-
-### Authentication and Access Control
-
-Pluggable authentication for shared/network deployments via `EMBEDIQ_AUTH_STRATEGY`:
+## Commands at a glance
 
 ```bash
-# Basic Auth
-EMBEDIQ_AUTH_STRATEGY=basic EMBEDIQ_AUTH_USER=admin EMBEDIQ_AUTH_PASS=secret npm run start:web
-
-# OIDC
-EMBEDIQ_AUTH_STRATEGY=oidc EMBEDIQ_OIDC_ISSUER=https://idp.example.com npm run start:web
-
-# Proxy Header (behind identity-aware proxy)
-EMBEDIQ_AUTH_STRATEGY=proxy npm run start:web
+make help                 # Show all targets
+make check                # Type-check + 731+ tests
+make start                # CLI wizard
+make start-web            # Web server on :3000
+make evaluate             # Run evaluation harness
+make benchmark            # Benchmark another tool's output
+make drift                # Drift-check a project (flags required)
+make otel-dev             # Web server with OpenTelemetry enabled
+make docker-up            # Start via docker-compose
 ```
 
-RBAC with `wizard-user` and `wizard-admin` roles controls access to wizard execution and template management. Audit trail logging is available as an opt-in feature. When no auth strategy is set, the server runs without auth (suitable for local use). See the [User Guide](docs/USER_GUIDE.md#data-privacy--security) for full data privacy documentation.
+Or use the raw `npm` scripts — every Makefile target wraps a one-line
+`npm run ...` call.
+
+---
+
+## Data privacy — the short version
+
+- **No database** unless you opt in to a session backend (JSON file or
+  SQLite). Default is volatile memory only.
+- **No telemetry.** EmbedIQ never phones home.
+- **No LLM calls.** The wizard is 100% deterministic — answers are
+  never sent to any AI service.
+- **No hidden disk writes.** Output lands in the directory you name,
+  period.
+- **Air-gap compatible.** CLI runs offline; web server's only optional
+  outbound traffic is OpenTelemetry export, git PR integration, and
+  outbound webhooks — all opt-in via env vars.
+
+Full threat model and compliance-framework coverage in
+[`SECURITY.md`](SECURITY.md) and
+[`docs/evaluators/threat-coverage.md`](docs/evaluators/threat-coverage.md).
 
 ---
 
 ## License
 
-MIT
+[MIT](LICENSE). Contributions welcome — see
+[`CONTRIBUTING.md`](CONTRIBUTING.md).

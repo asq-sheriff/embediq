@@ -1,6 +1,8 @@
 import { existsSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { DomainPack } from './index.js';
+import { skillRegistry } from '../skills/skill-registry.js';
+import { composeSkills } from '../skills/skill-composer.js';
 
 const PLUGINS_DIR = () => process.env.EMBEDIQ_PLUGINS_DIR || './plugins';
 
@@ -82,6 +84,32 @@ export class DomainPackRegistry {
   getForIndustry(industry: string): DomainPack | undefined {
     const packId = INDUSTRY_TO_PACK[industry.toLowerCase()];
     return packId ? this.packs.get(packId) : undefined;
+  }
+
+  /**
+   * Compose a one-off DomainPack from a list of skill IDs. Used by
+   * skill-aware callers who need the DomainPack-shaped payload (so the
+   * existing generators and validator consume it unchanged) without
+   * registering a permanent pack. Returns undefined if any skill ID
+   * is unknown.
+   */
+  composeFromSkills(
+    skillIds: readonly string[],
+    meta: { id: string; name: string; version: string; description: string },
+  ): DomainPack | undefined {
+    const skills = skillRegistry.getByIds(skillIds);
+    if (skills.length !== skillIds.length) return undefined;
+    const composed = composeSkills(skills);
+    return {
+      ...meta,
+      questions: composed.questions,
+      complianceFrameworks: composed.complianceFrameworks,
+      priorityCategories: composed.priorityCategories,
+      dlpPatterns: composed.dlpPatterns,
+      ruleTemplates: composed.ruleTemplates,
+      ignorePatterns: composed.ignorePatterns,
+      validationChecks: composed.validationChecks,
+    };
   }
 }
 

@@ -1,0 +1,8 @@
+id: minimal-developer
+title: Minimal Developer (SaaS baseline)
+description: |
+  Smallest answer set that produces a valid technical profile — solo
+  TypeScript developer on a SaaS project with no compliance obligations.
+  Establishes the structural baseline for every generator in the default
+  permissive tier, with no domain-pack questions triggered.
+minimumFloor: 8
