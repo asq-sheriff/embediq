@@ -334,9 +334,13 @@ observe what EmbedIQ saw.
   `EMBEDIQ_AUTOPILOT_WEBHOOK_SECRET` (and optionally
   `EMBEDIQ_AUTOPILOT_WEBHOOK_SECRET_PREV` during rotation — a future
   enhancement).
-- **HMAC signatures aren't implemented yet.** Platforms like Drata
-  support HMAC verification of webhook bodies; that's a roadmap item.
-  Until then, the shared-secret header is the only trust mechanism.
+- **HMAC verification is opt-in per adapter.** When the relevant
+  `EMBEDIQ_COMPLIANCE_SECRET_<ADAPTER>` env var is set, EmbedIQ
+  verifies the platform's signature header (`X-Drata-Signature`,
+  `X-Vanta-Signature`, or `X-EmbedIQ-Signature`) against
+  `HMAC-SHA256(secret, raw-body)` and rejects mismatches. The shared
+  secret on the gateway URL remains a separate trust layer — use
+  both for defense in depth.
 - **IP allowlisting at the edge.** For higher assurance, put EmbedIQ
   behind a reverse proxy that restricts the inbound compliance route
   to your platform's published outbound IPs.

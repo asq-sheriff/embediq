@@ -31,9 +31,11 @@ Orthogonal concerns plug into the pipeline via a **typed event bus**
 - **Event bus**: five default subscribers (audit, metrics, status,
   OTel, WebSocket) + the opt-in outbound-webhook subscriber. Every
   subsystem emits events; subscribers consume them independently.
-- **Integrations**: git PR flow (GitHub adapter), outbound webhook
+- **Integrations**: git PR flow (GitHub / GitLab / Bitbucket Cloud
+  adapters behind a shared `GitPlatform` interface), outbound webhook
   formatters (Slack/Teams/generic), inbound compliance adapters
-  (Drata/Vanta/generic).
+  (Drata/Vanta/generic) with optional HMAC-SHA256 signature
+  verification.
 - **Autopilot**: a scheduled + webhook-driven runner that uses the
   same evaluation/drift machinery as the CLI.
 

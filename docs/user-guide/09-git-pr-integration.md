@@ -1,9 +1,11 @@
 <!-- audience: public -->
 
-# GitHub PR integration
+# Git PR integration (GitHub, GitLab, Bitbucket)
 
 With `--git-pr`, EmbedIQ opens a pull request containing the generated
 configuration instead of (or in addition to) writing files to disk.
+GitHub, GitLab, and Bitbucket Cloud are all first-class via the same
+`GitPlatform` interface — select with `EMBEDIQ_GIT_PROVIDER`.
 The PR body includes the profile summary, per-generator file list,
 validation results, contributor attribution (from multi-stakeholder
 sessions), and drift context (when triggered by autopilot). The team

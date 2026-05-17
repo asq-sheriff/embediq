@@ -8,7 +8,7 @@ without embedding external assumptions into the core.
 
 **Source**: [`src/integrations/`](../../src/integrations/).
 
-- `git/` — GitHub PR integration.
+- `git/` — multi-platform PR integration (GitHub, GitLab, Bitbucket Cloud).
 - `webhooks/` — outbound notification formatters.
 - `compliance/` — inbound compliance platform adapters.
 

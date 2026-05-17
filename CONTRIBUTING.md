@@ -12,7 +12,7 @@ the release process.
 git clone <this-repo>
 cd embediq
 npm install
-make check          # type-check + 731+ tests (the CI baseline)
+make check          # type-check + 830+ tests (the CI baseline)
 make start          # CLI wizard
 make start-web      # web server on :3000
 ```
@@ -75,7 +75,7 @@ generated output intentionally, regenerate them via
 your PR.
 
 Run `make check` before you push. It type-checks and runs the full
-Vitest suite (731+ tests today).
+Vitest suite (830+ tests today).
 
 ### 3. Update docs as part of the PR
 

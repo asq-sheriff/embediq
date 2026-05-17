@@ -9,7 +9,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-_No unreleased changes yet._
+Five v3.2.x follow-ups, all non-gated and backward-compatible.
+
+### Added
+- **GitLab adapter for git PR integration.** `EMBEDIQ_GIT_PROVIDER=gitlab`
+  selects a `GitLabAdapter` that uses REST v4 with atomic
+  multi-action commits via the `actions[]` payload, base-tree
+  pre-walk, and delete-then-recreate branch idempotency. Project
+  paths support nested groups (`group/subgroup/project`).
+  Self-hosted GitLab via `EMBEDIQ_GIT_API_BASE_URL` (adapter appends
+  `/api/v4`).
+- **Bitbucket Cloud adapter for git PR integration.**
+  `EMBEDIQ_GIT_PROVIDER=bitbucket` selects a `BitbucketAdapter` that
+  uses REST 2.0 with multipart `/src` commits and Bearer-token auth
+  via Repository / Workspace Access Tokens (app-password Basic auth
+  is not supported). All three platforms (GitHub, GitLab, Bitbucket)
+  now share the same `GitPlatform` interface and PR-template flow.
+- **HMAC signature verification on inbound compliance webhooks.**
+  Per-adapter opt-in via `EMBEDIQ_COMPLIANCE_SECRET_<ADAPTER>` env
+  vars. Drata's `X-Drata-Signature`, Vanta's `X-Vanta-Signature`,
+  and the generic adapter's `X-EmbedIQ-Signature` (`<hex>` or
+  `sha256=<hex>`) are verified against `HMAC-SHA256(secret,
+  raw-body)`. Unset → verification skipped (preserves existing
+  shared-secret gateway as the only trust layer). Adds a second
+  defense layer for high-assurance deployments.
+- **docs-lint script.** `scripts/docs-lint.ts` (and `make docs-lint`)
+  enforces the `<!-- audience: public | private -->` directive on
+  every markdown file, scans public-tagged files for leak markers
+  (private repo URLs, internal-only framework references), and
+  validates cross-link targets exist. Runs in CI via the
+  `tests/integration/docs-lint.test.ts` suite. Backbone for the
+  dual-repo sanitize-and-publish flow.
+- **Per-engagement state scoping.** `EMBEDIQ_ENGAGEMENT_ID` env var
+  nests default session, autopilot, and audit-log paths under
+  `.embediq/engagements/<id>/`, enabling consulting firms and
+  systems integrators to run one process per client engagement
+  out of the same checkout without state leakage. Strict ID
+  sanitization rejects path traversal. Explicit
+  `EMBEDIQ_SESSION_DIR` / `EMBEDIQ_SESSION_DB_URL` /
+  `EMBEDIQ_AUTOPILOT_DIR` always win over engagement scoping —
+  operator-set paths are never modified. Audit-log entries
+  auto-tagged with `engagementId` via request context with direct
+  env fallback for CLI mode. New
+  [`docs/CONSULTING-FIRM-DEPLOYMENT.md`](docs/CONSULTING-FIRM-DEPLOYMENT.md)
+  runbook covers the full deployment pattern.
+
+### Changed
+- `WizardAuditEntry` gained an optional `engagementId` field, auto-
+  enriched from request context or directly from
+  `EMBEDIQ_ENGAGEMENT_ID`. Absent on entries written before this
+  release; explicit values on the entry override context.
+- `RequestContext` gained an `engagementId?: string` field populated
+  by `createRequestContext()` from `resolveEngagementId()`.
+
+### Fixed
+- `docs/user-guide/11-compliance-webhooks.md` security section
+  incorrectly claimed HMAC verification was a future roadmap item;
+  it's been shipped since the HMAC commit and is now documented
+  accurately.
 
 ## [3.2.0] — Enterprise Operations & Integration
 

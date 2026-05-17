@@ -79,7 +79,8 @@ instead of code.
 | **Drift detection**            | `npm run drift` classifies files as match / missing / modified / stale / version-mismatch / extra |
 | **Autopilot**                  | `@hourly` / `@daily` / `@weekly` / `@monthly` scheduled drift scans + webhook triggers              |
 | **Interrupt & resume**         | Shareable `?session=<id>` URLs; per-answer attribution for multi-stakeholder workflows              |
-| **GitHub PR integration**      | `--git-pr` opens a PR with the generated files via the Git Data API (atomic multi-file commit)      |
+| **Multi-platform PR integration** | `--git-pr` opens a PR via GitHub, GitLab, or Bitbucket Cloud (atomic multi-file commit through each platform's native API) |
+| **Multi-engagement scoping**   | One process per client engagement via `EMBEDIQ_ENGAGEMENT_ID`; isolated session/autopilot/audit state under `.embediq/engagements/<id>/`                |
 | **Outbound notifications**     | Slack Block Kit / Teams MessageCard / generic JSON formatters via `EMBEDIQ_WEBHOOK_URLS`            |
 | **Compliance webhooks**        | Drata / Vanta / generic adapters translate external findings into autopilot runs                    |
 | **Authentication**             | Basic / OIDC / reverse-proxy header; RBAC with `wizard-user` + `wizard-admin`                       |
@@ -153,6 +154,7 @@ without compromising the zero-persistence baseline.
 | Wire Slack / Teams notifications | [`docs/user-guide/10-notification-webhooks.md`](docs/user-guide/10-notification-webhooks.md) |
 | Trigger runs from Drata or Vanta | [`docs/user-guide/11-compliance-webhooks.md`](docs/user-guide/11-compliance-webhooks.md) |
 | Deploy to Docker or Kubernetes | [`docs/operator-guide/deployment.md`](docs/operator-guide/deployment.md) |
+| Run multiple engagements out of one checkout | [`docs/CONSULTING-FIRM-DEPLOYMENT.md`](docs/CONSULTING-FIRM-DEPLOYMENT.md) |
 | Wire authentication | [`docs/operator-guide/authentication.md`](docs/operator-guide/authentication.md) |
 | Set up OpenTelemetry | [`docs/operator-guide/observability.md`](docs/operator-guide/observability.md) |
 | Look up every env var | [`docs/reference/configuration.md`](docs/reference/configuration.md) |
@@ -169,7 +171,7 @@ without compromising the zero-persistence baseline.
 
 ```bash
 make help                 # Show all targets
-make check                # Type-check + 731+ tests
+make check                # Type-check + 830+ tests
 make start                # CLI wizard
 make start-web            # Web server on :3000
 make evaluate             # Run evaluation harness
