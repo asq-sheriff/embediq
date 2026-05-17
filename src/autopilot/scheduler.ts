@@ -1,11 +1,11 @@
-import type { JsonAutopilotStore } from './store.js';
+import type { AutopilotStore } from './autopilot-store.js';
 import { runAutopilot } from './runner.js';
-import { isDue } from './types.js';
+import { isDue, nextRunAt } from './types.js';
 
 const DEFAULT_TICK_MS = 60_000;
 
 export interface SchedulerOptions {
-  store: JsonAutopilotStore;
+  store: AutopilotStore;
   /** Override the tick interval; honored over EMBEDIQ_AUTOPILOT_TICK_MS. */
   tickMs?: number;
   /** Inject a clock for tests. */
@@ -19,7 +19,7 @@ export interface SchedulerOptions {
  * for a single-node v1.
  */
 export class AutopilotScheduler {
-  private readonly store: JsonAutopilotStore;
+  private readonly store: AutopilotStore;
   private readonly tickMs: number;
   private readonly now: () => Date;
   private timer: NodeJS.Timeout | null = null;
@@ -57,11 +57,26 @@ export class AutopilotScheduler {
       const now = this.now();
       const schedules = await this.store.listSchedules();
       const due = schedules.filter((s) => isDue(s, now));
-      // Run sequentially — concurrency would race on the JSON store. v1 has
-      // no parallelism requirement; v2 SQL-backed store can lift this.
+      // Each due schedule goes through claim-and-advance so multiple
+      // scheduler replicas can run concurrently against the same
+      // store without firing duplicate runs. The replica whose CAS
+      // succeeds owns the run; losers' `claimSchedule` returns null
+      // and they skip the schedule for this tick.
       for (const schedule of due) {
+        const advancedNextRun = nextRunAt(schedule.cadence, now, schedule.timezone);
+        const claimed = await this.store.claimSchedule(
+          schedule.id,
+          schedule.nextRunAt,
+          advancedNextRun.toISOString(),
+          now.toISOString(),
+        );
+        if (!claimed) continue;
         try {
-          await runAutopilot(schedule, this.store, { trigger: 'cron', now: this.now });
+          await runAutopilot(claimed, this.store, {
+            trigger: 'cron',
+            now: this.now,
+            advanceNextRun: false,
+          });
         } catch (err) {
           // runAutopilot already swallows DriftError into a failure run;
           // anything thrown out is a bug we want surfaced in stderr.

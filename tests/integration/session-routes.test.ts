@@ -28,7 +28,7 @@ describe('Session CRUD routes (JsonFile backend, auth off)', () => {
     process.env.EMBEDIQ_SESSION_COOKIE_SECRET = COOKIE_SECRET;
     dir = await mkdtemp(join(tmpdir(), 'embediq-routes-'));
     backend = new JsonFileBackend({ dir });
-    app = createApp({ backend });
+    app = await createApp({ backend });
   });
 
   afterEach(async () => {
@@ -153,14 +153,14 @@ describe('Session CRUD routes (JsonFile backend, auth off)', () => {
   it('honors two-key rotation — PREV secret verifies cookies signed with it', async () => {
     // Mint a session with a specific secret
     process.env.EMBEDIQ_SESSION_COOKIE_SECRET = 'old-secret';
-    const oldApp = createApp({ backend });
+    const oldApp = await createApp({ backend });
     const create = await request(oldApp).post('/api/sessions').send({});
     const cookie = extractSetCookie(create)!;
 
     // Rotate: old becomes PREV, new becomes CURRENT
     process.env.EMBEDIQ_SESSION_COOKIE_SECRET = 'new-secret';
     process.env.EMBEDIQ_SESSION_COOKIE_SECRET_PREV = 'old-secret';
-    const rotatedApp = createApp({ backend });
+    const rotatedApp = await createApp({ backend });
 
     const read = await request(rotatedApp)
       .get(`/api/sessions/${create.body.sessionId}`)
@@ -178,7 +178,7 @@ describe('Admin listing', () => {
     process.env.EMBEDIQ_SESSION_COOKIE_SECRET = COOKIE_SECRET;
     dir = await mkdtemp(join(tmpdir(), 'embediq-adm-'));
     backend = new JsonFileBackend({ dir });
-    app = createApp({ backend });
+    app = await createApp({ backend });
   });
 
   afterEach(async () => {
@@ -223,7 +223,7 @@ describe('Admin listing', () => {
 
 describe('Backend=none', () => {
   it('POST /api/sessions returns 503 when persistence is disabled', async () => {
-    const app = createApp(); // default NullBackend
+    const app = await createApp(); // default NullBackend
     const res = await request(app).post('/api/sessions').send({});
     expect(res.status).toBe(503);
   });
@@ -231,7 +231,7 @@ describe('Backend=none', () => {
 
 describe('GET /api/sessions/config', () => {
   it('reports enabled:false when backend=none', async () => {
-    const app = createApp();
+    const app = await createApp();
     const res = await request(app).get('/api/sessions/config');
     expect(res.status).toBe(200);
     expect(res.body.enabled).toBe(false);
@@ -245,7 +245,7 @@ describe('GET /api/sessions/config', () => {
     try {
       const { JsonFileBackend } = await import('../../src/web/sessions/index.js');
       const backend = new JsonFileBackend({ dir });
-      const app = createApp({ backend });
+      const app = await createApp({ backend });
       const res = await request(app).get('/api/sessions/config');
       expect(res.status).toBe(200);
       expect(res.body.enabled).toBe(true);

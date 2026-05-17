@@ -190,7 +190,7 @@ describe('server auth integration', () => {
 
     // Re-import to pick up env vars
     const { createApp } = await import('../../src/web/server.js');
-    const app = createApp();
+    const app = await createApp();
 
     const res = await request(app).get('/api/dimensions');
     expect(res.status).toBe(401);

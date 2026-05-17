@@ -9,6 +9,78 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.6.0] — SQL-backed autopilot store with multi-replica scheduling
+
+Closes the second half of the SQL-backed multi-node story. The
+autopilot store now has a database backend that mirrors the session
+store's shape: a `SqlAutopilotDialect` interface with SQLite and
+Postgres implementations behind it. Multiple scheduler replicas can
+run concurrently without duplicate firings via **claim-and-advance**:
+each tick atomically advances a due schedule's `next_run_at` from the
+observed value to the next firing; only one replica's CAS succeeds.
+
+### Added
+
+- **`AutopilotStore` interface** (`src/autopilot/autopilot-store.ts`).
+  Extracted from `JsonAutopilotStore` so both stores share one
+  contract. New required method: `claimSchedule(id,
+  expectedNextRunAt, newNextRunAt, now)` — the atomic CAS primitive
+  used by the scheduler.
+- **`DatabaseAutopilotStore`** + **`SqlAutopilotDialect`**
+  (`src/autopilot/backends/database-store.ts`). Two-table schema —
+  `embediq_autopilot_schedules` + `embediq_autopilot_runs`, both
+  portable (TEXT/INTEGER only). Owns schedule ↔ row serialization
+  (JSON columns for `targets`, `complianceFrameworks`, and
+  `driftSummary`) so dialects stay thin.
+- **`SqliteAutopilotDialect`** + **`PostgresAutopilotDialect`** —
+  identical SQL surface, identical row shape. Postgres uses
+  `RETURNING id` to detect CAS success; SQLite uses `info.changes ===
+  1`.
+- **`selectAutopilotStore()`** factory (`src/autopilot/factory.ts`).
+  Env-driven selection: `EMBEDIQ_AUTOPILOT_STORE=json-file` (default)
+  / `database`, with `EMBEDIQ_AUTOPILOT_DB_DRIVER=sqlite|postgres`
+  and `EMBEDIQ_AUTOPILOT_DB_URL` mirroring the session-store pattern.
+  Postgres requires the optional `pg` package; selecting the driver
+  without it throws a clear install hint.
+- **Shared contract test suite** (`tests/helpers/autopilot-store-contract.ts`).
+  Same suite — schedule CRUD, claim-and-advance (including a
+  five-way parallel race verifying exactly one winner), runs CRUD,
+  driftSummary/error round-trip — runs against all three backends:
+  JSON, SQLite, Postgres (pg-mem). 39 contract tests per backend
+  shape locked in.
+- **Operator-guide updates** — `deployment.md` Scaling section gets
+  the multi-replica autopilot env-var set. `08-autopilot.md` "Known
+  limitations" updated.
+
+### Changed
+
+- **Scheduler tick path** (`src/autopilot/scheduler.ts`) — now calls
+  `store.claimSchedule(...)` for each due schedule and skips on
+  `null` (another replica won). The runner no longer advances
+  `nextRunAt` when invoked from the scheduler (new
+  `RunOptions.advanceNextRun` defaults to `true` for webhook/manual
+  triggers).
+- **`createApp()` is now async** because the autopilot factory must
+  dynamically import `pg` when Postgres is selected. All 27 test
+  call sites updated. No production caller change beyond `await`.
+- **`JsonAutopilotStore`** now implements the new `AutopilotStore`
+  interface (no behavioral change — `claimSchedule` is a CAS-on-
+  equality check against the in-memory schedule list).
+
+### Compatibility
+
+- `EMBEDIQ_AUTOPILOT_STORE` defaults to `json-file` — operators using
+  autopilot today see zero behavioral change.
+- The existing `EMBEDIQ_AUTOPILOT_DIR` env var still controls the
+  JSON-store directory; `EMBEDIQ_AUTOPILOT_DB_*` are new and only
+  apply when `EMBEDIQ_AUTOPILOT_STORE=database`.
+- Goldens untouched — synthesizer surface unchanged.
+
+### Test suite
+
+1078 passing across 72 files (was 1039/71). 39 new contract tests
+exercising the three backends.
+
 ## [3.5.0] — Postgres-backed session store (multi-node-ready)
 
 The next v3.2 follow-up. Web replicas can now share a Postgres-backed
@@ -621,7 +693,8 @@ targeting, and the composable skills system.
   17 questions, 10 compliance frameworks, 18 DLP patterns, 8 rule
   templates, 20 ignore patterns, 13 validation checks.
 
-[Unreleased]: https://github.com/asq-sheriff/embediq/compare/v3.5.0...HEAD
+[Unreleased]: https://github.com/asq-sheriff/embediq/compare/v3.6.0...HEAD
+[3.6.0]: https://github.com/asq-sheriff/embediq/compare/v3.5.0...v3.6.0
 [3.5.0]: https://github.com/asq-sheriff/embediq/compare/v3.4.0...v3.5.0
 [3.4.0]: https://github.com/asq-sheriff/embediq/compare/v3.3.1...v3.4.0
 [3.3.1]: https://github.com/asq-sheriff/embediq/compare/v3.3.0...v3.3.1

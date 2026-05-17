@@ -51,7 +51,7 @@ describe('Session dump endpoints', () => {
     dumpDir = await mkdtemp(join(tmpdir(), 'embediq-dump-files-'));
     backend = new JsonFileBackend({ dir: sessionsDir });
     dumpWorker = new DumpWorker(backend, { dir: dumpDir });
-    app = createApp({ backend, dumpWorker });
+    app = await createApp({ backend, dumpWorker });
   });
 
   afterEach(async () => {
@@ -157,7 +157,7 @@ describe('Session dump endpoints', () => {
 
 describe('Session dump — disabled modes', () => {
   it('returns 503 when backend=none (no worker constructed)', async () => {
-    const app = createApp();
+    const app = await createApp();
     const res = await request(app).post(`/api/sessions/${crypto.randomUUID()}/dump`);
     // With no backend the middleware won't load a session, so the first gate hit is
     // the session-not-found 404 rather than the no-worker 503. Either signals
@@ -166,7 +166,7 @@ describe('Session dump — disabled modes', () => {
   });
 
   it('returns 503 on /api/sessions/dumps/:dumpId when backend=none', async () => {
-    const app = createApp();
+    const app = await createApp();
     const res = await request(app).get(`/api/sessions/dumps/${crypto.randomUUID()}`);
     expect([404, 503]).toContain(res.status);
   });

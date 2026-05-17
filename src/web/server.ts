@@ -49,6 +49,8 @@ import { DIMENSION_ORDER, type Answer, type SetupConfig } from '../types/index.j
 import {
   AutopilotScheduler,
   JsonAutopilotStore,
+  selectAutopilotStore,
+  type AutopilotStore,
   runAutopilot,
   summarizeSchedule,
   CADENCE_PRESETS,
@@ -114,7 +116,7 @@ export interface CreateAppOptions {
    * Autopilot store + scheduler. Inject for tests; in production these are
    * created from EMBEDIQ_AUTOPILOT_ENABLED / EMBEDIQ_AUTOPILOT_DIR.
    */
-  autopilotStore?: import('../autopilot/index.js').JsonAutopilotStore;
+  autopilotStore?: import('../autopilot/index.js').AutopilotStore;
   autopilotScheduler?: import('../autopilot/index.js').AutopilotScheduler;
   /**
    * Adapter registry for inbound compliance webhooks. Defaults to the
@@ -123,7 +125,7 @@ export interface CreateAppOptions {
   complianceRegistry?: import('../integrations/compliance/index.js').ComplianceAdapterRegistry;
 }
 
-export function createApp(opts: CreateAppOptions = {}) {
+export async function createApp(opts: CreateAppOptions = {}) {
   const backend = opts.backend ?? new NullBackend();
   const dumpWorker =
     opts.dumpWorker ??
@@ -192,10 +194,12 @@ export function createApp(opts: CreateAppOptions = {}) {
   // ─── Autopilot ───
   // Opt-in via EMBEDIQ_AUTOPILOT_ENABLED. When disabled, the routes return
   // 503 so callers can detect feature availability without a feature flag
-  // round-trip. Tests inject autopilotStore directly.
+  // round-trip. Tests inject autopilotStore directly. The factory selects
+  // between json-file (single-node) and database (multi-node-ready) per
+  // EMBEDIQ_AUTOPILOT_STORE.
   const autopilotStore = opts.autopilotStore
     ?? (process.env.EMBEDIQ_AUTOPILOT_ENABLED === 'true'
-      ? new JsonAutopilotStore()
+      ? await selectAutopilotStore()
       : undefined);
   if (autopilotStore) {
     const complianceRegistry = opts.complianceRegistry ?? defaultComplianceRegistry;
@@ -517,7 +521,7 @@ function resolveDomainPack(answers: Map<string, Answer>) {
 // without authenticating to the wizard's main auth strategy.
 function mountAutopilotRoutes(
   app: express.Express,
-  store: JsonAutopilotStore,
+  store: AutopilotStore,
   complianceRegistry: ComplianceAdapterRegistry,
 ): void {
   app.get('/api/autopilot/schedules', async (_req, res) => {
@@ -789,7 +793,7 @@ if (isDirectRun) {
     sessionBackend,
   });
 
-  const app = createApp({ backend: sessionBackend });
+  const app = await createApp({ backend: sessionBackend });
   const PORT = parseInt(process.env.PORT || '3000', 10);
   const tlsCert = process.env.EMBEDIQ_TLS_CERT;
   const tlsKey = process.env.EMBEDIQ_TLS_KEY;

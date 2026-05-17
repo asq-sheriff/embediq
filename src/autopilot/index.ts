@@ -36,6 +36,16 @@ export {
 } from './types.js';
 
 export { JsonAutopilotStore } from './store.js';
+export type { AutopilotStore } from './autopilot-store.js';
+export {
+  DatabaseAutopilotStore,
+  type SqlAutopilotDialect,
+  type ScheduleRow as AutopilotScheduleRow,
+  type RunRow as AutopilotRunRow,
+} from './backends/database-store.js';
+export { SqliteAutopilotDialect } from './backends/sqlite-dialect.js';
+export { PostgresAutopilotDialect } from './backends/postgres-dialect.js';
+export { selectAutopilotStore } from './factory.js';
 
 export { runAutopilot, type RunOptions } from './runner.js';
 

@@ -1,6 +1,6 @@
 import { performance } from 'node:perf_hooks';
 import { randomUUID } from 'node:crypto';
-import type { JsonAutopilotStore } from './store.js';
+import type { AutopilotStore } from './autopilot-store.js';
 import { detectDrift, DriftError } from './drift-detector.js';
 import { nextRunAt } from './types.js';
 import type {
@@ -15,6 +15,15 @@ export interface RunOptions {
   trigger: AutopilotTrigger;
   /** Inject a clock for tests; defaults to system time. */
   now?: () => Date;
+  /**
+   * When true (the default), the runner advances the schedule's
+   * `nextRunAt` after recording the run. The scheduler tick path
+   * already advanced `nextRunAt` via `claimSchedule()` before
+   * calling the runner, so it passes `false` to avoid stomping the
+   * claimed value. Webhook / manual triggers leave the default in
+   * place — they do not participate in claim-and-advance.
+   */
+  advanceNextRun?: boolean;
 }
 
 /**
@@ -29,7 +38,7 @@ export interface RunOptions {
  */
 export async function runAutopilot(
   schedule: AutopilotSchedule,
-  store: JsonAutopilotStore,
+  store: AutopilotStore,
   options: RunOptions,
 ): Promise<AutopilotRun> {
   const now = options.now ?? (() => new Date());
@@ -84,10 +93,12 @@ export async function runAutopilot(
   };
 
   await store.recordRun(run);
-  await store.updateSchedule(schedule.id, {
-    lastRunAt: completedAt.toISOString(),
-    nextRunAt: nextRunAt(schedule.cadence, completedAt, schedule.timezone).toISOString(),
-  });
+  const advance = options.advanceNextRun !== false;
+  const patch: Partial<AutopilotSchedule> = { lastRunAt: completedAt.toISOString() };
+  if (advance) {
+    patch.nextRunAt = nextRunAt(schedule.cadence, completedAt, schedule.timezone).toISOString();
+  }
+  await store.updateSchedule(schedule.id, patch);
 
   // Suppress unused-variable warning while keeping perf metric live for
   // future telemetry hookup.

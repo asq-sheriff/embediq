@@ -176,7 +176,7 @@ describe('Autopilot REST + webhook', () => {
     // Inject a stopped scheduler so tests don't rely on a real interval
     // firing during execution.
     const scheduler = new AutopilotScheduler({ store });
-    app = createApp({ autopilotStore: store, autopilotScheduler: scheduler });
+    app = await createApp({ autopilotStore: store, autopilotScheduler: scheduler });
   });
 
   afterEach(async () => {
@@ -347,7 +347,7 @@ describe('Autopilot REST + webhook', () => {
   });
 
   it('returns 503-equivalent (route not present) when autopilot is disabled', async () => {
-    const plain = createApp(); // no autopilotStore
+    const plain = await createApp(); // no autopilotStore
     const res = await request(plain).get('/api/autopilot/schedules');
     expect(res.status).toBe(404); // route is not mounted at all
   });

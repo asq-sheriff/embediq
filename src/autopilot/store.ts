@@ -8,15 +8,17 @@ import type {
   ScheduleCreateInput,
 } from './types.js';
 import { nextRunAt } from './types.js';
+import type { AutopilotStore } from './autopilot-store.js';
 import { resolveEngagementId, withEngagementSubpath } from '../util/engagement.js';
 
 /**
  * Single-node JSON-file backed store for autopilot schedules and runs.
  * Each list is held in memory for fast lookups and persisted to disk on
  * every mutation via temp-file + atomic rename. Multi-node deployments
- * will need a SQL-backed store — that's tracked in the v3.2 follow-ups.
+ * should use `DatabaseAutopilotStore` — `JsonAutopilotStore` assumes a
+ * single writer process.
  */
-export class JsonAutopilotStore {
+export class JsonAutopilotStore implements AutopilotStore {
   private schedules: AutopilotSchedule[] = [];
   private runs: AutopilotRun[] = [];
   private loaded = false;
@@ -95,6 +97,33 @@ export class JsonAutopilotStore {
     if (this.schedules.length === before) return false;
     await this.persistSchedules();
     return true;
+  }
+
+  /**
+   * Atomically advance `nextRunAt` when the caller's observed value
+   * still matches. Single-node JSON store has no concurrent writers,
+   * so the CAS check is a straightforward equality compare; the
+   * method exists to satisfy the `AutopilotStore` contract used by
+   * multi-node SQL backends.
+   */
+  async claimSchedule(
+    id: string,
+    expectedNextRunAt: string,
+    newNextRunAt: string,
+    now: string,
+  ): Promise<AutopilotSchedule | null> {
+    await this.ensureLoaded();
+    const idx = this.schedules.findIndex((s) => s.id === id);
+    if (idx < 0) return null;
+    if (this.schedules[idx].nextRunAt !== expectedNextRunAt) return null;
+    const updated: AutopilotSchedule = {
+      ...this.schedules[idx],
+      nextRunAt: newNextRunAt,
+      updatedAt: now,
+    };
+    this.schedules[idx] = updated;
+    await this.persistSchedules();
+    return updated;
   }
 
   async recordRun(run: AutopilotRun): Promise<void> {

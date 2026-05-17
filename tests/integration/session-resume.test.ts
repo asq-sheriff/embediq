@@ -28,7 +28,7 @@ describe('Session resume — PATCH attribution', () => {
     process.env.EMBEDIQ_SESSION_COOKIE_SECRET = COOKIE_SECRET;
     dir = await mkdtemp(join(tmpdir(), 'embediq-resume-'));
     backend = new JsonFileBackend({ dir });
-    app = createApp({ backend });
+    app = await createApp({ backend });
   });
 
   afterEach(async () => {
@@ -91,7 +91,7 @@ describe('Session resume — buildResumeView (engine-driven)', () => {
     process.env.EMBEDIQ_SESSION_COOKIE_SECRET = COOKIE_SECRET;
     dir = await mkdtemp(join(tmpdir(), 'embediq-resume-2-'));
     backend = new JsonFileBackend({ dir });
-    app = createApp({ backend });
+    app = await createApp({ backend });
   });
 
   afterEach(async () => {

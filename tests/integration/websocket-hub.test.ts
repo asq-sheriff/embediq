@@ -59,7 +59,7 @@ describe('WebSocketHub integration', () => {
     if (existsSync(TMP_BASE)) rmSync(TMP_BASE, { recursive: true });
     mkdirSync(TARGET_DIR, { recursive: true });
 
-    const app = createApp();
+    const app = await createApp();
     server = createServer(app);
     wss = new WebSocketServer({ noServer: true });
     ({ teardown } = registerDefaultSubscribers(getEventBus(), { wsServer: wss }));
@@ -236,7 +236,7 @@ describe('WebSocketHub backend ownership enforcement', () => {
     sessionsDir = await mkdtemp(join(tmpdir(), 'embediq-ws-own-'));
     backend = new JsonFileBackend({ dir: sessionsDir });
 
-    const app = createApp({ backend });
+    const app = await createApp({ backend });
     server = createServer(app);
     wss = new WebSocketServer({ noServer: true });
     ({ teardown } = registerDefaultSubscribers(getEventBus(), {

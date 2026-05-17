@@ -26,7 +26,7 @@ describe('POST /api/autopilot/compliance/:adapterId', () => {
     await cp(FIXTURE_EXPECTED, projectDir, { recursive: true });
     store = new JsonAutopilotStore(storeDir);
     const scheduler = new AutopilotScheduler({ store });
-    app = createApp({ autopilotStore: store, autopilotScheduler: scheduler });
+    app = await createApp({ autopilotStore: store, autopilotScheduler: scheduler });
   });
 
   afterEach(async () => {

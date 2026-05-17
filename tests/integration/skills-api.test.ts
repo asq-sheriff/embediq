@@ -1,8 +1,12 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import request from 'supertest';
+import type { Express } from 'express';
 import { createApp } from '../../src/web/server.js';
 
-const app = createApp();
+let app: Express;
+beforeAll(async () => {
+  app = await createApp();
+});
 
 describe('GET /api/skills', () => {
   it('returns the list of registered skill summaries', async () => {

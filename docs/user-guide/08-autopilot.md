@@ -216,8 +216,12 @@ value depends on how strict you want to be:
 
 ## Known limitations
 
-- The store is JSON-file backed and single-node. For HA, pin autopilot
-  to one replica.
+- The default store is JSON-file backed (single-node). For HA
+  deployments, set `EMBEDIQ_AUTOPILOT_STORE=database` with the Postgres
+  driver — multiple scheduler replicas coordinate via atomic
+  claim-and-advance on `next_run_at`, so each due schedule fires
+  exactly once across the fleet. See
+  [deployment.md → Scaling](../operator-guide/deployment.md#scaling).
 - The autopilot run is a drift scan today. Once
   [git PR integration](09-git-pr-integration.md) is combined with
   autopilot in a future release, `success-alerting` will optionally

@@ -39,7 +39,7 @@ describe('/api/generate with server-side session', () => {
     sessionsDir = await mkdtemp(join(tmpdir(), 'embediq-gen-'));
     targetDir = await mkdtemp(join(tmpdir(), 'embediq-out-'));
     backend = new JsonFileBackend({ dir: sessionsDir });
-    app = createApp({ backend });
+    app = await createApp({ backend });
   });
 
   afterEach(async () => {
@@ -175,7 +175,7 @@ describe('/api/generate with server-side session', () => {
 
 describe('/api/generate without server-side session (backend=none)', () => {
   it('still accepts body answers and runs generation end-to-end', async () => {
-    const app = createApp();
+    const app = await createApp();
     const targetDir = await mkdtemp(join(tmpdir(), 'embediq-out-'));
     try {
       const res = await request(app)

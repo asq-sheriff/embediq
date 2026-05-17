@@ -1,12 +1,16 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, afterEach } from 'vitest';
 import request from 'supertest';
 import { existsSync, readFileSync, rmSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
+import type { Express } from 'express';
 import { createApp } from '../../src/web/server.js';
 import { getEventBus, registerDefaultSubscribers } from '../../src/events/index.js';
 import type { WizardAuditEntry } from '../../src/util/wizard-audit.js';
 
-const app = createApp();
+let app: Express;
+beforeAll(async () => {
+  app = await createApp();
+});
 
 describe('Web API', () => {
   describe('GET /health', () => {

@@ -77,7 +77,10 @@ See [operator-guide/session-backends.md](../operator-guide/session-backends.md).
 | Env var | Default | Type | Purpose |
 |---|---|---|---|
 | `EMBEDIQ_AUTOPILOT_ENABLED` | `false` | boolean | Must be `true` at startup to mount autopilot routes and start the scheduler. |
-| `EMBEDIQ_AUTOPILOT_DIR` | `./.embediq/autopilot` (or `./.embediq/engagements/<id>/autopilot` when [`EMBEDIQ_ENGAGEMENT_ID`](#multi-engagement-deployment) is set) | path | JSON store directory (schedules + run history). Mount a persistent volume in production. Explicit value always wins over engagement scoping. |
+| `EMBEDIQ_AUTOPILOT_STORE` | `json-file` | enum | `json-file` (single-node, default) / `database` (multi-node-ready via SQLite or Postgres). |
+| `EMBEDIQ_AUTOPILOT_DIR` | `./.embediq/autopilot` (or `./.embediq/engagements/<id>/autopilot` when [`EMBEDIQ_ENGAGEMENT_ID`](#multi-engagement-deployment) is set) | path | JSON store directory (schedules + run history). Applies only when `EMBEDIQ_AUTOPILOT_STORE=json-file`. Mount a persistent volume in production. Explicit value always wins over engagement scoping. |
+| `EMBEDIQ_AUTOPILOT_DB_DRIVER` | `sqlite` | enum | `sqlite` / `postgres`. Applies when `EMBEDIQ_AUTOPILOT_STORE=database`. Postgres is the multi-node-ready driver — every scheduler replica claim-and-advances on the shared row. |
+| `EMBEDIQ_AUTOPILOT_DB_URL` | `./.embediq/autopilot.db` (or `./.embediq/engagements/<id>/autopilot.db` when [`EMBEDIQ_ENGAGEMENT_ID`](#multi-engagement-deployment) is set) | path or connection string | For `sqlite`: file path (`:memory:` for tests). For `postgres`: a libpq connection string. Auto-creates the `embediq_autopilot_schedules` + `embediq_autopilot_runs` tables on first use. |
 | `EMBEDIQ_AUTOPILOT_TICK_MS` | `60000` | integer | Scheduler poll interval. |
 | `EMBEDIQ_AUTOPILOT_WEBHOOK_SECRET` | — | string **(secret)** | Shared secret required on `X-EmbedIQ-Autopilot-Secret` header for autopilot + compliance webhooks. |
 | `EMBEDIQ_COMPLIANCE_SECRET_DRATA` | — | string **(secret)** | HMAC-SHA256 signing secret for the Drata adapter. Header `X-Drata-Signature` is verified against `HMAC(secret, raw-body)`. Unset → verification skipped. |

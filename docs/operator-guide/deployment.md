@@ -143,11 +143,15 @@ when `replicas > 1`:
   replica and continue their wizard run. Single-node SQLite
   (`EMBEDIQ_SESSION_DB_DRIVER=sqlite`) and the `json-file` backend
   are **not HA-safe** — they're for single-replica deployments only.
-- **Autopilot**: the v1 store is still single-node JSON-file. Pin
-  the autopilot scheduler to a single replica (e.g. a separate
-  Deployment with `replicas: 1`) or disable it on the public web
-  replicas (`EMBEDIQ_AUTOPILOT_ENABLED=false`) and run it from a
-  dedicated worker.
+- **Autopilot**: set `EMBEDIQ_AUTOPILOT_STORE=database` plus
+  `EMBEDIQ_AUTOPILOT_DB_DRIVER=postgres` and point
+  `EMBEDIQ_AUTOPILOT_DB_URL` at the same Postgres (or a different
+  one). Multiple scheduler replicas can run concurrently — the store
+  uses **claim-and-advance** (atomic `UPDATE … WHERE next_run_at =
+  $expected`), so each due schedule fires exactly once across the
+  fleet. The single-node JSON store
+  (`EMBEDIQ_AUTOPILOT_STORE=json-file`, the default) is still
+  available for single-process deployments.
 
 See [`session-backends.md`](session-backends.md) for the full backend
 matrix.
@@ -159,6 +163,10 @@ matrix.
 EMBEDIQ_SESSION_BACKEND=database
 EMBEDIQ_SESSION_DB_DRIVER=postgres
 EMBEDIQ_SESSION_DB_URL=postgres://embediq:$PASSWORD@db-host:5432/embediq
+EMBEDIQ_AUTOPILOT_ENABLED=true
+EMBEDIQ_AUTOPILOT_STORE=database
+EMBEDIQ_AUTOPILOT_DB_DRIVER=postgres
+EMBEDIQ_AUTOPILOT_DB_URL=postgres://embediq:$PASSWORD@db-host:5432/embediq
 # Recommended in production:
 EMBEDIQ_SESSION_DATA_KEY=$(openssl rand -hex 32)  # AES-256-GCM at-rest encryption
 EMBEDIQ_SESSION_COOKIE_SECRET=$(openssl rand -hex 32)
