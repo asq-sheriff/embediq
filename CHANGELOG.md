@@ -9,7 +9,71 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-_No unreleased changes yet._
+### Added — v3.3 / 6L RAG Scaffold (industry-agnostic)
+
+Second phase of v3.3. Extends the wizard from "configure local AI" to
+"configure local AI **and** generate a runnable retrieval pipeline"
+when the user opts in. Industry-agnostic — the same generator emits a
+FHIR-aware variant for healthcare and a plain-text variant for every
+other industry, and emits one path-scoped compliance rule file per
+active framework on the profile.
+
+- **New `TargetFormat.RAG_SCAFFOLD`** (`rag-scaffold`). Auto-included
+  whenever `profile.localAiEnabled === true` (alongside the four 6K
+  local-AI targets). Never emitted for BA/PM/exec roles.
+- **New `RagScaffoldGenerator`** (`src/synthesizer/generators/rag-scaffold.ts`).
+  Emits a small runnable RAG application under `rag/`:
+  - `rag/README.md`, `rag/package.json` (or `rag/pyproject.toml` for
+    Python-only stacks), `rag/.env.example`
+  - `rag/src/chunker.ts` (or `.py`) — **FHIR-aware** for healthcare
+    (preserves Patient / Observation / Encounter resource boundaries),
+    **plain-text** for every other industry
+  - `rag/src/embedder.ts` — local Ollama `nomic-embed-text` by default
+  - `rag/src/store.ts` — SQLite-VSS with at-rest-encryption guidance
+  - `rag/src/audit.ts` — HMAC-hashed query logging (never stores raw
+    queries or chunk content)
+  - `rag/src/cli.ts` — `index <dir>` + `query <text>` commands
+  - `RAG_RUNBOOK.md` at project root — setup, smoke test,
+    industry-aware compliance obligations, production-hardening
+    checklist with per-framework items
+- **Per-framework compliance rules.** One file under `.claude/rules/`
+  per active framework on `profile.complianceFrameworks`:
+  - `rag-hipaa-compliance.md` (HIPAA) — PHI handling, BAA, six-year
+    audit retention per §164.316(b)(2), 45 CFR 164.514 de-identification
+  - `rag-pci-compliance.md` (PCI-DSS) — never index full PANs, SAD
+    prohibition, CDE network segmentation, one-year audit retention
+  - `rag-soc2-compliance.md` (SOC 2) — Trust Services Criteria
+    references (CC6.x, CC7.2, CC8.1, C1.x), change management, access
+    reviews
+  - `rag-ferpa-compliance.md` (FERPA) — education-record vs
+    directory-information distinction, parental consent rules
+  - `rag-conventions.md` (fallback) — generic best practices for
+    profiles with no active frameworks
+- **New `healthcare.rag` built-in skill** — trimmed companion to the
+  generator. Carries vector-dump DLP patterns and RAG-runtime ignore
+  patterns specific to healthcare. Registered for `/api/skills`
+  discovery; not auto-composed (composition wiring is a follow-up).
+- **New `healthcare-rag-developer` golden archetype** (30 files) —
+  locks the FHIR-aware chunker + HIPAA rule + HIPAA runbook variant
+  end-to-end.
+
+### Changed
+
+- The three pre-existing local-AI archetypes (`local-ai-developer`,
+  `local-ai-enterprise`, `dotnet-developer`) now also emit the RAG
+  scaffold — they all have `localAiEnabled: true`. Each gets the
+  plain-text chunker variant + `rag-conventions.md`. File counts:
+  `local-ai-developer` 14 → 24, `local-ai-enterprise` 15 → 25,
+  `dotnet-developer` 13 → 23.
+
+### Compatibility
+
+- All non-local-AI archetypes (`minimal-developer`,
+  `agents-md-developer`, `hipaa-developer-strict`,
+  `consulting-engagement-default`, `healthcare-bpo-strict`) regenerate
+  byte-identically — RAG only ships when `localAiEnabled === true`.
+- TECH_001 / TECH_005 / wizard question set unchanged.
+- No new mandatory wizard questions.
 
 ## [3.3.0] — Local AI Integration Layer (Phase 1)
 

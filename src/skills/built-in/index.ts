@@ -1,5 +1,6 @@
 import type { Skill } from '../skill.js';
 import { healthcareFullSkill } from './healthcare-full.js';
+import { healthcareRagSkill } from './healthcare-rag.js';
 import { financeFullSkill } from './finance-full.js';
 import { educationFullSkill } from './education-full.js';
 
@@ -11,6 +12,7 @@ import { educationFullSkill } from './education-full.js';
  */
 export const BUILT_IN_SKILLS: readonly Skill[] = [
   healthcareFullSkill,
+  healthcareRagSkill,
   financeFullSkill,
   educationFullSkill,
 ];

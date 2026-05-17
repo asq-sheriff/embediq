@@ -22,6 +22,10 @@ export enum TargetFormat {
   AIDER = 'aider',
   ZED_AI = 'zed-ai',
   OLLAMA = 'ollama',
+  // v3.3 / 6L — HIPAA-aware RAG scaffold. Auto-included when the user picks
+  // healthcare industry AND opts into local AI. Generates a small runnable
+  // RAG application under rag/, not just config files.
+  RAG_SCAFFOLD = 'rag-scaffold',
 }
 
 export const ALL_TARGETS: readonly TargetFormat[] = [
@@ -35,6 +39,7 @@ export const ALL_TARGETS: readonly TargetFormat[] = [
   TargetFormat.AIDER,
   TargetFormat.ZED_AI,
   TargetFormat.OLLAMA,
+  TargetFormat.RAG_SCAFFOLD,
 ];
 
 /** When the caller supplies nothing, we emit the native Claude Code setup only. */

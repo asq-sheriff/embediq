@@ -26,6 +26,7 @@ import { ContinueDevGenerator } from './generators/continue-dev.js';
 import { AiderGenerator } from './generators/aider.js';
 import { ZedAiGenerator } from './generators/zed-ai.js';
 import { OllamaSetupGenerator } from './generators/ollama-setup.js';
+import { RagScaffoldGenerator } from './generators/rag-scaffold.js';
 
 export class SynthesizerOrchestrator {
   private generators: ConfigGenerator[];
@@ -59,6 +60,10 @@ export class SynthesizerOrchestrator {
       new AiderGenerator(),
       new ZedAiGenerator(),
       new OllamaSetupGenerator(),
+      // v3.3 / 6L — RAG scaffold (industry-agnostic; FHIR-aware chunker
+      // for healthcare, plain-text for others; per-framework compliance
+      // rules from profile.complianceFrameworks).
+      new RagScaffoldGenerator(),
     ];
   }
 
@@ -86,6 +91,11 @@ export class SynthesizerOrchestrator {
         if (ides.includes('continue-dev')) targets.add(TargetFormat.CONTINUE_DEV);
         if (ides.includes('aider')) targets.add(TargetFormat.AIDER);
         if (ides.includes('zed-ai')) targets.add(TargetFormat.ZED_AI);
+        // v3.3 / 6L — RAG scaffold auto-includes for every local-AI user.
+        // Industry-aware content (FHIR chunker for healthcare; plain-text
+        // otherwise) plus per-framework compliance rules are decided
+        // inside the generator, not at the target-selection layer.
+        targets.add(TargetFormat.RAG_SCAFFOLD);
       }
 
       span.setAttribute('embediq.targets', Array.from(targets).sort().join(','));
@@ -179,7 +189,8 @@ export class SynthesizerOrchestrator {
       target === TargetFormat.CONTINUE_DEV ||
       target === TargetFormat.AIDER ||
       target === TargetFormat.ZED_AI ||
-      target === TargetFormat.OLLAMA
+      target === TargetFormat.OLLAMA ||
+      target === TargetFormat.RAG_SCAFFOLD
     );
   }
 

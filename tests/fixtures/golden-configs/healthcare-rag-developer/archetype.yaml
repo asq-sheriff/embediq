@@ -1,0 +1,18 @@
+id: healthcare-rag-developer
+title: Healthcare Developer with Local-AI RAG Pipeline
+description: |
+  Healthcare developer profile that opts into the v3.3 / 6L RAG scaffold.
+  Exercises the FHIR-aware chunker variant, the HIPAA-specific path-scoped
+  rule file (`.claude/rules/rag-hipaa-compliance.md`), and the runbook's
+  HIPAA hardening checklist. Locks in the healthcare member of the RAG
+  scaffold's industry-aware content surface — paired with
+  `local-ai-developer` and `local-ai-enterprise` (plain-text chunker,
+  generic conventions rule) to demonstrate the dual content paths from
+  the same generator.
+minimumFloor: 18
+targets:
+  - claude
+  - ollama
+  - continue-dev
+  - aider
+  - rag-scaffold
