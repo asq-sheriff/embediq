@@ -33,7 +33,7 @@ Legend: ● full support, ◐ partial, ○ not supported, — not applicable.
 
 | Capability | EmbedIQ | Claude `/init` | Spec Kit | Kiro | Agent Rules Builder | Rulesync |
 |---|:-:|:-:|:-:|:-:|:-:|:-:|
-| Adaptive Q&A with branching | ● (71 q, 40 branches) | ◐ (few Qs) | ● (different purpose — spec interview) | ○ | ○ | — |
+| Adaptive Q&A with branching | ● (74 q, 40 branches) | ◐ (few Qs) | ● (different purpose — spec interview) | ○ | ○ | — |
 | Role adaptation (dev / BA / PM / exec / …) | ● (8 roles) | ○ | ○ | ○ | ○ | — |
 | Multi-agent output from one interview | ● (6 target families) | ○ (Claude only) | ○ | ○ (Kiro only) | ● (one flat file) | — |
 | Compliance-aware DLP enforcement | ● (Python hooks, 18+ patterns) | ○ | ○ | ◐ (via AWS services) | ○ | — |
@@ -47,7 +47,7 @@ Legend: ● full support, ◐ partial, ○ not supported, — not applicable.
 | Evaluation framework (golden-config replay) | ● | ○ | ○ | ○ | ○ | — |
 | Drift detection | ● | ○ | ○ | ○ | ○ | — |
 | Scheduled regeneration / autopilot | ● | ○ | ○ | ○ | ○ | — |
-| Git PR integration (opens PR with output) | ● (GitHub; GitLab/Bitbucket planned) | ○ | ● | ○ | ○ | — |
+| Git PR integration (opens PR with output) | ● (GitHub + GitLab + Bitbucket Cloud) | ○ | ● | ○ | ○ | — |
 | Inbound compliance webhooks (Drata, Vanta) | ● | ○ | ○ | ○ | ○ | — |
 | Outbound notifications (Slack / Teams) | ● | ○ | ○ | ◐ | ○ | — |
 | Web UI + REST API | ● | ○ | ○ | ● (own IDE) | ◐ | — |

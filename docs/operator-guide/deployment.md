@@ -203,7 +203,7 @@ Rate limits are in addition to any limits at your ingress or CDN.
 | Healthcare BPO / regulated services | Air-gapped or controlled-outbound topology with HIPAA domain pack, encrypted SQLite sessions, autopilot + compliance feedback loop, 6-year audit retention. See [`docs/HEALTHCARE-BPO-DEPLOYMENT.md`](../HEALTHCARE-BPO-DEPLOYMENT.md). |
 | Multi-tenant SaaS | Horizontal scaling behind a sticky-session ingress for auth flows; stateless API otherwise. Autopilot pinned to one replica. |
 
-CPU cost is dominated by synthesizer runs (12 generators in parallel).
+CPU cost is dominated by synthesizer runs (up to 21 generators in parallel — 12 Claude Code + 5 multi-agent + 4 local-AI when active).
 Typical generation: tens of milliseconds. Memory usage is bounded by
 the answer set + session cache (a few KB per session).
 

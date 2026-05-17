@@ -11,7 +11,7 @@ see [deployment](../operator-guide/deployment.md) and
 
 ```bash
 make help                # Show every target with one-line descriptions
-make check               # Type-check + 830+ tests (CI equivalent)
+make check               # Type-check + 919 tests (CI equivalent)
 make build               # Type-check + test + compile to dist/
 make start               # Run CLI wizard
 make start-web           # Run web server (port 3000)

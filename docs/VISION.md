@@ -169,7 +169,7 @@ The generated configuration doesn't stop at the filesystem. A platform-agnostic 
 
 ## What Ships Today
 
-v3.2.0 is the current release. A complete capability inventory:
+v3.3.0 is the current release. A complete capability inventory:
 
 **Adaptive wizard**
 - 74 questions across seven dimensions, 40 with conditional branching

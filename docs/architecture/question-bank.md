@@ -104,7 +104,7 @@ question bank but feed the same `Map<string, Answer>` shape. See
 
 ## Performance
 
-The bank is small (71 + extension entries) and fully in-memory. All
+The bank is small (74 + extension entries) and fully in-memory. All
 queries are O(N) linear scans. No indexing is needed at this scale;
 if it ever does, it'll live in `QuestionBank` without changing the
 interface.

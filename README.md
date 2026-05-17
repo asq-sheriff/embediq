@@ -4,7 +4,7 @@
 
 **One adaptive interview → production-ready configs for six AI coding agents.**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) **Stable** · v3.2.0 shipped 2026-04-22
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) **Stable** · v3.3.0 shipped 2026-05-17
 
 EmbedIQ interviews you about your project, team, and compliance
 obligations, then generates a complete agent harness — 15–40 files —
@@ -15,7 +15,7 @@ Copilot, Gemini CLI, Windsurf, and cross-agent `AGENTS.md`**.
 Everything is **deterministic, offline, and audit-ready**: no LLM calls,
 no telemetry, no database. Same answers in → byte-identical files out.
 
-[Latest release: **v3.2.0**](https://github.com/asq-sheriff/embediq/releases/latest) ·
+[Latest release: **v3.3.0**](https://github.com/asq-sheriff/embediq/releases/latest) ·
 [Full changelog](CHANGELOG.md) ·
 [Security model](SECURITY.md)
 
@@ -301,7 +301,7 @@ without compromising the zero-persistence baseline.
 
 ```bash
 make help                 # Show all targets
-make check                # Type-check + 830+ tests
+make check                # Type-check + 919 tests
 make start                # CLI wizard
 make start-web            # Web server on :3000
 make evaluate             # Run evaluation harness

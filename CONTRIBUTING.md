@@ -12,7 +12,7 @@ the release process.
 git clone <this-repo>
 cd embediq
 npm install
-make check          # type-check + 830+ tests (the CI baseline)
+make check          # type-check + 919 tests (the CI baseline)
 make start          # CLI wizard
 make start-web      # web server on :3000
 ```
@@ -75,7 +75,7 @@ generated output intentionally, regenerate them via
 your PR.
 
 Run `make check` before you push. It type-checks and runs the full
-Vitest suite (830+ tests today).
+Vitest suite (919 tests today).
 
 ### 3. Update docs as part of the PR
 
@@ -161,7 +161,7 @@ When cutting a release, the release author:
    dated section.
 2. Bumps `version` in `package.json` per SemVer.
 3. Runs `make check` one last time.
-4. Tags the commit (`git tag v3.2.0`) and publishes release notes
+4. Tags the commit (`git tag v<version>`) and publishes release notes
    from the CHANGELOG entry.
 
 ## Responsible disclosure

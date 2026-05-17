@@ -206,7 +206,7 @@ EmbedIQ guides you through four phases. Each builds on the previous one.
 
 ### Phase 1 — Discovery
 
-The wizard asks 25–40 questions (from a bank of 71) organized across seven dimensions:
+The wizard asks 25–40 questions (from a bank of 74) organized across seven dimensions:
 
 | Dimension | What It Covers |
 |---|---|
