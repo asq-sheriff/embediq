@@ -9,7 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Five v3.2.x follow-ups, all non-gated and backward-compatible.
+_No unreleased changes yet._
+
+## [3.2.1] — Operational Consolidation
+
+Five v3.2.x follow-ups landing as a single patch release. All non-gated
+and backward-compatible — no env-var migration, no golden-config
+changes, no behavior shift unless you opt in.
 
 ### Added
 - **GitLab adapter for git PR integration.** `EMBEDIQ_GIT_PROVIDER=gitlab`
