@@ -10,7 +10,9 @@ EmbedIQ interviews you about your project, team, and compliance
 obligations, then generates a complete agent harness — 15–40 files —
 tailored to your role, industry, tech stack, and security posture.
 Same answer set produces output for **Claude Code, Cursor, GitHub
-Copilot, Gemini CLI, Windsurf, and cross-agent `AGENTS.md`**.
+Copilot, Gemini CLI, Windsurf, and cross-agent `AGENTS.md`**. Opt
+into local AI and the same interview also configures **Continue.dev,
+Aider, Zed AI, and Ollama** against locally-installed models.
 
 Everything is **deterministic, offline, and audit-ready**: no LLM calls,
 no telemetry, no database. Same answers in → byte-identical files out.
@@ -127,13 +129,22 @@ team, developer role, strict security tier:
 - For PHI handling details, see .claude/rules/hipaa-compliance.md
 ````
 
-That `CLAUDE.md` is one of ~25 files for this profile. Backing it up:
-path-scoped rule files (`.claude/rules/hipaa-phi-handling.md`,
-`.claude/rules/healthcare-interop.md`, `.claude/rules/security.md`),
-Python DLP and audit hooks under `.claude/hooks/`, a permissions-tier
-`.claude/settings.json`, custom slash commands and agents, plus an
-`AGENTS.md` cross-agent file. Same answer set generates the equivalents
-for Cursor, Copilot, Gemini, and Windsurf when you opt those targets in.
+That `CLAUDE.md` is one of 16 files generated for this profile under
+the default `claude` target. Backing it up: path-scoped rule files
+(`.claude/rules/hipaa-phi-handling.md`,
+`.claude/rules/healthcare-interop.md`, `.claude/rules/hipaa-compliance.md`,
+`.claude/rules/security.md`, plus language rules for `typescript` and
+`python`), three Python hook scripts under `.claude/hooks/`
+(`dlp-scanner.py`, `audit-logger.py`, `command-guard.py`), a
+permissions-tier `.claude/settings.json` plus a `.claude/settings.local.json`
+allow-list, an `.mcp.json.template` for MCP server wiring, and the
+`.claudeignore` / `.claude/.claude_ignore` egress controls. Opt additional
+targets in (`--targets claude,agents-md,cursor,copilot,gemini,windsurf`)
+and the same answer set produces `AGENTS.md`, `.cursor/rules/*.mdc`,
+`.github/copilot-instructions.md` + scoped instructions, `GEMINI.md`,
+and `.windsurfrules` alongside. If TECH_013 (local AI) is `yes`,
+add `.continue/config.json`, `.aider.conf.yml` + `.aiderignore`,
+`.zed/settings.json`, and a root `OLLAMA_SETUP.md`.
 
 See the full file inventory in
 [`docs/user-guide/02-generated-files.md`](docs/user-guide/02-generated-files.md).
@@ -145,18 +156,31 @@ See the full file inventory in
 Pick one or more output targets via `EMBEDIQ_OUTPUT_TARGETS` or
 `--targets`:
 
+**Hosted agents** (six target families — the default surface):
+
 | Target          | Files produced                                                                                     |
 | --------------- | -------------------------------------------------------------------------------------------------- |
-| `claude` (default) | `CLAUDE.md`, `.claude/settings.json`, `.claude/rules/*`, `.claude/commands/*`, `.claude/agents/*`, `.claude/skills/*`, `.claude/hooks/*` (Python), `.claudeignore`, `.mcp.json.template`, `.claude/association_map.yaml`, `.claude/document_state.yaml` |
+| `claude` (default) | `CLAUDE.md`, `.claude/settings.json`, `.claude/settings.local.json`, `.claude/rules/*` (universal + per-language), `.claude/commands/*` and `.claude/agents/*` (when the profile registers any), `.claude/skills/*` (when domain packs / skills are active), `.claude/hooks/*` (Python DLP, audit, egress, command-guard), `.claudeignore`, `.mcp.json.template`, `.claude/association_map.yaml`, `.claude/document_state.yaml` |
 | `agents-md`     | `AGENTS.md` (cross-agent universal format)                                                         |
 | `cursor`        | `.cursor/rules/*.mdc` with MDC frontmatter (`alwaysApply`, `globs`)                                |
 | `copilot`       | `.github/copilot-instructions.md` + glob-scoped `.github/instructions/*.instructions.md`           |
 | `gemini`        | `GEMINI.md`                                                                                         |
 | `windsurf`      | `.windsurfrules`                                                                                    |
 
+**Local-AI integrations** (v3.3 — auto-included when the wizard's
+`TECH_013` "use local AI" answer is `yes`; per-IDE gated by
+`TECH_017`):
+
+| Target          | Files produced                                                                                     |
+| --------------- | -------------------------------------------------------------------------------------------------- |
+| `continue-dev`  | `.continue/config.json` — Ollama models, tab-autocomplete, embeddings provider, telemetry off      |
+| `aider`         | `.aider.conf.yml` + `.aiderignore` — Ollama-backed default model, language-aware test/lint commands |
+| `zed-ai`        | `.zed/settings.json` — Ollama provider registration                                                |
+| `ollama`        | Root `OLLAMA_SETUP.md` runbook — install commands, `ollama pull` per selected model, hardware-tier tuning notes |
+
 Non-technical roles (Business Analyst, Product Manager, Executive) get
 coworker-shaped variants focused on research, analysis, and documentation
-instead of code.
+instead of code, and never see the local-AI targets.
 
 ---
 
@@ -191,6 +215,7 @@ output) in
 | **Adaptive Q&A** | 74 questions · 7 dimensions · 40 with conditional branching |
 | **Role adaptation** | 8 roles (developer, devops, lead, BA, PM, executive, QA, data); role-specific output variants |
 | **Multi-agent targets** | Claude Code, `AGENTS.md`, Cursor, Copilot, Gemini, Windsurf — from one interview |
+| **Local-AI integration** (v3.3) | Continue.dev, Aider, Zed AI, and Ollama — auto-included when the wizard's local-AI branch (`TECH_013`) is opted in |
 | **Compliance-aware output** | Pre-write validators (HIPAA, PCI-DSS, SOC2, GDPR, universal); refused — not warned about |
 | **Determinism + audit-readiness** | Zero LLM calls in the generator path; same answers → byte-identical files; CI-gateable |
 | **Evaluation framework** | Golden-config replay scoring; benchmark mode against competing tools |
