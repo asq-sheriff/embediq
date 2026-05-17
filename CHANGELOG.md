@@ -11,6 +11,102 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _No unreleased changes yet._
 
+## [3.3.0] — Local AI Integration Layer (Phase 1)
+
+First phase of v3.3 — extends EmbedIQ from "configures hosted-model
+agents" to "configures hosted + local AI from one interview." Plus
+closes a language-coverage gap that pre-dated v3.3 but ships here.
+
+### Added — 6K Local-Model Wizard Support
+
+The wizard now configures Continue.dev, Aider, Zed AI, and Ollama
+when the user opts into local AI (`TECH_013` yes) and picks their
+IDE integrations.
+
+- **Three new wizard questions** (`TECH_016`/`017`/`018`) — Ollama
+  model picks, IDE integrations, default model for autocomplete.
+  Gated on `TECH_013=true` plus a technical role; independent of
+  team size and primary IDE. Total wizard questions: 71 → 74.
+- **Four new generators**:
+  - `continue-dev.ts` → `.continue/config.json` with selected models,
+    default-as-tab-autocomplete, embeddings provider, telemetry off.
+  - `aider.ts` → `.aider.conf.yml` + `.aiderignore`. Default model
+    points at `ollama/<defaultLocalModel>`, test/lint commands
+    inferred per language, auto-commits disabled. `.aiderignore`
+    picks up HIPAA / PCI patterns when those frameworks are active.
+  - `zed-ai.ts` → `.zed/settings.json` registering an Ollama provider.
+  - `ollama-setup.ts` → root `OLLAMA_SETUP.md` runbook with install
+    commands per OS, `ollama pull` commands for selected models,
+    hardware-tier tuning notes, IDE wiring notes, end-to-end
+    validation, and a HIPAA reminder when applicable.
+- **Four new `TargetFormat` values**: `continue-dev`, `aider`,
+  `zed-ai`, `ollama`. Auto-included by the orchestrator when
+  `profile.localAiEnabled` is true (per-IDE gating via
+  `profile.ideIntegrations`). Selectable explicitly via `--targets`
+  / `EMBEDIQ_OUTPUT_TARGETS` too. Never emitted for BA/PM/exec roles.
+- **Four new optional `UserProfile` fields**: `localAiEnabled`,
+  `ollamaModels`, `ideIntegrations`, `defaultLocalModel`. All
+  absent when `TECH_013` is false, preserving existing golden
+  configs byte-for-byte.
+- **Two new golden archetypes**: `local-ai-developer` (small team,
+  multi-IDE TS sandbox) and `local-ai-enterprise` (medium team,
+  TS+Python, GPU hardware). Both score 100% with zero validator
+  failures.
+
+### Added — Language coverage (C# / Swift / Ruby)
+
+Closes a pre-existing gap: the wizard's `TECH_001` question
+accepted all 8 languages (TypeScript, Python, Java/Kotlin, Go,
+Rust, C#/.NET, Swift, Ruby), but the rule generator only emitted
+language-specific files for 5 of them.
+
+- **New rule files**: `.claude/rules/csharp.md`, `swift.md`,
+  `ruby.md` — path-scoped, mirrors the existing pattern. C# rule
+  covers net8/9 LTS, nullable reference types, async/await
+  end-to-end, `IAsyncEnumerable` for streaming, `dotnet format`,
+  `dotnet test`. Swift covers Swift Concurrency, value-types-by-
+  default, `swift-format lint --strict`. Ruby covers
+  `frozen_string_literal`, keyword args, `rubocop`, `bundle exec
+  rake test`.
+- **Extended Aider test/lint inference** for: C# (`dotnet test` /
+  `dotnet format --verify-no-changes`), Swift (`swift test` /
+  `swift-format lint --strict --recursive .`), Ruby
+  (`bundle exec rake test` / `bundle exec rubocop`); plus Java
+  lint (`mvn checkstyle:check`).
+- **Three new `TECH_005` build-tool options**: `dotnet`, `swift_pm`,
+  `bundler`.
+- **New golden archetype**: `dotnet-developer` — C# developer on a
+  small enterprise team running Continue.dev + Aider against local
+  Ollama models. Locks in csharp.md emission and dotnet test/format
+  wiring. Scores 100% with zero validator failures.
+
+### Compatibility
+
+- All eight pre-existing golden archetypes regenerate byte-identically.
+- No `TECH_013` answer = no local-AI fields on the profile = no
+  local-AI generators fire = output unchanged for non-local-AI users.
+- `TECH_001` wizard options unchanged; `TECH_005` only adds new
+  entries without renaming or removing existing ones.
+
+### Tests
+
+919/919 passing across 67 test files (was 871/65 before this release).
+
+- 23 new unit tests for local-AI generators
+- 22 new unit tests for language rule coverage (all 8 languages)
+- 4 new Aider command-inference tests (C#/Swift/Ruby/Java-lint)
+- 3 new archetypes hit the existing `evaluator.test.ts` end-to-end test
+
+### Coming next in v3.3
+
+- **6L Healthcare RAG Pipeline** — HIPAA-aware retrieval scaffold
+  (chunker, embeddings, SQLite-VSS store) for healthcare + local-AI
+  profiles.
+- **6M Local Router with Confidence Escalation** — the PHI-safe
+  routing headline differentiator. Local classifier routes simple
+  tasks to the local model; escalates complex tasks to Claude/OpenAI
+  only after PHI redaction.
+
 ## [3.2.2] — GTM Enablement
 
 Three deliverables that turn the existing evaluation framework and
