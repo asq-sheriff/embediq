@@ -104,6 +104,9 @@ function inferTestCommand(profile: UserProfile): string | null {
   if (langs.includes('go')) return 'go test ./...';
   if (langs.includes('rust')) return 'cargo test';
   if (langs.includes('java')) return 'mvn test';
+  if (langs.includes('csharp')) return 'dotnet test';
+  if (langs.includes('swift')) return 'swift test';
+  if (langs.includes('ruby')) return 'bundle exec rake test';
   return null;
 }
 
@@ -116,5 +119,9 @@ function inferLintCommand(profile: UserProfile): string | null {
   if (langs.includes('python')) return 'ruff check .';
   if (langs.includes('go')) return 'go vet ./...';
   if (langs.includes('rust')) return 'cargo clippy';
+  if (langs.includes('java')) return 'mvn checkstyle:check';
+  if (langs.includes('csharp')) return 'dotnet format --verify-no-changes';
+  if (langs.includes('swift')) return 'swift-format lint --strict --recursive .';
+  if (langs.includes('ruby')) return 'bundle exec rubocop';
   return null;
 }

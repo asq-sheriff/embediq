@@ -1,0 +1,24 @@
+{
+  "models": [
+    {
+      "title": "qwen2.5-coder:32b",
+      "provider": "ollama",
+      "model": "qwen2.5-coder:32b"
+    },
+    {
+      "title": "llama3.1:8b",
+      "provider": "ollama",
+      "model": "llama3.1:8b"
+    }
+  ],
+  "tabAutocompleteModel": {
+    "title": "qwen2.5-coder:32b",
+    "provider": "ollama",
+    "model": "qwen2.5-coder:32b"
+  },
+  "embeddingsProvider": {
+    "provider": "ollama",
+    "model": "nomic-embed-text"
+  },
+  "allowAnonymousTelemetry": false
+}

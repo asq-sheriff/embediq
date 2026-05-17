@@ -1,0 +1,30 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "type": "command",
+        "if": "Bash",
+        "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/command-guard.py\"",
+        "timeout": 300
+      }
+    ],
+    "SessionStart": [
+      {
+        "type": "command",
+        "command": "echo \"Session started: $(date -u +%Y-%m-%dT%H:%M:%SZ) | Branch: $(git branch --show-current 2>/dev/null || echo none)\"",
+        "timeout": 1000
+      }
+    ]
+  },
+  "deniedMcpServers": [
+    "figma",
+    "google-calendar",
+    "gmail",
+    "cloudflare",
+    "gamma",
+    "mermaid-chart",
+    "excalidraw",
+    "biorender",
+    "hugging-face"
+  ]
+}

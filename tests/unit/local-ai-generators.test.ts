@@ -97,6 +97,34 @@ describe('AiderGenerator', () => {
     expect(conf).toMatch(/test-cmd:\s*npm test/);
   });
 
+  it('infers dotnet test + dotnet format for C# projects', () => {
+    const profile = makeProfile({ languages: ['csharp'], devOps: { ide: ['vscode'], buildTools: ['dotnet'], testFrameworks: [], cicd: 'github_actions', monitoring: [], containerization: [] } });
+    const conf = new AiderGenerator().generate(makeConfig(profile))[0].content;
+    expect(conf).toMatch(/test-cmd:\s*dotnet test/);
+    expect(conf).toMatch(/lint-cmd:\s*dotnet format/);
+  });
+
+  it('infers swift test + swift-format lint for Swift projects', () => {
+    const profile = makeProfile({ languages: ['swift'], devOps: { ide: ['vscode'], buildTools: ['swift_pm'], testFrameworks: [], cicd: 'github_actions', monitoring: [], containerization: [] } });
+    const conf = new AiderGenerator().generate(makeConfig(profile))[0].content;
+    expect(conf).toMatch(/test-cmd:\s*swift test/);
+    expect(conf).toMatch(/lint-cmd:\s*swift-format lint/);
+  });
+
+  it('infers bundle exec rake test + rubocop for Ruby projects', () => {
+    const profile = makeProfile({ languages: ['ruby'], devOps: { ide: ['vscode'], buildTools: ['bundler'], testFrameworks: [], cicd: 'github_actions', monitoring: [], containerization: [] } });
+    const conf = new AiderGenerator().generate(makeConfig(profile))[0].content;
+    expect(conf).toMatch(/test-cmd:\s*bundle exec rake test/);
+    expect(conf).toMatch(/lint-cmd:\s*bundle exec rubocop/);
+  });
+
+  it('infers mvn test + mvn checkstyle for Java projects', () => {
+    const profile = makeProfile({ languages: ['java'], devOps: { ide: ['vscode'], buildTools: ['maven'], testFrameworks: [], cicd: 'github_actions', monitoring: [], containerization: [] } });
+    const conf = new AiderGenerator().generate(makeConfig(profile))[0].content;
+    expect(conf).toMatch(/test-cmd:\s*mvn test/);
+    expect(conf).toMatch(/lint-cmd:\s*mvn checkstyle:check/);
+  });
+
   it('keeps auto-commits disabled (conservative default)', () => {
     const files = new AiderGenerator().generate(makeConfig(makeProfile()));
     const conf = files.find((f) => f.relativePath === '.aider.conf.yml')!.content;

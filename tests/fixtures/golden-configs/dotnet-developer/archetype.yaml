@@ -1,0 +1,17 @@
+id: dotnet-developer
+title: .NET Developer (C# enterprise stack with local AI)
+description: |
+  C# / .NET developer on a small enterprise team — exercises the
+  csharp.md rule generator, .NET-aware test/lint commands in the
+  generated `.aider.conf.yml` (`dotnet test`, `dotnet format
+  --verify-no-changes`), and the local-AI generator surface from
+  6K. Pairs with `local-ai-developer` (TypeScript) and `hipaa-developer-strict`
+  (TypeScript + Python) to demonstrate that the language-specific
+  output is independent of the local-AI feature and the compliance
+  domain pack.
+minimumFloor: 11
+targets:
+  - claude
+  - ollama
+  - continue-dev
+  - aider

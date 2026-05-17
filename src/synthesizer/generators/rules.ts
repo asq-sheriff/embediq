@@ -180,6 +180,41 @@ export class RulesGenerator implements ConfigGenerator {
         md.bullet('Document public APIs with `///` doc comments');
         return { relativePath: '.claude/rules/rust.md', content: md.build(), description: 'Rust rules (path-scoped)' };
       }
+      case 'csharp': {
+        const paths = ['**/*.cs', '**/*.csproj', '**/*.fs'];
+        md.frontmatter({ description: 'C# / .NET conventions', paths });
+        md.h1('C# / .NET Conventions');
+        md.bullet('Target the current LTS .NET (net8.0 or net9.0); enable nullable reference types globally');
+        md.bullet('Use `record` types for immutable value objects; prefer `sealed` on classes by default');
+        md.bullet('Use `async`/`await` end-to-end; avoid `.Result` and `.Wait()` (deadlocks)');
+        md.bullet('Use `IAsyncEnumerable<T>` for streaming sequences instead of `Task<List<T>>`');
+        md.bullet('Validate input at API boundaries with `ArgumentNullException.ThrowIfNull` (.NET 6+)');
+        md.bullet('Use `dotnet format` and StyleCop / EditorConfig for consistent style');
+        md.bullet('Run `dotnet test` on every change; track coverage with coverlet');
+        return { relativePath: '.claude/rules/csharp.md', content: md.build(), description: 'C#/.NET rules (path-scoped)' };
+      }
+      case 'swift': {
+        const paths = ['**/*.swift'];
+        md.frontmatter({ description: 'Swift conventions', paths });
+        md.h1('Swift Conventions');
+        md.bullet('Use Swift Concurrency (`async`/`await`, `Task`, actors); avoid mixing with GCD');
+        md.bullet('Prefer value types (`struct`) over reference types (`class`) unless identity is required');
+        md.bullet('Use `let` by default; reach for `var` only when mutation is needed');
+        md.bullet('Mark APIs with explicit access control (`private` / `internal` / `public`)');
+        md.bullet('Run `swift-format lint --strict` and `swift test` in CI');
+        return { relativePath: '.claude/rules/swift.md', content: md.build(), description: 'Swift rules (path-scoped)' };
+      }
+      case 'ruby': {
+        const paths = ['**/*.rb', '**/Gemfile', '**/Rakefile'];
+        md.frontmatter({ description: 'Ruby conventions', paths });
+        md.h1('Ruby Conventions');
+        md.bullet('Follow the community style guide; enforce with `rubocop`');
+        md.bullet('Use `frozen_string_literal: true` at the top of every file');
+        md.bullet('Prefer keyword arguments for methods with 3+ parameters');
+        md.bullet('Use `Struct` / `Data.define` for plain value objects');
+        md.bullet('Run `bundle exec rake test` (or `rspec`) on every change');
+        return { relativePath: '.claude/rules/ruby.md', content: md.build(), description: 'Ruby rules (path-scoped)' };
+      }
       default:
         return null;
     }
