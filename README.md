@@ -168,12 +168,16 @@ golden references and against what other tools produce — Claude
 harness that gates internal quality is yours to run end-to-end:
 
 ```bash
-npm run evaluate            # score EmbedIQ vs golden references
-npm run benchmark           # score another tool's output vs the same goldens
+npm run evaluate                                  # score EmbedIQ vs golden references
+npm run benchmark                                 # score another tool's output vs the same goldens
+npm run evaluate -- --format scorecard --out r.html  # customer-facing HTML scorecard
 ```
 
 Methodology, scoring weights, and per-archetype scorecards in
-[`docs/evaluators/competitive-comparison.md`](docs/evaluators/competitive-comparison.md).
+[`docs/evaluators/competitive-comparison.md`](docs/evaluators/competitive-comparison.md);
+the scorecard option surface (themes, layouts, logo embed, PDF
+output) in
+[`docs/user-guide/06-evaluation-and-drift.md`](docs/user-guide/06-evaluation-and-drift.md#customer-facing-scorecards).
 "Prove it" beats "trust me" in regulated procurement.
 
 ---

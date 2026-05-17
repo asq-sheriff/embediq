@@ -6,8 +6,13 @@ import type {
   ScoredCheck,
   Severity,
 } from './types.js';
+import {
+  renderScorecard,
+  renderScorecardPdf,
+  type ScorecardOptions,
+} from './scorecard-renderer.js';
 
-export type ReportFormat = 'text' | 'json';
+export type ReportFormat = 'text' | 'json' | 'scorecard' | 'pdf';
 
 export interface RenderOptions {
   /** When true, list up to `failureLimit` failing checks per archetype. */
@@ -21,6 +26,10 @@ export interface ReporterOptions extends RenderOptions {
   format: ReportFormat;
   /** Write JSON output here when format === 'json'. Defaults to stdout. */
   jsonPath?: string;
+  /** Output path for scorecard / pdf formats. Required for those formats. */
+  outputPath?: string;
+  /** Options forwarded to the scorecard renderer when format === 'scorecard' or 'pdf'. */
+  scorecard?: ScorecardOptions;
 }
 
 /** Render a human-readable summary suitable for stdout. */
@@ -149,6 +158,21 @@ export async function writeReport(
       await writeFile(options.jsonPath, serialized, 'utf-8');
     }
     return serialized;
+  }
+  if (options.format === 'scorecard') {
+    if (!options.outputPath) {
+      throw new Error("--format scorecard requires --out <path> to specify the HTML output file.");
+    }
+    const html = await renderScorecard(report, options.scorecard ?? {});
+    await writeFile(options.outputPath, html, 'utf-8');
+    return html;
+  }
+  if (options.format === 'pdf') {
+    if (!options.outputPath) {
+      throw new Error("--format pdf requires --out <path> to specify the PDF output file.");
+    }
+    await renderScorecardPdf(report, options.outputPath, options.scorecard ?? {});
+    return `PDF written to ${options.outputPath}`;
   }
   return renderText(report, options);
 }

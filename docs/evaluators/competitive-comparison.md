@@ -153,6 +153,22 @@ candidate and publish the results — the procedure in
 [evaluation-methodology.md](evaluation-methodology.md) is
 reproducible by any evaluator.
 
+### Customer-facing HTML scorecard
+
+For a sales-ready or audit-attachable version of the benchmark results:
+
+```bash
+npm run benchmark -- --candidate ./other-tool-output \
+  --candidate-label "Claude /init" \
+  --format scorecard --out comparison.html
+```
+
+Produces a self-contained HTML file with side-by-side scores, per-
+dimension breakdowns, and provenance metadata. See
+[`docs/user-guide/06-evaluation-and-drift.md`](../user-guide/06-evaluation-and-drift.md#customer-facing-scorecards)
+for the full scorecard option surface (themes, layouts, logo embed,
+PDF output).
+
 ## See also
 
 - [Evaluation methodology](evaluation-methodology.md)

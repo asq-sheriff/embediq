@@ -85,3 +85,14 @@ export {
   type RenderOptions,
   type ReportFormat,
 } from './reporter.js';
+
+export {
+  renderScorecard,
+  writeScorecard,
+  renderScorecardPdf,
+  type ScorecardOptions,
+  type ScorecardTheme,
+  type ScorecardLayout,
+} from './scorecard-renderer.js';
+
+export { renderScorecardHtml } from './scorecard-template.js';

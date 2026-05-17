@@ -20,11 +20,23 @@ Options:
   --candidate <path>             (benchmark) Candidate output directory
   --candidate-label <name>       (benchmark) Label for the candidate tool
   --candidate-layout flat|per-archetype  (benchmark) Layout of --candidate (default: per-archetype)
-  --format text|json             Output format (default: text)
+  --format text|json|scorecard|pdf       Output format (default: text)
+                                         scorecard = customer-facing HTML
+                                         pdf       = HTML rendered to PDF (requires puppeteer)
   --out <path>                   Write output to file instead of stdout
+                                 Required for scorecard and pdf formats
   --show-failures                Include the worst failing checks per archetype
   --failure-limit <n>            Max failing checks shown per archetype (default: 10)
   --no-color                     Disable ANSI color in text output
+
+Scorecard / PDF options (apply when --format is scorecard or pdf):
+  --scorecard-title <string>     Override the scorecard heading
+  --scorecard-subtitle <string>  Override the scorecard subtitle
+  --scorecard-theme light|dark   Color theme (default: light)
+  --scorecard-layout full|email-safe   Layout variant (default: full)
+  --scorecard-logo <path>        Embed a logo image (PNG / JPG / SVG)
+  --scorecard-include-failures   Include the failure-detail tables (default: hidden)
+
   -h, --help                     Print this help and exit
 
 Exit codes:
@@ -42,22 +54,29 @@ interface ParsedArgs {
   candidate?: string;
   candidateLabel?: string;
   candidateLayout: 'flat' | 'per-archetype';
-  format: 'text' | 'json';
+  format: 'text' | 'json' | 'scorecard' | 'pdf';
   out?: string;
   showFailures: boolean;
   failureLimit?: number;
   noColor: boolean;
   help: boolean;
+  // Scorecard / PDF options
+  scorecardTitle?: string;
+  scorecardSubtitle?: string;
+  scorecardTheme: 'light' | 'dark';
+  scorecardLayout: 'full' | 'email-safe';
+  scorecardLogo?: string;
+  scorecardIncludeFailures: boolean;
 }
 
 export async function main(argv: string[] = process.argv.slice(2)): Promise<number> {
-  const args = parseArgs(argv);
-  if (args.help) {
-    process.stdout.write(USAGE);
-    return 0;
-  }
-
   try {
+    const args = parseArgs(argv);
+    if (args.help) {
+      process.stdout.write(USAGE);
+      return 0;
+    }
+
     const report = args.mode === 'benchmark'
       ? await runBenchmark(args)
       : await runEvaluate(args);
@@ -117,6 +136,31 @@ async function emitReport(report: EvaluationReport, args: ParsedArgs): Promise<v
     return;
   }
 
+  if (args.format === 'scorecard' || args.format === 'pdf') {
+    if (!args.out) {
+      throw new EvaluationError(
+        `--format ${args.format} requires --out <path> to specify the output file.`,
+      );
+    }
+    await writeReport(report, {
+      format: args.format,
+      outputPath: resolve(args.out),
+      scorecard: {
+        title: args.scorecardTitle,
+        subtitle: args.scorecardSubtitle,
+        theme: args.scorecardTheme,
+        layout: args.scorecardLayout,
+        logoPath: args.scorecardLogo ? resolve(args.scorecardLogo) : undefined,
+        includeFailures: args.scorecardIncludeFailures,
+        failureLimit: args.failureLimit,
+      },
+    });
+    process.stderr.write(
+      `  ✓ ${args.format === 'pdf' ? 'PDF' : 'Scorecard'} written to ${args.out}\n`,
+    );
+    return;
+  }
+
   const text = renderText(report, {
     showFailures: args.showFailures,
     failureLimit: args.failureLimit,
@@ -154,6 +198,9 @@ function parseArgs(argv: string[]): ParsedArgs {
     showFailures: false,
     noColor: false,
     help: false,
+    scorecardTheme: 'light',
+    scorecardLayout: 'full',
+    scorecardIncludeFailures: false,
   };
 
   for (let i = 0; i < argv.length; i++) {
@@ -193,7 +240,11 @@ function parseArgs(argv: string[]): ParsedArgs {
         );
         break;
       case '--format':
-        out.format = expectEnum(argv[++i], ['text', 'json'], '--format');
+        out.format = expectEnum(
+          argv[++i],
+          ['text', 'json', 'scorecard', 'pdf'],
+          '--format',
+        );
         break;
       case '--out':
         out.out = expectValue(argv[++i], '--out');
@@ -206,6 +257,32 @@ function parseArgs(argv: string[]): ParsedArgs {
         break;
       case '--no-color':
         out.noColor = true;
+        break;
+      case '--scorecard-title':
+        out.scorecardTitle = expectValue(argv[++i], '--scorecard-title');
+        break;
+      case '--scorecard-subtitle':
+        out.scorecardSubtitle = expectValue(argv[++i], '--scorecard-subtitle');
+        break;
+      case '--scorecard-theme':
+        out.scorecardTheme = expectEnum(
+          argv[++i],
+          ['light', 'dark'],
+          '--scorecard-theme',
+        );
+        break;
+      case '--scorecard-layout':
+        out.scorecardLayout = expectEnum(
+          argv[++i],
+          ['full', 'email-safe'],
+          '--scorecard-layout',
+        );
+        break;
+      case '--scorecard-logo':
+        out.scorecardLogo = expectValue(argv[++i], '--scorecard-logo');
+        break;
+      case '--scorecard-include-failures':
+        out.scorecardIncludeFailures = true;
         break;
       default:
         throw new EvaluationError(`Unknown argument: ${arg}`);

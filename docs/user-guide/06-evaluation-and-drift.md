@@ -142,6 +142,60 @@ See [the evaluation-methodology guide](../evaluators/evaluation-methodology.md)
 for a step-by-step "benchmark `/init`" recipe suitable for competitive
 analysis.
 
+## Customer-facing scorecards
+
+`--format scorecard` turns either `npm run evaluate` or `npm run
+benchmark` into a standalone HTML scorecard suitable for attaching to a
+sales email, including in a procurement packet, or handing to a
+compliance reviewer.
+
+```bash
+# Solo: EmbedIQ's own evaluation
+npm run evaluate -- --format scorecard --out report.html
+
+# Side-by-side: EmbedIQ vs another tool
+npm run benchmark -- --candidate ./other-tool-output \
+  --candidate-label "Claude /init" \
+  --format scorecard --out comparison.html
+```
+
+The scorecard is a single self-contained HTML file — inline CSS, no
+external assets, no JavaScript. Open it in any browser, print to PDF
+via `Cmd+P`, or attach it directly to email.
+
+### Scorecard options
+
+| Flag | Purpose |
+|---|---|
+| `--scorecard-title <string>` | Override the heading (default: "EmbedIQ Evaluation Scorecard") |
+| `--scorecard-subtitle <string>` | Override the subtitle |
+| `--scorecard-theme light\|dark` | Color theme (default: `light`) |
+| `--scorecard-layout full\|email-safe` | `full` uses CSS grid/flex; `email-safe` uses table-based markup that survives email clients that strip CSS |
+| `--scorecard-logo <path>` | Embed a logo (PNG / JPG / SVG) as a base64 data URL — useful for white-labelling per engagement |
+| `--scorecard-include-failures` | Include the failing-check details table (default: hidden for buyer-facing scorecards) |
+| `--failure-limit <n>` | Cap how many failures to show per archetype (default: 10) |
+
+### Optional PDF output
+
+`--format pdf` renders the scorecard to a PDF via a headless Chrome
+process. This requires `puppeteer` as a peer dependency:
+
+```bash
+npm install --save-dev puppeteer
+npm run evaluate -- --format pdf --out report.pdf
+```
+
+If you don't want the puppeteer dependency, stick with `--format
+scorecard` and use your browser's built-in "Save as PDF" — the
+scorecard HTML is print-friendly with `@page` margins set.
+
+### Determinism
+
+The scorecard renderer is deterministic — same `EvaluationReport` input
+produces byte-identical HTML output (except for the `runId` UUID and
+`startedAt` timestamp, which both change per run by design). This
+makes scorecards diff-friendly and audit-stamped.
+
 ## `npm run drift`
 
 Compares a target project's managed subtrees (`.claude/`, `.cursor/`,
