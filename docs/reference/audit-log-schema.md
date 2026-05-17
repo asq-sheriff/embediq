@@ -24,6 +24,7 @@ interface WizardAuditEntry {
     | 'session_error';
   userId?: string;             // from request context
   requestId?: string;          // from request context
+  engagementId?: string;       // from request context / EMBEDIQ_ENGAGEMENT_ID
   profileSummary?: {           // only on profile_built
     role: string;
     industry: string;
@@ -55,14 +56,22 @@ interface WizardAuditEntry {
 
 ## Auto-enrichment
 
-`userId` and `requestId` are **not supplied by callers** — the
-`auditLog()` function pulls them from the ambient request context
-(`AsyncLocalStorage`) at write time. Callers can still set them
-explicitly; explicit values win over the context.
+`userId`, `requestId`, and `engagementId` are **not supplied by
+callers** — the `auditLog()` function pulls them from the ambient
+request context (`AsyncLocalStorage`) at write time. Callers can
+still set them explicitly; explicit values win over the context.
 
-In CLI mode there is no request context, so both fields stay
-undefined. Web-server calls always carry `requestId`; when an auth
-strategy is active they carry `userId` too.
+In CLI mode there is no request context, so `userId` and `requestId`
+stay undefined. `engagementId` falls back to a direct read of
+`EMBEDIQ_ENGAGEMENT_ID` when set, so per-engagement CLI runs are
+tagged correctly even without a request scope. Web-server calls
+always carry `requestId`; when an auth strategy is active they carry
+`userId` too.
+
+When `EMBEDIQ_ENGAGEMENT_ID` is set, every entry written by that
+process carries the same `engagementId`, enabling either per-engagement
+audit files (set `EMBEDIQ_AUDIT_LOG` per process) or a single shared
+file filtered by tag — see [`docs/CONSULTING-FIRM-DEPLOYMENT.md`](../CONSULTING-FIRM-DEPLOYMENT.md).
 
 ## Example log
 
@@ -115,7 +124,10 @@ compliance team):
 
 ## Schema evolution
 
-EmbedIQ v3.2 writes `WizardAuditEntry` v1. Future major versions may
+EmbedIQ v3.2 writes `WizardAuditEntry` v1. v3.2.x added the
+`engagementId` field (auto-enriched from `EMBEDIQ_ENGAGEMENT_ID` /
+request context; absent when neither is set, preserving backward
+compatibility with pre-engagement entries). Future major versions may
 add fields — consumers should tolerate unknown keys. Removed or
 renamed fields are called out in [CHANGELOG.md](../../CHANGELOG.md).
 

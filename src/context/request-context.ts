@@ -1,6 +1,7 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { randomUUID } from 'node:crypto';
 import type { SessionStore } from '../web/sessions/session-store.js';
+import { resolveEngagementId } from '../util/engagement.js';
 
 export interface RequestContext {
   /** Unique identifier for this request */
@@ -15,6 +16,8 @@ export interface RequestContext {
   sessionId?: string;
   /** Per-request handle for the active server-side session (undefined when backend=none) */
   sessionStore?: SessionStore;
+  /** Engagement identifier from EMBEDIQ_ENGAGEMENT_ID — undefined when unset */
+  engagementId?: string;
   /** Request start time (high-resolution) */
   startedAt: number;
 }
@@ -53,6 +56,7 @@ export function createRequestContext(opts?: {
     displayName: opts?.displayName,
     roles: opts?.roles,
     sessionId: opts?.sessionId,
+    engagementId: resolveEngagementId(),
     startedAt: performance.now(),
   };
 }

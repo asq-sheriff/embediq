@@ -22,6 +22,24 @@ stateless, offline, unauthenticated local wizard.
 
 See [operator-guide/deployment.md](../operator-guide/deployment.md).
 
+## Multi-engagement deployment
+
+Optional scoping for self-hosted operators running EmbedIQ as multiple
+processes — one per client engagement, project, or workspace — out of
+the same checkout.
+
+| Env var | Default | Type | Purpose |
+|---|---|---|---|
+| `EMBEDIQ_ENGAGEMENT_ID` | — | string | Engagement identifier. When set, default state paths (session dir, sqlite file, autopilot dir) nest under `.embediq/engagements/<id>/`, and audit-log entries are auto-tagged with `engagementId`. Allowed chars: `[a-zA-Z0-9._-]{1,64}`, not all-dots. Explicit `EMBEDIQ_SESSION_DIR` / `EMBEDIQ_SESSION_DB_URL` / `EMBEDIQ_AUTOPILOT_DIR` always win — engagement scoping never modifies operator-set paths. |
+
+One engagement per process; multiple engagements means multiple
+processes. Per-request engagement switching is intentionally not
+supported.
+
+See [`docs/CONSULTING-FIRM-DEPLOYMENT.md`](../CONSULTING-FIRM-DEPLOYMENT.md)
+for the full deployment pattern (directory layout, audit strategies,
+out-of-scope clarifications).
+
 ## Authentication
 
 | Env var | Default | Type | Purpose |
@@ -44,9 +62,9 @@ See [operator-guide/authentication.md](../operator-guide/authentication.md).
 |---|---|---|---|
 | `EMBEDIQ_SESSION_BACKEND` | `none` | enum | `none` / `json-file` / `database` / `redis`. `redis` is reserved; `database` + `postgres` driver is reserved. |
 | `EMBEDIQ_SESSION_TTL_MS` | `604800000` (7d) | integer | Session lifetime in ms. Clamped to [60 000, 2 592 000 000] (1 min – 30 d). |
-| `EMBEDIQ_SESSION_DIR` | `./.embediq/sessions` | path | Per-session JSON file directory. Applies only when `EMBEDIQ_SESSION_BACKEND=json-file`. |
+| `EMBEDIQ_SESSION_DIR` | `./.embediq/sessions` (or `./.embediq/engagements/<id>/sessions` when [`EMBEDIQ_ENGAGEMENT_ID`](#multi-engagement-deployment) is set) | path | Per-session JSON file directory. Applies only when `EMBEDIQ_SESSION_BACKEND=json-file`. Explicit value always wins over engagement scoping. |
 | `EMBEDIQ_SESSION_DB_DRIVER` | `sqlite` | enum | `sqlite` / `postgres` (reserved). Applies when `EMBEDIQ_SESSION_BACKEND=database`. |
-| `EMBEDIQ_SESSION_DB_URL` | `./.embediq/sessions.db` | path | SQLite file path. `:memory:` is supported for tests. |
+| `EMBEDIQ_SESSION_DB_URL` | `./.embediq/sessions.db` (or `./.embediq/engagements/<id>/sessions.db` when [`EMBEDIQ_ENGAGEMENT_ID`](#multi-engagement-deployment) is set) | path | SQLite file path. `:memory:` is supported for tests. Explicit value always wins over engagement scoping. |
 | `EMBEDIQ_SESSION_COOKIE_SECRET` | — | hex string **(secret)** | HMAC-SHA-256 signing key for the `embediq_session_owner` cookie. Required when auth is off. 32 bytes recommended. |
 | `EMBEDIQ_SESSION_COOKIE_SECRET_PREV` | — | hex string **(secret)** | Previous cookie signing key accepted during rotation. |
 | `EMBEDIQ_SESSION_DATA_KEY` | — | hex string **(secret)** | AES-256-GCM key for payload encryption. 64-character hex (32 bytes). Optional but recommended in production. |
@@ -59,7 +77,7 @@ See [operator-guide/session-backends.md](../operator-guide/session-backends.md).
 | Env var | Default | Type | Purpose |
 |---|---|---|---|
 | `EMBEDIQ_AUTOPILOT_ENABLED` | `false` | boolean | Must be `true` at startup to mount autopilot routes and start the scheduler. |
-| `EMBEDIQ_AUTOPILOT_DIR` | `./.embediq/autopilot` | path | JSON store directory (schedules + run history). Mount a persistent volume in production. |
+| `EMBEDIQ_AUTOPILOT_DIR` | `./.embediq/autopilot` (or `./.embediq/engagements/<id>/autopilot` when [`EMBEDIQ_ENGAGEMENT_ID`](#multi-engagement-deployment) is set) | path | JSON store directory (schedules + run history). Mount a persistent volume in production. Explicit value always wins over engagement scoping. |
 | `EMBEDIQ_AUTOPILOT_TICK_MS` | `60000` | integer | Scheduler poll interval. |
 | `EMBEDIQ_AUTOPILOT_WEBHOOK_SECRET` | — | string **(secret)** | Shared secret required on `X-EmbedIQ-Autopilot-Secret` header for autopilot + compliance webhooks. |
 | `EMBEDIQ_COMPLIANCE_SECRET_DRATA` | — | string **(secret)** | HMAC-SHA256 signing secret for the Drata adapter. Header `X-Drata-Signature` is verified against `HMAC(secret, raw-body)`. Unset → verification skipped. |

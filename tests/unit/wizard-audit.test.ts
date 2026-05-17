@@ -118,5 +118,35 @@ describe('auditLog', () => {
 
       spy.mockRestore();
     });
+
+    describe('engagement enrichment', () => {
+      afterEach(() => {
+        delete process.env.EMBEDIQ_ENGAGEMENT_ID;
+      });
+
+      it('omits engagementId when EMBEDIQ_ENGAGEMENT_ID is unset and no context provides one', () => {
+        auditLog({ timestamp: '2026-04-15T00:00:00Z', eventType: 'session_start' });
+        const entry = JSON.parse(readFileSync(LOG_PATH, 'utf-8').trim());
+        expect(entry.engagementId).toBeUndefined();
+      });
+
+      it('enriches with engagementId from EMBEDIQ_ENGAGEMENT_ID when set', () => {
+        process.env.EMBEDIQ_ENGAGEMENT_ID = 'eng-alpha';
+        auditLog({ timestamp: '2026-04-15T00:00:00Z', eventType: 'session_start' });
+        const entry = JSON.parse(readFileSync(LOG_PATH, 'utf-8').trim());
+        expect(entry.engagementId).toBe('eng-alpha');
+      });
+
+      it('preserves an explicit engagementId on the entry over the env value', () => {
+        process.env.EMBEDIQ_ENGAGEMENT_ID = 'eng-alpha';
+        auditLog({
+          timestamp: '2026-04-15T00:00:00Z',
+          eventType: 'session_start',
+          engagementId: 'eng-explicit',
+        });
+        const entry = JSON.parse(readFileSync(LOG_PATH, 'utf-8').trim());
+        expect(entry.engagementId).toBe('eng-explicit');
+      });
+    });
   });
 });

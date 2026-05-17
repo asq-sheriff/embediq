@@ -199,6 +199,7 @@ Rate limits are in addition to any limits at your ingress or CDN.
 |---|---|
 | Single-team internal use | 1 replica, 128Mi / 100m. `NullBackend` (stateless) is fine. |
 | Multi-team, session persistence | 1 replica, 256Mi / 200m. `sqlite` backend on a PVC. |
+| Per-engagement (consulting firm / SI) | One replica per engagement; set `EMBEDIQ_ENGAGEMENT_ID` to isolate state. See [`docs/CONSULTING-FIRM-DEPLOYMENT.md`](../CONSULTING-FIRM-DEPLOYMENT.md). |
 | Multi-tenant SaaS | Horizontal scaling behind a sticky-session ingress for auth flows; stateless API otherwise. Autopilot pinned to one replica. |
 
 CPU cost is dominated by synthesizer runs (12 generators in parallel).
@@ -233,3 +234,6 @@ require inbound reachability from your compliance platform.
 - [Ops troubleshooting](troubleshooting-ops.md)
 - [Configuration reference](../reference/configuration.md) — every
   env var in one table
+- [Per-engagement deployment pattern](../CONSULTING-FIRM-DEPLOYMENT.md) —
+  consulting-firm / systems-integrator scoping via
+  `EMBEDIQ_ENGAGEMENT_ID`

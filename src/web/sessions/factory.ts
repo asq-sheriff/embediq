@@ -3,6 +3,7 @@ import { NullBackend } from './null-backend.js';
 import { JsonFileBackend } from './backends/json-file.js';
 import { DatabaseBackend } from './backends/database.js';
 import { PayloadCipher } from './encryption.js';
+import { resolveEngagementId, withEngagementSubpath } from '../../util/engagement.js';
 
 const DEFAULT_SESSION_DIR = './.embediq/sessions';
 const DEFAULT_SQLITE_PATH = './.embediq/sessions.db';
@@ -73,7 +74,8 @@ export async function selectSessionBackend(
   if (name === 'none') return new NullBackend();
 
   if (name === 'json-file') {
-    const dir = env.EMBEDIQ_SESSION_DIR?.trim() || DEFAULT_SESSION_DIR;
+    const explicit = env.EMBEDIQ_SESSION_DIR?.trim();
+    const dir = explicit || withEngagementSubpath(DEFAULT_SESSION_DIR, resolveEngagementId(env));
     return new JsonFileBackend({ dir });
   }
 
@@ -105,7 +107,8 @@ async function selectDatabaseBackend(env: NodeJS.ProcessEnv): Promise<SessionBac
 }
 
 async function buildSqliteBackend(env: NodeJS.ProcessEnv): Promise<SessionBackend> {
-  const filePath = env.EMBEDIQ_SESSION_DB_URL?.trim() || DEFAULT_SQLITE_PATH;
+  const explicit = env.EMBEDIQ_SESSION_DB_URL?.trim();
+  const filePath = explicit || withEngagementSubpath(DEFAULT_SQLITE_PATH, resolveEngagementId(env));
   // Dynamic import is typed as `any` because better-sqlite3 ships a CJS
   // namespace export that trips TypeScript's ESM/CJS interop on import().
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -1,5 +1,6 @@
 import { appendFileSync } from 'node:fs';
 import { getRequestContext } from '../context/request-context.js';
+import { resolveEngagementId } from './engagement.js';
 
 export interface WizardAuditEntry {
   timestamp: string;
@@ -13,6 +14,7 @@ export interface WizardAuditEntry {
     | 'session_error';
   userId?: string;
   requestId?: string;
+  engagementId?: string;
   profileSummary?: {
     role: string;
     industry: string;
@@ -41,6 +43,7 @@ export function auditLog(entry: WizardAuditEntry): void {
     timestamp: entry.timestamp || new Date().toISOString(),
     userId: entry.userId ?? ctx?.userId,
     requestId: entry.requestId ?? ctx?.requestId,
+    engagementId: entry.engagementId ?? ctx?.engagementId ?? resolveEngagementId(),
   };
 
   try {

@@ -8,6 +8,7 @@ import type {
   ScheduleCreateInput,
 } from './types.js';
 import { nextRunAt } from './types.js';
+import { resolveEngagementId, withEngagementSubpath } from '../util/engagement.js';
 
 /**
  * Single-node JSON-file backed store for autopilot schedules and runs.
@@ -136,7 +137,9 @@ export class JsonAutopilotStore {
 // ─── helpers ──────────────────────────────────────────────────────────────
 
 function defaultDir(): string {
-  return resolve(process.env.EMBEDIQ_AUTOPILOT_DIR || '.embediq/autopilot');
+  const explicit = process.env.EMBEDIQ_AUTOPILOT_DIR;
+  if (explicit) return resolve(explicit);
+  return resolve(withEngagementSubpath('.embediq/autopilot', resolveEngagementId()));
 }
 
 async function readJsonArray<T>(path: string): Promise<T[]> {

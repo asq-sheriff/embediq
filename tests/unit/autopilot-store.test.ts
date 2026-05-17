@@ -148,3 +148,104 @@ describe('JsonAutopilotStore — schedule CRUD', () => {
     expect(runs).toHaveLength(3);
   });
 });
+
+describe('JsonAutopilotStore — default directory resolution', () => {
+  const originalEngagementId = process.env.EMBEDIQ_ENGAGEMENT_ID;
+  const originalAutopilotDir = process.env.EMBEDIQ_AUTOPILOT_DIR;
+  let workDir: string;
+  let originalCwd: string;
+
+  beforeEach(async () => {
+    workDir = await mkdtemp(join(tmpdir(), 'embediq-ap-default-'));
+    originalCwd = process.cwd();
+    process.chdir(workDir);
+    delete process.env.EMBEDIQ_ENGAGEMENT_ID;
+    delete process.env.EMBEDIQ_AUTOPILOT_DIR;
+  });
+
+  afterEach(async () => {
+    process.chdir(originalCwd);
+    await rm(workDir, { recursive: true, force: true });
+    if (originalEngagementId === undefined) delete process.env.EMBEDIQ_ENGAGEMENT_ID;
+    else process.env.EMBEDIQ_ENGAGEMENT_ID = originalEngagementId;
+    if (originalAutopilotDir === undefined) delete process.env.EMBEDIQ_AUTOPILOT_DIR;
+    else process.env.EMBEDIQ_AUTOPILOT_DIR = originalAutopilotDir;
+  });
+
+  it('writes to .embediq/autopilot when neither env var is set', async () => {
+    const store = new JsonAutopilotStore();
+    await store.addSchedule({
+      name: 'baseline',
+      cadence: '@daily',
+      answerSourcePath: '/tmp/a.yaml',
+      targetDir: '/tmp/project',
+    });
+    const { existsSync } = await import('node:fs');
+    expect(existsSync(join(workDir, '.embediq/autopilot/schedules.json'))).toBe(true);
+  });
+
+  it('scopes under engagements/<id> when EMBEDIQ_ENGAGEMENT_ID is set', async () => {
+    process.env.EMBEDIQ_ENGAGEMENT_ID = 'eng-alpha';
+    const store = new JsonAutopilotStore();
+    await store.addSchedule({
+      name: 'scoped',
+      cadence: '@daily',
+      answerSourcePath: '/tmp/a.yaml',
+      targetDir: '/tmp/project',
+    });
+    const { existsSync } = await import('node:fs');
+    expect(
+      existsSync(join(workDir, '.embediq/engagements/eng-alpha/autopilot/schedules.json')),
+    ).toBe(true);
+    expect(existsSync(join(workDir, '.embediq/autopilot/schedules.json'))).toBe(false);
+  });
+
+  it('honors explicit EMBEDIQ_AUTOPILOT_DIR even when engagement id is set', async () => {
+    process.env.EMBEDIQ_ENGAGEMENT_ID = 'eng-alpha';
+    const explicit = join(workDir, 'custom-autopilot');
+    process.env.EMBEDIQ_AUTOPILOT_DIR = explicit;
+    const store = new JsonAutopilotStore();
+    await store.addSchedule({
+      name: 'explicit',
+      cadence: '@daily',
+      answerSourcePath: '/tmp/a.yaml',
+      targetDir: '/tmp/project',
+    });
+    const { existsSync } = await import('node:fs');
+    expect(existsSync(join(explicit, 'schedules.json'))).toBe(true);
+    expect(
+      existsSync(join(workDir, '.embediq/engagements/eng-alpha/autopilot/schedules.json')),
+    ).toBe(false);
+  });
+
+  it('isolates two engagement IDs into disjoint directories', async () => {
+    process.env.EMBEDIQ_ENGAGEMENT_ID = 'eng-alpha';
+    const storeA = new JsonAutopilotStore();
+    await storeA.addSchedule({
+      name: 'alpha-only',
+      cadence: '@daily',
+      answerSourcePath: '/tmp/a.yaml',
+      targetDir: '/tmp/project',
+    });
+
+    process.env.EMBEDIQ_ENGAGEMENT_ID = 'eng-beta';
+    const storeB = new JsonAutopilotStore();
+    await storeB.addSchedule({
+      name: 'beta-only',
+      cadence: '@daily',
+      answerSourcePath: '/tmp/b.yaml',
+      targetDir: '/tmp/project',
+    });
+
+    // Re-instantiating against each engagement ID should see only its own schedules
+    process.env.EMBEDIQ_ENGAGEMENT_ID = 'eng-alpha';
+    const reloadedA = new JsonAutopilotStore();
+    const namesA = (await reloadedA.listSchedules()).map((s) => s.name);
+    expect(namesA).toEqual(['alpha-only']);
+
+    process.env.EMBEDIQ_ENGAGEMENT_ID = 'eng-beta';
+    const reloadedB = new JsonAutopilotStore();
+    const namesB = (await reloadedB.listSchedules()).map((s) => s.name);
+    expect(namesB).toEqual(['beta-only']);
+  });
+});
