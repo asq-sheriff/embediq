@@ -200,6 +200,7 @@ Rate limits are in addition to any limits at your ingress or CDN.
 | Single-team internal use | 1 replica, 128Mi / 100m. `NullBackend` (stateless) is fine. |
 | Multi-team, session persistence | 1 replica, 256Mi / 200m. `sqlite` backend on a PVC. |
 | Per-engagement (consulting firm / SI) | One replica per engagement; set `EMBEDIQ_ENGAGEMENT_ID` to isolate state. See [`docs/CONSULTING-FIRM-DEPLOYMENT.md`](../CONSULTING-FIRM-DEPLOYMENT.md). |
+| Healthcare BPO / regulated services | Air-gapped or controlled-outbound topology with HIPAA domain pack, encrypted SQLite sessions, autopilot + compliance feedback loop, 6-year audit retention. See [`docs/HEALTHCARE-BPO-DEPLOYMENT.md`](../HEALTHCARE-BPO-DEPLOYMENT.md). |
 | Multi-tenant SaaS | Horizontal scaling behind a sticky-session ingress for auth flows; stateless API otherwise. Autopilot pinned to one replica. |
 
 CPU cost is dominated by synthesizer runs (12 generators in parallel).
@@ -237,3 +238,6 @@ require inbound reachability from your compliance platform.
 - [Per-engagement deployment pattern](../CONSULTING-FIRM-DEPLOYMENT.md) —
   consulting-firm / systems-integrator scoping via
   `EMBEDIQ_ENGAGEMENT_ID`
+- [Healthcare BPO deployment pattern](../HEALTHCARE-BPO-DEPLOYMENT.md) —
+  HIPAA-covered services firms, air-gap topology, Drata/Vanta
+  feedback loop, 6-year audit retention

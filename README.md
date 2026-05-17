@@ -284,6 +284,7 @@ without compromising the zero-persistence baseline.
 | Trigger runs from Drata or Vanta | [`docs/user-guide/11-compliance-webhooks.md`](docs/user-guide/11-compliance-webhooks.md) |
 | Deploy to Docker or Kubernetes | [`docs/operator-guide/deployment.md`](docs/operator-guide/deployment.md) |
 | Run multiple engagements out of one checkout | [`docs/CONSULTING-FIRM-DEPLOYMENT.md`](docs/CONSULTING-FIRM-DEPLOYMENT.md) |
+| Deploy in a HIPAA-covered healthcare BPO environment | [`docs/HEALTHCARE-BPO-DEPLOYMENT.md`](docs/HEALTHCARE-BPO-DEPLOYMENT.md) |
 | Wire authentication | [`docs/operator-guide/authentication.md`](docs/operator-guide/authentication.md) |
 | Set up OpenTelemetry | [`docs/operator-guide/observability.md`](docs/operator-guide/observability.md) |
 | Look up every env var | [`docs/reference/configuration.md`](docs/reference/configuration.md) |
