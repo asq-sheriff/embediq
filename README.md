@@ -12,7 +12,10 @@ tailored to your role, industry, tech stack, and security posture.
 Same answer set produces output for **Claude Code, Cursor, GitHub
 Copilot, Gemini CLI, Windsurf, and cross-agent `AGENTS.md`**. Opt
 into local AI and the same interview also configures **Continue.dev,
-Aider, Zed AI, and Ollama** against locally-installed models.
+Aider, Zed AI, and Ollama** against locally-installed models, and
+emits a **runnable RAG scaffold** under `rag/` — FHIR-aware for
+healthcare profiles, plain-text for everyone else, with one
+path-scoped compliance rule file per active framework.
 
 Everything is **deterministic, offline, and audit-ready**: no LLM calls,
 no telemetry, no database. Same answers in → byte-identical files out.
@@ -144,7 +147,13 @@ and the same answer set produces `AGENTS.md`, `.cursor/rules/*.mdc`,
 `.github/copilot-instructions.md` + scoped instructions, `GEMINI.md`,
 and `.windsurfrules` alongside. If TECH_013 (local AI) is `yes`,
 add `.continue/config.json`, `.aider.conf.yml` + `.aiderignore`,
-`.zed/settings.json`, and a root `OLLAMA_SETUP.md`.
+`.zed/settings.json`, a root `OLLAMA_SETUP.md`, and a runnable
+RAG scaffold under `rag/` (chunker + embedder + SQLite-VSS store +
+audit + CLI) with `RAG_RUNBOOK.md` at the project root and a
+path-scoped compliance rule file under `.claude/rules/` for each
+active framework (`rag-hipaa-`, `rag-pci-`, `rag-soc2-`, or
+`rag-ferpa-compliance.md`; `rag-conventions.md` for non-regulated
+profiles).
 
 See the full file inventory in
 [`docs/user-guide/02-generated-files.md`](docs/user-guide/02-generated-files.md).
@@ -177,6 +186,7 @@ Pick one or more output targets via `EMBEDIQ_OUTPUT_TARGETS` or
 | `aider`         | `.aider.conf.yml` + `.aiderignore` — Ollama-backed default model, language-aware test/lint commands |
 | `zed-ai`        | `.zed/settings.json` — Ollama provider registration                                                |
 | `ollama`        | Root `OLLAMA_SETUP.md` runbook — install commands, `ollama pull` per selected model, hardware-tier tuning notes |
+| `rag-scaffold`  | `rag/` directory (chunker + embedder + SQLite-VSS store + audit + CLI), root `RAG_RUNBOOK.md`, and one path-scoped `.claude/rules/rag-{framework}-compliance.md` per active compliance framework. Chunker is FHIR-aware for healthcare profiles, plain-text otherwise. |
 
 Non-technical roles (Business Analyst, Product Manager, Executive) get
 coworker-shaped variants focused on research, analysis, and documentation
@@ -216,6 +226,7 @@ output) in
 | **Role adaptation** | 8 roles (developer, devops, lead, BA, PM, executive, QA, data); role-specific output variants |
 | **Multi-agent targets** | Claude Code, `AGENTS.md`, Cursor, Copilot, Gemini, Windsurf — from one interview |
 | **Local-AI integration** (v3.3) | Continue.dev, Aider, Zed AI, and Ollama — auto-included when the wizard's local-AI branch (`TECH_013`) is opted in |
+| **Runnable RAG scaffold** (v3.3) | `rag-scaffold` target emits chunker + embedder + SQLite-VSS store + audit + CLI under `rag/`, with FHIR-aware chunker for healthcare profiles and per-framework compliance rules (`rag-hipaa-`, `rag-pci-`, `rag-soc2-`, `rag-ferpa-compliance.md`) |
 | **Compliance-aware output** | Pre-write validators (HIPAA, PCI-DSS, SOC2, GDPR, universal); refused — not warned about |
 | **Determinism + audit-readiness** | Zero LLM calls in the generator path; same answers → byte-identical files; CI-gateable |
 | **Evaluation framework** | Golden-config replay scoring; benchmark mode against competing tools |
@@ -326,7 +337,7 @@ without compromising the zero-persistence baseline.
 
 ```bash
 make help                 # Show all targets
-make check                # Type-check + 919 tests
+make check                # Type-check + 949 tests
 make start                # CLI wizard
 make start-web            # Web server on :3000
 make evaluate             # Run evaluation harness

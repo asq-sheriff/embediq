@@ -20,9 +20,13 @@ without breaking everything downstream.
         ▲                                                 │
         │                                                 ▼
     Extension surfaces                           Output target(s)
-    (plugins, skills,                         (Claude, Cursor, Copilot,
-     templates)                                 Gemini, Windsurf,
+    (plugins, skills,                         (Hosted: Claude, Cursor,
+     templates)                                 Copilot, Gemini, Windsurf,
                                                 AGENTS.md)
+                                              (Local-AI v3.3: Continue.dev,
+                                                Aider, Zed AI, Ollama)
+                                              (RAG scaffold v3.3:
+                                                rag-scaffold)
 ```
 
 Orthogonal concerns plug into the pipeline via a **typed event bus**
@@ -83,7 +87,7 @@ formulation of these tenets.
 ```
 User opens /                                 (index.html / index.ts)
     ↓
-Frontend mounts session from URL / storage   (optional 6C)
+Frontend mounts session from URL / storage   (optional)
     ↓
 POST /api/questions (per dimension)          (Q&A loop)
     ↓
@@ -95,7 +99,11 @@ POST /api/generate                           (orchestrator → generators)
     ClaudeMdGenerator   ──▶  CLAUDE.md
     SettingsJsonGen     ──▶  .claude/settings.json
     RulesGenerator      ──▶  .claude/rules/*.md
-    …                        (12 Claude generators + 5 multi-agent)
+    …                        (22 generators total:
+                              12 Claude Code
+                              +  5 multi-agent
+                              +  4 local-AI (v3.3)
+                              +  1 RAG scaffold (v3.3))
     ↓
 OutputValidator                              (pass/fail per compliance check)
     ↓

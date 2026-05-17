@@ -6,7 +6,7 @@
 
 ## Subsystem
 
-<!-- Tag the affected area, e.g. [6E autopilot], [6H git], [docs], [infra]. -->
+<!-- Tag the affected area, e.g. [autopilot], [git], [docs], [infra]. -->
 
 ## Changes
 

@@ -63,7 +63,7 @@ Every feature PR must include tests. The bar:
 
 - **New generator** → unit test asserting each file it emits under
   representative profiles.
-- **New subsystem** (like 6E autopilot) → unit tests for pure logic
+- **New subsystem** (like autopilot) → unit tests for pure logic
   plus at least one integration test that exercises the HTTP route
   end-to-end.
 - **Bug fix** → a regression test that fails against `master` and
@@ -121,7 +121,7 @@ for the overlay process.
 - Keep the PR focused — one shipping priority per PR when feasible.
 - Write a description that explains the **why**, not just the
   **what**; the CHANGELOG line is a good seed.
-- Tag the affected subsystem (`[6E autopilot]`, `[6H git]`, `[docs]`,
+- Tag the affected subsystem (`[autopilot]`, `[git]`, `[docs]`,
   etc.) in the title.
 
 ## Coding style

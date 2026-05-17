@@ -100,7 +100,7 @@ embediq/
     │   ├── priority-analyzer.ts  # Tag-weight priority derivation
     │   └── dimension-tracker.ts  # Progress tracking per dimension
     ├── synthesizer/
-    │   ├── orchestrator.ts       # Coordinates 21 generators (12 Claude + 5 multi-agent + 4 local-AI) + validation
+    │   ├── orchestrator.ts       # Coordinates 22 generators (12 Claude + 5 multi-agent + 4 local-AI + 1 RAG scaffold) + validation
     │   ├── generator.ts          # ConfigGenerator interface
     │   ├── output-validator.ts   # Post-generation compliance verification
     │   ├── generation-header.ts  # Version stamps for generated files
@@ -359,7 +359,7 @@ Simple bookkeeping: tracks `{total, answered, skipped}` per dimension for progre
 
 ### Purpose
 
-The synthesizer transforms the approved `UserProfile` into 15–40 real, usable configuration files across the selected target families (Claude Code, AGENTS.md, Cursor, Copilot, Gemini, Windsurf, plus the v3.3 local-AI targets: Continue.dev, Aider, Zed AI, Ollama). It operates as a meta-framework — no single output template is prescribed. Instead, 21 independent generators each decide what to produce based on the profile and the active target set: 12 Claude Code generators, 5 multi-agent generators, and 4 local-AI generators.
+The synthesizer transforms the approved `UserProfile` into 15–40 real, usable configuration files across the selected target families (Claude Code, AGENTS.md, Cursor, Copilot, Gemini, Windsurf, the v3.3 local-AI targets — Continue.dev, Aider, Zed AI, Ollama — and the v3.3 industry-agnostic `rag-scaffold` target). It operates as a meta-framework — no single output template is prescribed. Instead, 22 independent generators each decide what to produce based on the profile and the active target set: 12 Claude Code generators, 5 multi-agent generators, 4 local-AI generators, and 1 RAG scaffold generator (which emits ~10 files when active — chunker + embedder + store + audit + CLI + runbook + framework-scoped rules).
 
 ### SynthesizerOrchestrator
 

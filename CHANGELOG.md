@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added — v3.3 / 6L RAG Scaffold (industry-agnostic)
+### Added — v3.3 RAG Scaffold (industry-agnostic)
 
 Second phase of v3.3. Extends the wizard from "configure local AI" to
 "configure local AI **and** generate a runnable retrieval pipeline"
@@ -19,7 +19,7 @@ other industry, and emits one path-scoped compliance rule file per
 active framework on the profile.
 
 - **New `TargetFormat.RAG_SCAFFOLD`** (`rag-scaffold`). Auto-included
-  whenever `profile.localAiEnabled === true` (alongside the four 6K
+  whenever `profile.localAiEnabled === true` (alongside the four
   local-AI targets). Never emitted for BA/PM/exec roles.
 - **New `RagScaffoldGenerator`** (`src/synthesizer/generators/rag-scaffold.ts`).
   Emits a small runnable RAG application under `rag/`:
@@ -81,7 +81,7 @@ First phase of v3.3 — extends EmbedIQ from "configures hosted-model
 agents" to "configures hosted + local AI from one interview." Plus
 closes a language-coverage gap that pre-dated v3.3 but ships here.
 
-### Added — 6K Local-Model Wizard Support
+### Added — Local-Model Wizard Support
 
 The wizard now configures Continue.dev, Aider, Zed AI, and Ollama
 when the user opts into local AI (`TECH_013` yes) and picks their
@@ -163,10 +163,10 @@ language-specific files for 5 of them.
 
 ### Coming next in v3.3
 
-- **6L Healthcare RAG Pipeline** — HIPAA-aware retrieval scaffold
+- **Healthcare RAG Pipeline** — HIPAA-aware retrieval scaffold
   (chunker, embeddings, SQLite-VSS store) for healthcare + local-AI
   profiles.
-- **6M Local Router with Confidence Escalation** — the PHI-safe
+- **Local Router with Confidence Escalation** — the PHI-safe
   routing headline differentiator. Local classifier routes simple
   tasks to the local model; escalates complex tasks to Claude/OpenAI
   only after PHI redaction.
@@ -181,7 +181,7 @@ client deliverables. Pure additions — no behavior changes to the
 core wizard or generators.
 
 ### Added
-- **Customer-facing HTML scorecards (6N).** `--format scorecard` turns
+- **Customer-facing HTML scorecards.** `--format scorecard` turns
   `npm run evaluate` or `npm run benchmark` into a standalone HTML
   scorecard suitable for a sales email, audit packet, or compliance
   reviewer. Two layouts (`full` with optional multi-archetype TOC;
@@ -201,7 +201,7 @@ core wizard or generators.
   scorecard for client deliverables. Includes a BAA-survivable
   evidence checklist mapping eight common auditor questions to the
   artifacts EmbedIQ produces.
-- **Industry case-study fixtures (6P).** Two new golden archetypes
+- **Industry case-study fixtures.** Two new golden archetypes
   prospects can run end-to-end:
   - `healthcare-bpo-strict` — tech-lead persona at a healthcare BPO
     claims platform, full HIPAA + strict tier, TypeScript + Python.
@@ -300,39 +300,39 @@ scheduled regeneration, GitHub PR integration, outbound notification webhooks,
 and compliance platform inbound webhooks.
 
 ### Added
-- **Interrupt & resume wizard flows (6C).** `?session=<id>` resume URLs;
+- **Interrupt & resume wizard flows.** `?session=<id>` resume URLs;
   server-side computation of next dimension/question from partial answers;
   welcome-back banner with progress totals; partial profile reconstruction;
   `contributors` map showing who answered what (multi-stakeholder audit
   attribution). `AdaptiveEngine.serialize()` / `restore()` for headless
   replay.
-- **Drift detection CLI (6E-1).** `npm run drift -- --target <dir>
+- **Drift detection CLI.** `npm run drift -- --target <dir>
   (--answers <yaml> | --archetype <id>)` with six classifications:
   match / missing / modified-by-user / modified-stale-stamp /
   version-mismatch / extra. Stamp-aware — distinguishes post-generation
   user edits from entirely hand-authored files. Exit codes 0 / 1 / 2 for
   CI gating.
-- **Autopilot scheduled regeneration (6E-2).** In-process scheduler with
+- **Autopilot scheduled regeneration.** In-process scheduler with
   `@hourly` / `@daily` / `@weekly` / `@monthly` cadence presets (UTC);
   JSON-file store at `EMBEDIQ_AUTOPILOT_DIR`; REST CRUD under
   `/api/autopilot/schedules`; manual trigger webhook at
   `/api/autopilot/webhook/:scheduleId`; per-run records with four status
   classifications; optional `EMBEDIQ_AUTOPILOT_WEBHOOK_SECRET` shared
   secret. Opt-in via `EMBEDIQ_AUTOPILOT_ENABLED=true`.
-- **GitHub PR integration (6H).** `--git-pr` CLI flag uses the GitHub
+- **GitHub PR integration.** `--git-pr` CLI flag uses the GitHub
   REST v3 Git Data API for atomic multi-file commits (no local working
   tree). PR template includes profile summary, per-generator file list,
   validation results, contributor attribution, and drift context. Env
   vars: `EMBEDIQ_GIT_PROVIDER` / `EMBEDIQ_GIT_REPO` / `EMBEDIQ_GIT_TOKEN`
   / `EMBEDIQ_GIT_BASE_BRANCH` / `EMBEDIQ_GIT_API_BASE_URL`. GitHub
   Enterprise supported via the base URL override.
-- **Outbound notification webhooks (6I).** Event-bus subscriber auto-
+- **Outbound notification webhooks.** Event-bus subscriber auto-
   detects Slack (Block Kit), Microsoft Teams (MessageCard), and generic
   JSON formats from the target host. Per-URL event filter via repeated
   `?events=…&events=…` query params. Per-target failure isolation with
   a 3-second timeout so a slow endpoint never blocks the wizard.
   `EMBEDIQ_WEBHOOK_URLS` to enable, `EMBEDIQ_WEBHOOK_FORMAT` to override.
-- **Compliance platform inbound webhooks (6J).** Adapters for Drata,
+- **Compliance platform inbound webhooks.** Adapters for Drata,
   Vanta, and a generic format translate external findings into autopilot
   run triggers. `POST /api/autopilot/compliance/:adapterId` fires a run
   for every enabled schedule whose `complianceFrameworks` list matches
@@ -358,7 +358,7 @@ Three priorities shipped: evaluation framework, multi-agent output
 targeting, and the composable skills system.
 
 ### Added
-- **Evaluation framework (6D).** Golden-config replay harness under
+- **Evaluation framework.** Golden-config replay harness under
   `src/evaluation/` with three shipped archetypes
   (`minimal-developer`, `hipaa-developer-strict`,
   `agents-md-developer`). `npm run evaluate` scores generated output
@@ -368,7 +368,7 @@ targeting, and the composable skills system.
   per-generator scores. `npm run benchmark` scores externally-produced
   configuration files against the same goldens. CLI: text/JSON output,
   baseline regression detection, CI-friendly exit codes.
-- **Multi-agent output targeting (6G).** `TargetFormat` enum
+- **Multi-agent output targeting.** `TargetFormat` enum
   (`claude`, `agents-md`, `cursor`, `copilot`, `gemini`, `windsurf`)
   and five new generators producing cross-agent `AGENTS.md`,
   `.cursor/rules/*.mdc` with MDC frontmatter, `.github/copilot-
@@ -376,7 +376,7 @@ targeting, and the composable skills system.
   `GEMINI.md`, and `.windsurfrules`. Target selection via
   `EMBEDIQ_OUTPUT_TARGETS` env var or `--targets` CLI flag. Default
   remains `claude` for backward compatibility.
-- **Composable skills system (6F).** `Skill` interface as the new
+- **Composable skills system.** `Skill` interface as the new
   lower-level primitive (id, name, version, tags, source, requires,
   conflicts, payload fields). `SkillComposer` merges N skills into a
   `ComposedSkillPayload` with first-wins conflict resolution.
@@ -394,12 +394,12 @@ targeting, and the composable skills system.
 ## [3.0.0] — Enterprise Runtime Foundation
 
 ### Added
-- **Event bus architecture (6A).** Typed in-memory event bus with
+- **Event bus architecture.** Typed in-memory event bus with
   nine events across engine, synthesizer, and web layers. Five
   subscribers: `AuditSubscriber`, `MetricsCollector`,
   `StatusReconciler`, `OtelSubscriber`, `WebSocketHub`. Frontend live
   progress streaming within a 20 KB JS budget.
-- **Multi-backend server-side sessions (6B).** `SessionBackend`
+- **Multi-backend server-side sessions.** `SessionBackend`
   interface with `NullBackend` (zero-persistence default),
   `JsonFileBackend` (dev), and `DatabaseBackend` + `SqliteDialect`
   (production). TTL-governed, monotonic versioning, AES-256-GCM

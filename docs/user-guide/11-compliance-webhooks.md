@@ -9,7 +9,7 @@ canonical `ComplianceEvent` and fires an autopilot run for every
 enabled schedule whose `complianceFrameworks` list includes the
 affected framework. The automated flow becomes: **platform detects
 gap → autopilot regenerates configuration → drift report surfaces the
-delta → (with [6H git PR integration](09-git-pr-integration.md))
+delta → (with [git PR integration](09-git-pr-integration.md))
 team reviews and approves → platform sees the gap closed.**
 
 > **When to use this.** Your organization uses a SaaS compliance

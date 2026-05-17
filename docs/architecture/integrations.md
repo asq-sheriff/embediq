@@ -53,7 +53,7 @@ Higher-level wrapper that:
    `resolveGitConfigFromEnv`).
 2. Builds a PR template via `buildPrTemplate(input)` —
    Summary / Changes (grouped by generator) / Validation /
-   Contributors (from 6C session data) / Drift (from 6E autopilot).
+   Contributors (from session data) / Drift (from autopilot).
 3. Names the branch (`embediq/<UTC-YYYYMMDD-HHMMSS>` by default).
 4. Commits every file atomically.
 5. Opens the PR.

@@ -131,7 +131,7 @@ Sections included conditionally:
 - **Contributors** — present when the session's answers carry
   `contributedBy`. See
   [session and resume](07-session-and-resume.md) — requires auth on.
-- **Drift that triggered this PR** — present when autopilot (6E)
+- **Drift that triggered this PR** — present when autopilot
   calls `openPrForGeneration` with a drift summary. Manual runs skip
   this section.
 

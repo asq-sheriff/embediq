@@ -8,7 +8,7 @@ service: every hour / day / week / month it checks whether your target
 project's generated files still match the expected output, and it
 records a run for every scan. External systems (Drata, Vanta, CI
 pipelines, your own dashboards) can also trigger a run via an HTTP
-webhook. When 6H git PR integration is enabled, a future release will
+webhook. When git PR integration is enabled, a future release will
 turn "drift detected" into an automatic PR; today autopilot produces an
 audit-grade run record you can alert on.
 
