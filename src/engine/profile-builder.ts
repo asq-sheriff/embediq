@@ -26,6 +26,7 @@ export class ProfileBuilder {
     profile.budgetTier = this.resolveBudget(answers);
     profile.securityConcerns = this.resolveSecurityConcerns(answers);
     profile.hardwareProfile = this.resolveHardware(answers);
+    this.applyLocalAi(profile, answers);
 
     this.bus.emit('profile:built', {
       profileSummary: {
@@ -117,6 +118,27 @@ export class ProfileBuilder {
     const wantsLocal = this.getBool(answers, 'TECH_013');
     if (!wantsLocal) return {};
     return { ram: this.getString(answers, 'TECH_014') };
+  }
+
+  /**
+   * v3.3 / 6K — map the local-AI answer set onto the optional UserProfile
+   * fields. Leaves all four fields undefined when the user did not opt in
+   * (TECH_013 false), preserving golden-config byte-identity for the
+   * existing fixtures.
+   */
+  private applyLocalAi(profile: UserProfile, answers: Map<string, Answer>): void {
+    const enabled = this.getBool(answers, 'TECH_013');
+    if (!enabled) return;
+    profile.localAiEnabled = true;
+
+    const models = this.getStringArray(answers, 'TECH_016').filter((m) => m && m !== 'custom');
+    if (models.length > 0) profile.ollamaModels = models;
+
+    const ides = this.getStringArray(answers, 'TECH_017').filter((i) => i && i !== 'none');
+    if (ides.length > 0) profile.ideIntegrations = ides;
+
+    const def = this.getString(answers, 'TECH_018');
+    if (def) profile.defaultLocalModel = def;
   }
 
   private getString(answers: Map<string, Answer>, id: string): string {

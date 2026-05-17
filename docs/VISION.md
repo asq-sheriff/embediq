@@ -94,7 +94,7 @@ Industry and regulatory context drives generation. Permission tiers, DLP pattern
 
 ### 5. Multi-agent from a single interview
 
-A team using Claude Code today and Cursor tomorrow does not re-answer 71 questions. The Q&A, profile, priorities, compliance logic, and validation are all agent-agnostic. Only the Synthesizer targets specific formats — `CLAUDE.md` + `.claude/*`, `AGENTS.md`, `.cursor/rules/*.mdc`, `.github/copilot-instructions.md`, `GEMINI.md`, `.windsurfrules`. The Q&A interview feeds every target format from a single answer set.
+A team using Claude Code today and Cursor tomorrow does not re-answer 74 questions. The Q&A, profile, priorities, compliance logic, and validation are all agent-agnostic. Only the Synthesizer targets specific formats — `CLAUDE.md` + `.claude/*`, `AGENTS.md`, `.cursor/rules/*.mdc`, `.github/copilot-instructions.md`, `GEMINI.md`, `.windsurfrules`. The Q&A interview feeds every target format from a single answer set.
 
 ### 6. Type safety as the configuration source
 
@@ -126,7 +126,7 @@ EmbedIQ generates files and events. Existing enterprise tools handle the human c
 
 ### 1. Adaptive Q&A
 
-71 questions across seven dimensions — Strategic Intent, Problem Definition, Operational Reality, Technology Requirements, Regulatory Compliance, Financial Constraints, Innovation. 40 questions have branching conditions; irrelevant paths are hidden. Completing the wizard takes 5–15 minutes end-to-end.
+74 questions across seven dimensions — Strategic Intent, Problem Definition, Operational Reality, Technology Requirements, Regulatory Compliance, Financial Constraints, Innovation. 40 questions have branching conditions; irrelevant paths are hidden. Completing the wizard takes 5–15 minutes end-to-end.
 
 ### 2. Profile synthesis and priority derivation
 
@@ -172,7 +172,7 @@ The generated configuration doesn't stop at the filesystem. A platform-agnostic 
 v3.2.0 is the current release. A complete capability inventory:
 
 **Adaptive wizard**
-- 71 questions across seven dimensions, 40 with conditional branching
+- 74 questions across seven dimensions, 40 with conditional branching
 - Eight role profiles (developer, DevOps, tech lead, QA, data, BA, PM, executive) with role-adaptive output
 - Three built-in domain packs — Healthcare (HIPAA/HITECH/42 CFR Part 2), Finance (PCI-DSS/SOX/GLBA/AML-BSA), Education (FERPA/COPPA) — plus a typed plugin interface for external packs
 - Composable skills system with a registry, typed skill interface, and external loading from `EMBEDIQ_SKILLS_DIR`

@@ -1,0 +1,22 @@
+id: local-ai-enterprise
+title: Local-AI Enterprise (medium team, TypeScript + Python, GPU hardware)
+description: |
+  Medium-sized enterprise engineering team running local AI alongside
+  hosted Claude — the typical shape of a regulated-industry workforce
+  that wants 70% of completions to never leave the workstation while
+  keeping Claude available for the complex 30%.
+
+  Demonstrates the v3.3 / 6K local-AI surface at non-minimal-floor
+  scale: multi-language stack (TypeScript + Python), GPU hardware, all
+  three IDE integrations selected, larger model picks. Pairs with
+  `local-ai-developer` to show that the local-AI feature is independent
+  of team size (`OPS_001`) and primary IDE (`TECH_004`) — the gating
+  conditions on the new TECH_016/017/018 questions are only
+  TECH_013=true and a technical role.
+minimumFloor: 14
+targets:
+  - claude
+  - ollama
+  - continue-dev
+  - aider
+  - zed-ai

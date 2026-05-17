@@ -655,6 +655,68 @@ export const questions: Question[] = [
     showConditions: [],
     tags: ['mcp', 'tools', 'integrations'],
   },
+  {
+    id: 'TECH_016',
+    dimension: Dimension.TECHNOLOGY_REQUIREMENTS,
+    text: 'Which Ollama models will you run locally?',
+    helpText: 'Pick the models you plan to install via `ollama pull`. The wizard wires them into the generated IDE config.',
+    type: QuestionType.MULTI_CHOICE,
+    options: [
+      { key: 'qwen2.5-coder:32b', label: 'qwen2.5-coder:32b (coding, ~20GB)' },
+      { key: 'qwen3.5:35b-a3b', label: 'qwen3.5:35b-a3b (general, ~22GB)' },
+      { key: 'llama3.1:8b', label: 'llama3.1:8b (general, small, ~5GB)' },
+      { key: 'gemma2:27b', label: 'gemma2:27b (general, ~16GB)' },
+      { key: 'nomic-embed-text', label: 'nomic-embed-text (embeddings)' },
+      { key: 'custom', label: 'Custom (specify in OLLAMA_SETUP.md after run)' },
+    ],
+    required: false,
+    order: 16,
+    showConditions: [
+      { questionId: 'TECH_013', operator: ConditionOperator.EQUALS, value: true },
+      { questionId: 'STRAT_000', operator: ConditionOperator.NONE_OF, value: ['ba', 'pm', 'executive'] },
+    ],
+    tags: ['local_models', 'ollama'],
+  },
+  {
+    id: 'TECH_017',
+    dimension: Dimension.TECHNOLOGY_REQUIREMENTS,
+    text: 'Which IDE-resident AI assistants do you want configured for local models?',
+    helpText: 'EmbedIQ will emit ready-to-use config files for each selected IDE.',
+    type: QuestionType.MULTI_CHOICE,
+    options: [
+      { key: 'continue-dev', label: 'Continue.dev (VS Code / JetBrains extension)' },
+      { key: 'aider', label: 'Aider (terminal-resident pair-programmer)' },
+      { key: 'zed-ai', label: 'Zed AI (Zed editor)' },
+      { key: 'none', label: 'None — just Ollama, no IDE wiring' },
+    ],
+    required: false,
+    order: 17,
+    showConditions: [
+      { questionId: 'TECH_013', operator: ConditionOperator.EQUALS, value: true },
+      { questionId: 'STRAT_000', operator: ConditionOperator.NONE_OF, value: ['ba', 'pm', 'executive'] },
+    ],
+    tags: ['local_models', 'ide_integration'],
+  },
+  {
+    id: 'TECH_018',
+    dimension: Dimension.TECHNOLOGY_REQUIREMENTS,
+    text: 'Which Ollama model should be the default for autocomplete / chat?',
+    helpText: 'Pick one model to set as the default — typically a smaller, faster one for tab-autocomplete.',
+    type: QuestionType.SINGLE_CHOICE,
+    options: [
+      { key: 'qwen2.5-coder:32b', label: 'qwen2.5-coder:32b' },
+      { key: 'qwen3.5:35b-a3b', label: 'qwen3.5:35b-a3b' },
+      { key: 'llama3.1:8b', label: 'llama3.1:8b' },
+      { key: 'gemma2:27b', label: 'gemma2:27b' },
+    ],
+    required: false,
+    order: 18,
+    showConditions: [
+      { questionId: 'TECH_013', operator: ConditionOperator.EQUALS, value: true },
+      { questionId: 'STRAT_000', operator: ConditionOperator.NONE_OF, value: ['ba', 'pm', 'executive'] },
+    ],
+    tags: ['local_models', 'ollama'],
+  },
 
   // ═══════════════════════════════════════════════════════════════
   // DIMENSION 5: REGULATORY COMPLIANCE

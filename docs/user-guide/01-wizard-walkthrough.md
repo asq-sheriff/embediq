@@ -17,7 +17,7 @@ this chapter is the longer reference for each phase.
 
 ## Quick reference to the four phases
 
-1. **Discovery** — adaptive Q&A, up to ~40 of the 71 questions based
+1. **Discovery** — adaptive Q&A, up to ~40 of the 74 questions based
    on your answers and chosen industry / compliance frameworks.
 2. **Playback** — summary of the derived profile, tech stack,
    compliance posture, and priorities (with confidence scores).

@@ -1,0 +1,28 @@
+STRAT_000: developer
+STRAT_000a: advanced
+STRAT_001: Enterprise data platform
+STRAT_002: saas
+OPS_001: medium
+TECH_001:
+  - typescript
+  - python
+TECH_004:
+  - vscode
+  - intellij
+  - zed
+TECH_005:
+  - npm
+TECH_007: github_actions
+TECH_013: true
+TECH_014: gpu
+TECH_016:
+  - qwen2.5-coder:32b
+  - qwen3.5:35b-a3b
+  - llama3.1:8b
+  - nomic-embed-text
+TECH_017:
+  - continue-dev
+  - aider
+  - zed-ai
+TECH_018: qwen3.5:35b-a3b
+FIN_001: enterprise

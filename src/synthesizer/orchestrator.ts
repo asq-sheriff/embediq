@@ -22,6 +22,10 @@ import { CursorRulesGenerator } from './generators/cursor-rules.js';
 import { CopilotInstructionsGenerator } from './generators/copilot-instructions.js';
 import { GeminiMdGenerator } from './generators/gemini-md.js';
 import { WindsurfRulesGenerator } from './generators/windsurf-rules.js';
+import { ContinueDevGenerator } from './generators/continue-dev.js';
+import { AiderGenerator } from './generators/aider.js';
+import { ZedAiGenerator } from './generators/zed-ai.js';
+import { OllamaSetupGenerator } from './generators/ollama-setup.js';
 
 export class SynthesizerOrchestrator {
   private generators: ConfigGenerator[];
@@ -49,6 +53,12 @@ export class SynthesizerOrchestrator {
       new CopilotInstructionsGenerator(),
       new GeminiMdGenerator(),
       new WindsurfRulesGenerator(),
+      // v3.3 / 6K — local-AI targets. Auto-included when profile.localAiEnabled
+      // is true; explicit selection via --targets / EMBEDIQ_OUTPUT_TARGETS also works.
+      new ContinueDevGenerator(),
+      new AiderGenerator(),
+      new ZedAiGenerator(),
+      new OllamaSetupGenerator(),
     ];
   }
 
@@ -66,14 +76,31 @@ export class SynthesizerOrchestrator {
         ? new Set<TargetFormat>(config.targets)
         : new Set<TargetFormat>(DEFAULT_TARGETS);
 
+      // v3.3 / 6K — auto-include local-AI targets when the profile says so.
+      // The user opted into local AI via the wizard (TECH_013); honor that
+      // regardless of the rest of the target set. Per-IDE gating happens
+      // through profile.ideIntegrations.
+      if (config.profile.localAiEnabled && !isNonTechnical) {
+        targets.add(TargetFormat.OLLAMA);
+        const ides = config.profile.ideIntegrations ?? [];
+        if (ides.includes('continue-dev')) targets.add(TargetFormat.CONTINUE_DEV);
+        if (ides.includes('aider')) targets.add(TargetFormat.AIDER);
+        if (ides.includes('zed-ai')) targets.add(TargetFormat.ZED_AI);
+      }
+
       span.setAttribute('embediq.targets', Array.from(targets).sort().join(','));
 
       // Filter by target first, then drop technical-only Claude generators
       // when the active role is non-technical. Non-Claude targets already
-      // render role-appropriate output internally.
+      // render role-appropriate output internally. Local-AI targets are
+      // never emitted for BA/PM/exec roles — those personas don't have an
+      // Ollama / Aider setup.
       const applicable = this.generators.filter((g) => {
         if (!targets.has(g.target)) return false;
         if (isNonTechnical && g.target === TargetFormat.CLAUDE && this.isTechnicalOnlyGenerator(g.name)) {
+          return false;
+        }
+        if (isNonTechnical && this.isLocalAiTarget(g.target)) {
           return false;
         }
         return true;
@@ -145,6 +172,15 @@ export class SynthesizerOrchestrator {
   private isTechnicalOnlyGenerator(name: string): boolean {
     // These generators produce configs only relevant to developers/devops
     return ['hooks', 'association-map'].includes(name);
+  }
+
+  private isLocalAiTarget(target: TargetFormat): boolean {
+    return (
+      target === TargetFormat.CONTINUE_DEV ||
+      target === TargetFormat.AIDER ||
+      target === TargetFormat.ZED_AI ||
+      target === TargetFormat.OLLAMA
+    );
   }
 
   private generateCoworkerClaudeMd(config: SetupConfig): GeneratedFile {

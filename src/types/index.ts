@@ -106,6 +106,15 @@ export interface UserProfile {
   securityConcerns: string[];
   hardwareProfile: Record<string, string>;
   priorities: Priority[];
+  // v3.3 / 6K — local AI integration. All optional; defaulted when unset.
+  /** True when the user opted into local AI (TECH_013 yes). */
+  localAiEnabled?: boolean;
+  /** Ollama model identifiers the user plans to run (TECH_016). */
+  ollamaModels?: string[];
+  /** IDE-resident assistants to wire up: continue-dev / aider / zed-ai (TECH_017). */
+  ideIntegrations?: string[];
+  /** Default Ollama model for autocomplete / chat (TECH_018). */
+  defaultLocalModel?: string;
 }
 
 export interface SetupConfig {

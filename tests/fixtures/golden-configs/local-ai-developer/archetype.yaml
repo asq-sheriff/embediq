@@ -1,0 +1,22 @@
+id: local-ai-developer
+title: Local-AI Developer (small team, multi-IDE, all four local-AI generators)
+description: |
+  A minimal example of the v3.3 / 6K local-AI branch — small TypeScript
+  team running Continue.dev, Aider, and Zed AI against locally-installed
+  Ollama models. The answer set is illustrative, not prescriptive: the
+  local-AI feature is gated only on TECH_013=true plus a technical role
+  (not on team size or specific IDE). Any team size (solo through large)
+  and any IDE supported by the chosen integration will produce the same
+  surface — see `local-ai-enterprise` for a medium-team variant.
+
+  Locks in the four local-AI generators' output (.continue/config.json,
+  .aider.conf.yml + .aiderignore, .zed/settings.json, OLLAMA_SETUP.md)
+  alongside the Claude default target so the orchestrator's auto-include
+  logic regresses cleanly under CI.
+minimumFloor: 13
+targets:
+  - claude
+  - ollama
+  - continue-dev
+  - aider
+  - zed-ai

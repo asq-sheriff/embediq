@@ -5,7 +5,7 @@
 Long compliance-heavy wizard runs rarely finish in one sitting. A
 developer answers the stack questions, a compliance officer fills in
 regulatory obligations, a tech lead supplies team-size and permission
-preferences. EmbedIQ's server-side session persistence turns a 71-question
+preferences. EmbedIQ's server-side session persistence turns a 74-question
 interview into a **shareable, resumable artifact** that the right person
 can open on the right device at the right time — with per-answer
 attribution so compliance reviewers can prove who answered what.

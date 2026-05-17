@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git status)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git branch *)",
+      "Bash(npm test)",
+      "Bash(npm run *)",
+      "Bash(npx *)",
+      "Bash(ls *)"
+    ],
+    "deny": [
+      "Bash(rm -rf /)",
+      "Bash(rm -rf /*)",
+      "Bash(git push --force *)",
+      "Bash(git push -f *)",
+      "Bash(sudo *)",
+      "Bash(chmod 777 *)",
+      "Bash(curl * | bash)",
+      "Bash(wget * | sh)",
+      "Bash(mkfs *)",
+      "Bash(dd if=*)",
+      "Write(**/.env)",
+      "Write(**/.env.*)",
+      "Write(**/credentials*)",
+      "Write(**/secrets*)",
+      "Write(**/*.pem)",
+      "Write(**/*.key)",
+      "Edit(**/.env)",
+      "Edit(**/.env.*)",
+      "Edit(**/credentials*)",
+      "Edit(**/secrets*)"
+    ]
+  }
+}

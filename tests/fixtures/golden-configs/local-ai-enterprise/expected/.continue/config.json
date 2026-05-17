@@ -1,0 +1,29 @@
+{
+  "models": [
+    {
+      "title": "qwen2.5-coder:32b",
+      "provider": "ollama",
+      "model": "qwen2.5-coder:32b"
+    },
+    {
+      "title": "qwen3.5:35b-a3b",
+      "provider": "ollama",
+      "model": "qwen3.5:35b-a3b"
+    },
+    {
+      "title": "llama3.1:8b",
+      "provider": "ollama",
+      "model": "llama3.1:8b"
+    }
+  ],
+  "tabAutocompleteModel": {
+    "title": "qwen3.5:35b-a3b",
+    "provider": "ollama",
+    "model": "qwen3.5:35b-a3b"
+  },
+  "embeddingsProvider": {
+    "provider": "ollama",
+    "model": "nomic-embed-text"
+  },
+  "allowAnonymousTelemetry": false
+}

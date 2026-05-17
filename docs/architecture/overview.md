@@ -9,7 +9,7 @@ without breaking everything downstream.
 ```
 ┌────────────────────────────────────────────────────────────────┐
 │  Layer 1 — Universal Question Bank   src/bank/                 │
-│  71 questions · 7 dimensions · 40 with conditional branching   │
+│  74 questions · 7 dimensions · 40 with conditional branching   │
 ├────────────────────────────────────────────────────────────────┤
 │  Layer 2 — Adaptive Logic Engine     src/engine/               │
 │  Branch evaluation · profile building · priority analysis      │

@@ -45,7 +45,7 @@ The system serves two interfaces (CLI and web) from a single shared core, adapts
 │  ┌─────────────────────────────────────────────────────────────┐   │
 │  │              Layer 1: Universal Question Bank               │   │
 │  │                                                             │   │
-│  │  71 questions · 7 dimensions · 40 with branching conditions │   │
+│  │  74 questions · 7 dimensions · 40 with branching conditions │   │
 │  │  question-registry.ts → QuestionBank                        │   │
 │  └─────────────────────────┬───────────────────────────────────┘   │
 │                             ▼                                       │
@@ -90,7 +90,7 @@ embediq/
     ├── types/
     │   └── index.ts              # All interfaces, enums, type aliases
     ├── bank/
-    │   ├── question-registry.ts  # 71 question definitions (1,115 lines)
+    │   ├── question-registry.ts  # 74 question definitions (1,177 lines)
     │   ├── question-bank.ts      # Query/filter interface
     │   └── profile-templates.ts  # Organizational template loader
     ├── engine/
@@ -188,7 +188,7 @@ The taxonomy is derived from Praglogic's Adaptive Architecture Specifications' c
 | 6 | Financial Constraints | 5 | Budget, model routing, cost optimization |
 | 7 | Innovation & Future | 7 | Plugins, doc tracking, memory, agents, commands |
 
-**Total**: 71 questions. **With branching**: 40 (56%) have conditional show logic.
+**Total**: 74 questions. **With branching**: 40 (56%) have conditional show logic.
 
 ### Conditional Branching Model
 
@@ -253,7 +253,7 @@ FIN_002 (model routing?)
 
 `QuestionBank` wraps the static registry and provides query methods:
 
-- `getAll()` — All 71 questions
+- `getAll()` — All 74 questions
 - `getById(id)` — Lookup by question ID
 - `getByDimension(dim)` — All questions in a dimension, sorted by order
 - `getVisibleQuestions(dim, answers)` — Questions whose conditions are satisfied
@@ -739,7 +739,7 @@ User Input
     ▼
 ┌───────────────┐    ┌──────────────────┐
 │ QuestionBank  │───▶│ BranchEvaluator  │
-│ (71 questions)│    │ (10 operators)   │
+│ (74 questions)│    │ (10 operators)   │
 └───────┬───────┘    └────────┬─────────┘
         │                     │
         ▼                     ▼

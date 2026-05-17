@@ -62,7 +62,7 @@ regulatory audit.
 **Not for**
 
 - **Hobbyist solo developers** who want a one-page `CLAUDE.md`. Shallow
-  generators serve that case well and a 71-question wizard would
+  generators serve that case well and a 74-question wizard would
   over-serve it — even with the engine's short-circuiting for
   minimal-compliance profiles.
 
@@ -188,7 +188,7 @@ output) in
 
 | Area | What ships today |
 |---|---|
-| **Adaptive Q&A** | 71 questions · 7 dimensions · 40 with conditional branching |
+| **Adaptive Q&A** | 74 questions · 7 dimensions · 40 with conditional branching |
 | **Role adaptation** | 8 roles (developer, devops, lead, BA, PM, executive, QA, data); role-specific output variants |
 | **Multi-agent targets** | Claude Code, `AGENTS.md`, Cursor, Copilot, Gemini, Windsurf — from one interview |
 | **Compliance-aware output** | Pre-write validators (HIPAA, PCI-DSS, SOC2, GDPR, universal); refused — not warned about |
@@ -251,7 +251,7 @@ Three-layer design:
 ```
 ┌────────────────────────────────────────────────────┐
 │  Layer 1: Universal Question Bank                  │
-│  71 questions · 7 dimensions · 40 with branching   │
+│  74 questions · 7 dimensions · 40 with branching   │
 ├────────────────────────────────────────────────────┤
 │  Layer 2: Adaptive Logic Engine                    │
 │  Branch evaluation · profile building · priorities │

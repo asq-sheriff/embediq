@@ -1,0 +1,26 @@
+{
+  "assistant": {
+    "version": "2",
+    "default_model": {
+      "provider": "ollama",
+      "model": "qwen2.5-coder:32b"
+    }
+  },
+  "language_models": {
+    "ollama": {
+      "api_url": "http://localhost:11434",
+      "available_models": [
+        {
+          "name": "qwen2.5-coder:32b",
+          "display_name": "qwen2.5-coder:32b",
+          "max_tokens": 32768
+        },
+        {
+          "name": "llama3.1:8b",
+          "display_name": "llama3.1:8b",
+          "max_tokens": 32768
+        }
+      ]
+    }
+  }
+}

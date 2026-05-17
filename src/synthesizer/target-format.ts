@@ -15,6 +15,13 @@ export enum TargetFormat {
   COPILOT = 'copilot',
   GEMINI = 'gemini',
   WINDSURF = 'windsurf',
+  // v3.3 / 6K — local-AI targets. Opt-in only — never included in DEFAULT_TARGETS.
+  // Auto-included by the orchestrator when the user has answered the local-AI
+  // wizard questions; selectable explicitly via --targets / EMBEDIQ_OUTPUT_TARGETS.
+  CONTINUE_DEV = 'continue-dev',
+  AIDER = 'aider',
+  ZED_AI = 'zed-ai',
+  OLLAMA = 'ollama',
 }
 
 export const ALL_TARGETS: readonly TargetFormat[] = [
@@ -24,6 +31,10 @@ export const ALL_TARGETS: readonly TargetFormat[] = [
   TargetFormat.COPILOT,
   TargetFormat.GEMINI,
   TargetFormat.WINDSURF,
+  TargetFormat.CONTINUE_DEV,
+  TargetFormat.AIDER,
+  TargetFormat.ZED_AI,
+  TargetFormat.OLLAMA,
 ];
 
 /** When the caller supplies nothing, we emit the native Claude Code setup only. */
