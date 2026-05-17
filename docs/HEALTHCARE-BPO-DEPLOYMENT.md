@@ -257,12 +257,19 @@ Each engagement completion can produce an audit-stamped HTML
 scorecard:
 
 ```bash
-npm run evaluate -- --archetype hipaa-developer-strict \
+npm run evaluate -- --archetype healthcare-bpo-strict \
   --format scorecard \
   --out /deliverables/client-{id}/embediq-scorecard.html \
   --scorecard-title "{Client Name} — HIPAA AI Harness Score" \
   --scorecard-logo /etc/embediq/client-{id}-logo.png
 ```
+
+The `healthcare-bpo-strict` archetype ships with the repo
+(`tests/fixtures/golden-configs/healthcare-bpo-strict/`) and models a
+tech-lead persona at a healthcare BPO running a claims platform with
+full HIPAA + strict security tier. Use `hipaa-developer-strict` for
+the individual-developer variant — both score against the same
+Healthcare domain pack.
 
 Hand this to the client compliance officer alongside the generated
 files. See

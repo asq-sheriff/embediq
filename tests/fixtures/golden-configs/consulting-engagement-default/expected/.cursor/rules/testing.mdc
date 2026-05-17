@@ -1,0 +1,15 @@
+---
+description: "Testing standards for test files"
+globs:
+  - "**/*.test.*"
+  - "**/*.spec.*"
+  - "tests/**"
+  - "__tests__/**"
+---
+
+# Testing Standards
+
+- Every new feature must have corresponding tests.
+- Use descriptive test names that explain the expected behavior.
+- Never commit code that fails existing tests.
+- Co-locate tests with source when the framework allows.

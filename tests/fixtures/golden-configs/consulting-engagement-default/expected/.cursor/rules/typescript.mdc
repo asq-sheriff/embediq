@@ -1,0 +1,14 @@
+---
+description: "TypeScript conventions"
+globs:
+  - "**/*.ts"
+  - "**/*.tsx"
+---
+
+# TypeScript Conventions
+
+- Strict mode is mandatory.
+- Explicit return types on exported functions.
+- Prefer `interface` over `type` for object shapes.
+- `const` by default; `let` only when reassignment is needed.
+- No `any` — use `unknown` and narrow with type guards.

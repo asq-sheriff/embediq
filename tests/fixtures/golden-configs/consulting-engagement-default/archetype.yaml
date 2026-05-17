@@ -1,0 +1,14 @@
+id: consulting-engagement-default
+title: Consulting Engagement (default — SaaS, SOC 2, balanced security)
+description: |
+  Default consulting-firm engagement: developer at a systems integrator
+  building a SaaS-flavored client project under SOC 2 obligations with a
+  balanced security tier. Multi-agent target set (Claude + AGENTS.md +
+  Cursor) so the same harness works across whichever IDE the client
+  mandates. The archetype a Turnberry-class consultancy uses as the
+  starting point per engagement before client-specific overrides.
+minimumFloor: 12
+targets:
+  - claude
+  - agents-md
+  - cursor

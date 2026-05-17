@@ -1,0 +1,19 @@
+STRAT_000: developer
+STRAT_000a: intermediate
+STRAT_001: Client engagement platform
+STRAT_002: saas
+OPS_001: small
+TECH_001:
+  - typescript
+TECH_004:
+  - vscode
+  - cursor
+TECH_005:
+  - npm
+TECH_007: github_actions
+FIN_001: standard
+REG_001: true
+REG_002:
+  - soc2
+REG_005: true
+REG_008: balanced

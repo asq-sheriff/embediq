@@ -44,6 +44,23 @@ engagements:
 This is by design: a consulting firm's reusable IP (skills, templates, plugins)
 compounds across engagements. The boundary is *state*, not *IP*.
 
+## Reference archetype
+
+`tests/fixtures/golden-configs/consulting-engagement-default/` ships
+as a starting point — developer role, SaaS industry, SOC 2 obligations,
+balanced security tier, multi-agent target set (Claude + AGENTS.md +
+Cursor). Generate a scorecard for it with:
+
+```bash
+npm run evaluate -- --archetype consulting-engagement-default \
+  --format scorecard \
+  --out /deliverables/{client}/scorecard.html \
+  --scorecard-title "{Client} — Engagement AI Harness Score"
+```
+
+Override its answer set per engagement to model client-specific
+requirements before deployment.
+
 ## Minimum viable setup
 
 ```bash
