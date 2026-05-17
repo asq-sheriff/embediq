@@ -1,0 +1,62 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "type": "command",
+        "if": "Edit",
+        "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/dlp-scanner.py\"",
+        "timeout": 500
+      },
+      {
+        "type": "command",
+        "if": "Write",
+        "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/dlp-scanner.py\"",
+        "timeout": 500
+      },
+      {
+        "type": "command",
+        "if": "Bash",
+        "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/dlp-scanner.py\"",
+        "timeout": 500
+      },
+      {
+        "type": "command",
+        "if": "Bash",
+        "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/command-guard.py\"",
+        "timeout": 300
+      }
+    ],
+    "PostToolUse": [
+      {
+        "type": "command",
+        "if": "Edit",
+        "command": "npx prettier --write \"$CLAUDE_FILE\" 2>/dev/null; npx tsc --noEmit 2>&1 | head -20",
+        "timeout": 5000
+      },
+      {
+        "type": "command",
+        "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/audit-logger.py\"",
+        "timeout": 200,
+        "async": true
+      }
+    ],
+    "SessionStart": [
+      {
+        "type": "command",
+        "command": "echo \"Session started: $(date -u +%Y-%m-%dT%H:%M:%SZ) | Branch: $(git branch --show-current 2>/dev/null || echo none)\"",
+        "timeout": 1000
+      }
+    ]
+  },
+  "deniedMcpServers": [
+    "figma",
+    "google-calendar",
+    "gmail",
+    "cloudflare",
+    "gamma",
+    "mermaid-chart",
+    "excalidraw",
+    "biorender",
+    "hugging-face"
+  ]
+}

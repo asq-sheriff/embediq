@@ -3,6 +3,9 @@ dist/
 .DS_Store
 .env
 .env.*
+# Allow .env.example template files inside golden-config fixtures —
+# they're test data, not runtime secrets.
+!tests/fixtures/**/.env.example
 *.log
 
 # IDE

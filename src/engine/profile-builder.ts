@@ -139,6 +139,15 @@ export class ProfileBuilder {
 
     const def = this.getString(answers, 'TECH_018');
     if (def) profile.defaultLocalModel = def;
+
+    const routerEnabled = this.getBool(answers, 'TECH_019');
+    if (!routerEnabled) return;
+    profile.routerEnabled = true;
+
+    const apis = this.getStringArray(answers, 'TECH_020').filter((a) => a);
+    if (apis.length > 0) profile.externalApis = apis;
+
+    if (this.getBool(answers, 'TECH_021')) profile.confidenceEscalation = true;
   }
 
   private getString(answers: Map<string, Answer>, id: string): string {

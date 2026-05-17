@@ -25,7 +25,7 @@ describe('Web API', () => {
       const res = await request(app).get('/ready');
       expect(res.status).toBe(200);
       expect(res.body.ready).toBe(true);
-      expect(res.body.questionCount).toBe(74);
+      expect(res.body.questionCount).toBe(77);
     });
   });
 

@@ -115,6 +115,12 @@ export interface UserProfile {
   ideIntegrations?: string[];
   /** Default Ollama model for autocomplete / chat (TECH_018). */
   defaultLocalModel?: string;
+  /** True when the user opted into the local-router service (TECH_019 yes). */
+  routerEnabled?: boolean;
+  /** External LLM APIs available for escalation: anthropic / openai (TECH_020). */
+  externalApis?: string[];
+  /** True when the router should self-evaluate and escalate below a threshold (TECH_021). */
+  confidenceEscalation?: boolean;
 }
 
 export interface SetupConfig {

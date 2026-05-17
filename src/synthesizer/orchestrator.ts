@@ -27,6 +27,7 @@ import { AiderGenerator } from './generators/aider.js';
 import { ZedAiGenerator } from './generators/zed-ai.js';
 import { OllamaSetupGenerator } from './generators/ollama-setup.js';
 import { RagScaffoldGenerator } from './generators/rag-scaffold.js';
+import { LocalRouterGenerator } from './generators/local-router.js';
 
 export class SynthesizerOrchestrator {
   private generators: ConfigGenerator[];
@@ -64,6 +65,11 @@ export class SynthesizerOrchestrator {
       // for healthcare, plain-text for others; per-framework compliance
       // rules from profile.complianceFrameworks).
       new RagScaffoldGenerator(),
+      // v3.3 / 6M — Local router with confidence escalation. Auto-included
+      // when profile.routerEnabled is true. Healthcare profiles add a
+      // PHI redactor; profiles that opt in to confidence escalation get
+      // a self-evaluation module wired into the dispatch path.
+      new LocalRouterGenerator(),
     ];
   }
 
@@ -96,6 +102,14 @@ export class SynthesizerOrchestrator {
         // otherwise) plus per-framework compliance rules are decided
         // inside the generator, not at the target-selection layer.
         targets.add(TargetFormat.RAG_SCAFFOLD);
+      }
+
+      // v3.3 / 6M — Local router auto-includes when the user opted into the
+      // hybrid-dispatch service via TECH_019. Independent of localAiEnabled
+      // because the router is the integration point — though in practice the
+      // wizard only surfaces TECH_019 once TECH_013 is yes.
+      if (config.profile.routerEnabled && !isNonTechnical) {
+        targets.add(TargetFormat.LOCAL_ROUTER);
       }
 
       span.setAttribute('embediq.targets', Array.from(targets).sort().join(','));
@@ -190,7 +204,8 @@ export class SynthesizerOrchestrator {
       target === TargetFormat.AIDER ||
       target === TargetFormat.ZED_AI ||
       target === TargetFormat.OLLAMA ||
-      target === TargetFormat.RAG_SCAFFOLD
+      target === TargetFormat.RAG_SCAFFOLD ||
+      target === TargetFormat.LOCAL_ROUTER
     );
   }
 

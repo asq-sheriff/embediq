@@ -9,6 +9,69 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.3.1] — Local AI Integration Layer (Phases 2 + 3)
+
+Bundles two phases of the v3.3 Local AI Integration Layer together —
+the industry-agnostic RAG scaffold (Phase 2) and the local router
+with confidence escalation (Phase 3). Both ship together so the
+PHI-safe routing differentiator lands alongside the runnable
+retrieval pipeline.
+
+See the per-phase notes below for full detail.
+
+### Added — v3.3 Local Router with Confidence Escalation
+
+Third phase of v3.3, and the headline PHI-safe-routing differentiator.
+Generates a runnable Express dispatch service that decides per request
+whether to answer locally (Ollama) or escalate to a hosted LLM —
+*always* through a PHI redactor on healthcare profiles, and optionally
+through a confidence self-evaluation step that re-routes low-quality
+local answers.
+
+- **Three new wizard questions** (`TECH_019`/`020`/`021`). All gated on
+  `TECH_013=true` plus a technical role.
+  - `TECH_019` — opt into the local router (yes/no).
+  - `TECH_020` — which external LLM APIs are available for escalation
+    (multi-select: Anthropic / OpenAI). Leaving both unchecked keeps
+    dispatch local-only — escalation returns 501.
+  - `TECH_021` — enable confidence-based escalation (yes/no).
+- **Three new optional `UserProfile` fields** — `routerEnabled`,
+  `externalApis`, `confidenceEscalation`. All undefined for archetypes
+  without `TECH_019=true`, preserving byte-identity of existing
+  goldens.
+- **New `TargetFormat.LOCAL_ROUTER`** (`local-router`). Auto-included
+  when `profile.routerEnabled === true`; never in `DEFAULT_TARGETS`.
+- **New `LocalRouterGenerator`**
+  (`src/synthesizer/generators/local-router.ts`). Emits a runnable
+  Express service under `router/`:
+  - `router/package.json`, `router/.env.example`, `router/README.md`
+  - `router/src/server.ts` — `POST /route` endpoint
+  - `router/src/classifier.ts` — token-count + escalation-hint signals
+  - `router/src/local-client.ts` — Ollama wrapper
+  - `router/src/hosted-client.ts` — Anthropic / OpenAI calls (or a
+    `501` stub when no `externalApis` are configured)
+  - `router/src/audit.ts` — JSONL audit log with HMAC-hashed prompts
+  - `router/src/redactor.ts` — **HIPAA-only**; runs before any
+    escalation. Catches SSN, MRN, phone, email, DOB, ZIP5.
+  - `router/src/confidence.ts` — **opt-in**; local self-evaluation
+    triggers a redacted re-dispatch below `ROUTER_CONFIDENCE_THRESHOLD`.
+  - `ROUTER_RUNBOOK.md` at project root — per-framework hardening
+    checklist.
+  - `.claude/rules/router-conventions.md` — path-scoped to `router/**`.
+- **Explicit chaining wired into Aider / Continue.dev / Zed AI** when
+  `routerEnabled` plus an `externalApis` entry are set. Aider gets
+  `model: anthropic/claude-sonnet-4-6` (or `openai/gpt-4o`) for heavy
+  edits and `weak-model: ollama/<defaultLocalModel>` for commit
+  messages / repo-map summaries. Continue.dev surfaces the hosted
+  model alongside the local Ollama entries (autocomplete stays local).
+  Zed AI registers the hosted provider as a selectable backend while
+  keeping the local default model. Profiles without `routerEnabled`
+  see no change.
+- **New `healthcare-router-developer` golden archetype** (42 files) —
+  locks healthcare + local AI + router + confidence + Anthropic
+  end-to-end, including the HIPAA redactor, chained Aider config,
+  and per-framework runbook content.
+
 ### Added — v3.3 RAG Scaffold (industry-agnostic)
 
 Second phase of v3.3. Extends the wizard from "configure local AI" to
@@ -453,7 +516,8 @@ targeting, and the composable skills system.
   17 questions, 10 compliance frameworks, 18 DLP patterns, 8 rule
   templates, 20 ignore patterns, 13 validation checks.
 
-[Unreleased]: https://github.com/asq-sheriff/embediq/compare/v3.2.0...HEAD
+[Unreleased]: https://github.com/asq-sheriff/embediq/compare/v3.3.1...HEAD
+[3.3.1]: https://github.com/asq-sheriff/embediq/compare/v3.3.0...v3.3.1
 [3.2.0]: https://github.com/asq-sheriff/embediq/releases/tag/v3.2.0
 [3.1.0]: https://github.com/asq-sheriff/embediq/releases/tag/v3.1.0
 [3.0.0]: https://github.com/asq-sheriff/embediq/releases/tag/v3.0.0

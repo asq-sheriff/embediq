@@ -1,0 +1,21 @@
+{
+  "name": "router",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local-AI dispatch router (scaffolded by EmbedIQ)",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "test": "echo \"see ROUTER_RUNBOOK.md for the smoke test\""
+  },
+  "dependencies": {
+    "express": "^4.19.0",
+    "ollama": "^0.5.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.4.0"
+  }
+}

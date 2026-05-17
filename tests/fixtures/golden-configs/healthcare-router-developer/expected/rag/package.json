@@ -1,0 +1,21 @@
+{
+  "name": "rag",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local-AI RAG pipeline (scaffolded by EmbedIQ)",
+  "scripts": {
+    "index": "tsx src/cli.ts index",
+    "query": "tsx src/cli.ts query",
+    "test": "echo \"see RAG_RUNBOOK.md for the smoke test\""
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.0.0",
+    "sqlite-vss": "^0.1.2",
+    "ollama": "^0.5.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.0.0",
+    "typescript": "^5.4.0"
+  }
+}

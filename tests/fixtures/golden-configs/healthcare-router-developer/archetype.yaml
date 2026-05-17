@@ -1,0 +1,21 @@
+id: healthcare-router-developer
+title: Healthcare Developer with Local Router + Confidence Escalation
+description: |
+  Healthcare developer profile that opts into the v3.3 local router with
+  confidence-based escalation and Anthropic as the hosted escalation
+  backend. Exercises:
+    - The PHI redactor that runs before any escalation (HIPAA branch)
+    - The confidence self-evaluation module (TECH_021 yes)
+    - The Anthropic branch of the hosted-client wiring
+    - Explicit model chaining in Aider / Continue.dev (Ollama for
+      autocomplete, hosted Claude for heavy chat)
+  Pairs with `healthcare-rag-developer` (RAG scaffold, no router) to
+  lock in the dual surfaces of the v3.3 local-AI integration layer.
+minimumFloor: 18
+targets:
+  - claude
+  - ollama
+  - continue-dev
+  - aider
+  - rag-scaffold
+  - local-router

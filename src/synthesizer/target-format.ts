@@ -26,6 +26,12 @@ export enum TargetFormat {
   // healthcare industry AND opts into local AI. Generates a small runnable
   // RAG application under rag/, not just config files.
   RAG_SCAFFOLD = 'rag-scaffold',
+  // v3.3 / 6M — Local router with confidence-based escalation. Auto-included
+  // when the user opts into the router (TECH_019). Generates a runnable
+  // Express dispatch service under router/ that routes simple tasks to
+  // local Ollama and escalates complex tasks (or low-confidence answers)
+  // to a hosted LLM after optional PHI redaction.
+  LOCAL_ROUTER = 'local-router',
 }
 
 export const ALL_TARGETS: readonly TargetFormat[] = [
@@ -40,6 +46,7 @@ export const ALL_TARGETS: readonly TargetFormat[] = [
   TargetFormat.ZED_AI,
   TargetFormat.OLLAMA,
   TargetFormat.RAG_SCAFFOLD,
+  TargetFormat.LOCAL_ROUTER,
 ];
 
 /** When the caller supplies nothing, we emit the native Claude Code setup only. */

@@ -2,7 +2,7 @@
 
 # Architecture — question bank (Layer 1)
 
-The question bank is the static knowledge EmbedIQ ships. 74 questions
+The question bank is the static knowledge EmbedIQ ships. 77 questions
 across 7 dimensions, 40 of them gated by conditional branching.
 
 **Source**: [`src/bank/`](../../src/bank/) —

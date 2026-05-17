@@ -1,0 +1,17 @@
+// MCP Server Configuration Template
+// Copy to .mcp.json and fill in API keys
+// .mcp.json is gitignored — credentials stay local
+{
+  "mcpServers": {
+    "ollama-sidekick": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@anthropic/ollama-claude"
+      ],
+      "env": {
+        "OLLAMA_HOST": "http://localhost:11434"
+      }
+    }
+  }
+}

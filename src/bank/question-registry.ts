@@ -720,6 +720,52 @@ export const questions: Question[] = [
     ],
     tags: ['local_models', 'ollama'],
   },
+  {
+    id: 'TECH_019',
+    dimension: Dimension.TECHNOLOGY_REQUIREMENTS,
+    text: 'Set up a local-router service for hybrid dispatch (route simple tasks locally, escalate complex tasks to a hosted LLM)?',
+    helpText: 'EmbedIQ will emit a runnable Express service under `router/` that classifies each request and routes accordingly. PHI-aware redaction is added automatically for healthcare profiles.',
+    type: QuestionType.YES_NO,
+    required: false,
+    order: 19,
+    showConditions: [
+      { questionId: 'TECH_013', operator: ConditionOperator.EQUALS, value: true },
+      { questionId: 'STRAT_000', operator: ConditionOperator.NONE_OF, value: ['ba', 'pm', 'executive'] },
+    ],
+    tags: ['local_models', 'router', 'hybrid_ai'],
+  },
+  {
+    id: 'TECH_020',
+    dimension: Dimension.TECHNOLOGY_REQUIREMENTS,
+    text: 'Which external LLM APIs do you have available for escalation?',
+    helpText: 'The router escalates complex / long-context tasks to one of these when the local model is not sufficient. Leave both unchecked to keep dispatch local-only.',
+    type: QuestionType.MULTI_CHOICE,
+    options: [
+      { key: 'anthropic', label: 'Anthropic Claude API' },
+      { key: 'openai', label: 'OpenAI API' },
+    ],
+    required: false,
+    order: 20,
+    showConditions: [
+      { questionId: 'TECH_019', operator: ConditionOperator.EQUALS, value: true },
+      { questionId: 'STRAT_000', operator: ConditionOperator.NONE_OF, value: ['ba', 'pm', 'executive'] },
+    ],
+    tags: ['local_models', 'router', 'hybrid_ai'],
+  },
+  {
+    id: 'TECH_021',
+    dimension: Dimension.TECHNOLOGY_REQUIREMENTS,
+    text: 'Enable confidence-based escalation (local model self-rates its answer; escalates when below threshold)?',
+    helpText: 'Adds a self-evaluation step after the local model responds. Catches "I am not sure" answers and re-routes them to the hosted LLM with PHI redaction first.',
+    type: QuestionType.YES_NO,
+    required: false,
+    order: 21,
+    showConditions: [
+      { questionId: 'TECH_019', operator: ConditionOperator.EQUALS, value: true },
+      { questionId: 'STRAT_000', operator: ConditionOperator.NONE_OF, value: ['ba', 'pm', 'executive'] },
+    ],
+    tags: ['local_models', 'router', 'hybrid_ai', 'confidence'],
+  },
 
   // ═══════════════════════════════════════════════════════════════
   // DIMENSION 5: REGULATORY COMPLIANCE
