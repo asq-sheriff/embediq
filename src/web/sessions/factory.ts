@@ -96,14 +96,38 @@ async function selectDatabaseBackend(env: NodeJS.ProcessEnv): Promise<SessionBac
     return await buildSqliteBackend(env);
   }
   if (driver === 'postgres') {
-    throw new Error(
-      "Postgres driver for the database backend is not yet wired. " +
-        "Set EMBEDIQ_SESSION_DB_DRIVER=sqlite (or unset it) to use the SQLite default.",
-    );
+    return await buildPostgresBackend(env);
   }
   throw new Error(
     `Unknown EMBEDIQ_SESSION_DB_DRIVER='${driver}'. Valid values: sqlite, postgres.`,
   );
+}
+
+async function buildPostgresBackend(env: NodeJS.ProcessEnv): Promise<SessionBackend> {
+  const url = env.EMBEDIQ_SESSION_DB_URL?.trim();
+  if (!url) {
+    throw new Error(
+      "Postgres session backend requires EMBEDIQ_SESSION_DB_URL " +
+        "(e.g. 'postgres://user:pass@host:5432/embediq').",
+    );
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let pgMod: any;
+  try {
+    pgMod = await import('pg');
+  } catch {
+    throw new Error(
+      "Postgres session backend requires the 'pg' package. " +
+        "Install it with: npm install --save pg @types/pg",
+    );
+  }
+  const Pool = pgMod.Pool ?? pgMod.default?.Pool;
+  if (!Pool) {
+    throw new Error("Postgres driver loaded but did not expose a Pool constructor.");
+  }
+  const pool = new Pool({ connectionString: url });
+  const { PostgresDialect } = await import('./backends/postgres-dialect.js');
+  return new DatabaseBackend(new PostgresDialect(pool), { cipher: PayloadCipher.fromEnv(env) });
 }
 
 async function buildSqliteBackend(env: NodeJS.ProcessEnv): Promise<SessionBackend> {

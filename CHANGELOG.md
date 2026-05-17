@@ -9,6 +9,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.5.0] — Postgres-backed session store (multi-node-ready)
+
+The next v3.2 follow-up. Web replicas can now share a Postgres-backed
+session store and scale horizontally with no sticky-session
+configuration. The four existing single-node backends (`none`,
+`json-file`, `database`+`sqlite`) continue to work unchanged.
+
+### Added
+
+- **`PostgresDialect`** (`src/web/sessions/backends/postgres-dialect.ts`)
+  implementing the existing `SqlDialect` interface — same
+  `embediq_sessions` schema, same row shape as SQLite, same contract
+  test suite. Uses `INSERT ... ON CONFLICT(session_id) DO UPDATE`
+  (Postgres 9.5+) so upserts are a single round-trip. All queries are
+  parameterized — no string concatenation.
+- **Structural `PgPoolLike`** type — the dialect accepts anything with
+  `{ query, end }`. The concrete `pg.Pool` is the production use case;
+  `pg-mem` provides the same shape for in-memory tests.
+- **`pg` + `@types/pg`** added as `optionalDependencies`. Selecting the
+  Postgres driver without installing them throws a clear error naming
+  the install command.
+- **`pg-mem`** added as a `devDependency` for the test suite — same
+  contract suite the SQLite dialect runs against, plus four dialect-
+  specific tests (schema creation, upsert idempotency, filtered list).
+- **Operator-guide updates** — `deployment.md` now includes a Multi-
+  Node Postgres section with the exact env-var set, the Dockerfile
+  snippet for installing `pg` in the runtime image, and the
+  single-replica pinning guidance for the still-JSON autopilot store.
+
+### Changed
+
+- **`SqlDialect` interface widened to async** — every method now
+  returns `Promise<T>` so the same interface fits both sync drivers
+  (`better-sqlite3`) and async drivers (`node-postgres`).
+  `ensureSchema()` is replaced by `init()`, called lazily by the
+  backend on first use (and exposed for explicit pre-warming).
+- **`SqliteDialect`** updated to satisfy the async interface — the
+  underlying calls remain synchronous, only the declared return types
+  changed.
+- **`DatabaseBackend`** now lazy-inits the dialect (one shared
+  promise across all callers) and `await`s every dialect call.
+- **Session-backend tests** (`tests/unit/database-backend-sqlite.test.ts`)
+  continue to pass byte-for-byte. New `database-backend-postgres.test.ts`
+  runs the same contract suite against `pg-mem`.
+
+### Compatibility
+
+- **No new mandatory env vars.** Operators using `EMBEDIQ_SESSION_BACKEND=database`
+  with the default `sqlite` driver see zero behavioral change.
+- **No goldens regenerated** — synthesizer untouched.
+- **Autopilot store stays single-node JSON-file for now.** SQL-backed
+  autopilot is the next pickup; multi-node deployments should pin the
+  scheduler to a single replica today.
+
+### Test suite
+
+1039 passing across 71 files (was 1008/70).
+
 ## [3.4.0] — Arbitrary cron + timezone-aware autopilot scheduling
 
 ### Added — Arbitrary cron + timezone-aware autopilot scheduling
@@ -563,7 +621,8 @@ targeting, and the composable skills system.
   17 questions, 10 compliance frameworks, 18 DLP patterns, 8 rule
   templates, 20 ignore patterns, 13 validation checks.
 
-[Unreleased]: https://github.com/asq-sheriff/embediq/compare/v3.4.0...HEAD
+[Unreleased]: https://github.com/asq-sheriff/embediq/compare/v3.5.0...HEAD
+[3.5.0]: https://github.com/asq-sheriff/embediq/compare/v3.4.0...v3.5.0
 [3.4.0]: https://github.com/asq-sheriff/embediq/compare/v3.3.1...v3.4.0
 [3.3.1]: https://github.com/asq-sheriff/embediq/compare/v3.3.0...v3.3.1
 [3.2.0]: https://github.com/asq-sheriff/embediq/releases/tag/v3.2.0

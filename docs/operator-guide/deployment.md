@@ -132,15 +132,54 @@ envFrom:
 
 ### Scaling
 
-EmbedIQ's single-node primitives (JSON-file session backend, JSON-file
-autopilot store) are **not HA-safe**. Before bumping `replicas` above
-1, pick a production-grade session backend (SQLite is still
-single-node — use an external store or pin autopilot to a single
-replica). See
-[`session-backends.md`](session-backends.md) for the backend matrix.
+EmbedIQ's stateless web API (no session, no autopilot) scales
+horizontally without coordination. Beyond that, two backends matter
+when `replicas > 1`:
 
-The stateless web API (no session, no autopilot) scales horizontally
-without coordination.
+- **Sessions**: set `EMBEDIQ_SESSION_BACKEND=database` plus
+  `EMBEDIQ_SESSION_DB_DRIVER=postgres` and point
+  `EMBEDIQ_SESSION_DB_URL` at a managed Postgres instance. Every web
+  replica reads/writes the same session table; users land on any
+  replica and continue their wizard run. Single-node SQLite
+  (`EMBEDIQ_SESSION_DB_DRIVER=sqlite`) and the `json-file` backend
+  are **not HA-safe** — they're for single-replica deployments only.
+- **Autopilot**: the v1 store is still single-node JSON-file. Pin
+  the autopilot scheduler to a single replica (e.g. a separate
+  Deployment with `replicas: 1`) or disable it on the public web
+  replicas (`EMBEDIQ_AUTOPILOT_ENABLED=false`) and run it from a
+  dedicated worker.
+
+See [`session-backends.md`](session-backends.md) for the full backend
+matrix.
+
+#### Multi-node Postgres deployment
+
+```bash
+# every web replica gets identical env
+EMBEDIQ_SESSION_BACKEND=database
+EMBEDIQ_SESSION_DB_DRIVER=postgres
+EMBEDIQ_SESSION_DB_URL=postgres://embediq:$PASSWORD@db-host:5432/embediq
+# Recommended in production:
+EMBEDIQ_SESSION_DATA_KEY=$(openssl rand -hex 32)  # AES-256-GCM at-rest encryption
+EMBEDIQ_SESSION_COOKIE_SECRET=$(openssl rand -hex 32)
+```
+
+The Postgres-backed session table (`embediq_sessions`) is auto-created
+on first use. The schema is portable — no Postgres-specific column
+types or extensions, just `TEXT`/`INTEGER`. Restoring from a SQLite
+dump → Postgres is a `pg_dump --data-only` from SQLite via an ORM is
+out of scope; for migrations, drain sessions to expiry rather than
+attempting a hot copy.
+
+Install the Postgres driver in the runtime image:
+
+```dockerfile
+# Add to your Dockerfile after npm install
+RUN npm install --save pg @types/pg
+```
+
+The `pg` package is an `optionalDependency` of EmbedIQ — it's not in
+the default install set, so non-Postgres deployments stay slim.
 
 ### Health probes
 

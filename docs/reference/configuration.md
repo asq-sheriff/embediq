@@ -60,11 +60,11 @@ See [operator-guide/authentication.md](../operator-guide/authentication.md).
 
 | Env var | Default | Type | Purpose |
 |---|---|---|---|
-| `EMBEDIQ_SESSION_BACKEND` | `none` | enum | `none` / `json-file` / `database` / `redis`. `redis` is reserved; `database` + `postgres` driver is reserved. |
+| `EMBEDIQ_SESSION_BACKEND` | `none` | enum | `none` / `json-file` / `database` / `redis`. `redis` is reserved. `database` is the multi-node-ready backend (SQLite default; Postgres via `EMBEDIQ_SESSION_DB_DRIVER=postgres`). |
 | `EMBEDIQ_SESSION_TTL_MS` | `604800000` (7d) | integer | Session lifetime in ms. Clamped to [60 000, 2 592 000 000] (1 min – 30 d). |
 | `EMBEDIQ_SESSION_DIR` | `./.embediq/sessions` (or `./.embediq/engagements/<id>/sessions` when [`EMBEDIQ_ENGAGEMENT_ID`](#multi-engagement-deployment) is set) | path | Per-session JSON file directory. Applies only when `EMBEDIQ_SESSION_BACKEND=json-file`. Explicit value always wins over engagement scoping. |
-| `EMBEDIQ_SESSION_DB_DRIVER` | `sqlite` | enum | `sqlite` / `postgres` (reserved). Applies when `EMBEDIQ_SESSION_BACKEND=database`. |
-| `EMBEDIQ_SESSION_DB_URL` | `./.embediq/sessions.db` (or `./.embediq/engagements/<id>/sessions.db` when [`EMBEDIQ_ENGAGEMENT_ID`](#multi-engagement-deployment) is set) | path | SQLite file path. `:memory:` is supported for tests. Explicit value always wins over engagement scoping. |
+| `EMBEDIQ_SESSION_DB_DRIVER` | `sqlite` | enum | `sqlite` / `postgres`. Applies when `EMBEDIQ_SESSION_BACKEND=database`. Postgres is the multi-node-ready driver — every web replica shares the same session store. SQLite stays single-node. |
+| `EMBEDIQ_SESSION_DB_URL` | `./.embediq/sessions.db` (or `./.embediq/engagements/<id>/sessions.db` when [`EMBEDIQ_ENGAGEMENT_ID`](#multi-engagement-deployment) is set) | path or connection string | For `sqlite`: file path (`:memory:` supported for tests). For `postgres`: a libpq connection string (e.g. `postgres://user:pass@host:5432/embediq`) — required, no default. Explicit value always wins over engagement scoping. |
 | `EMBEDIQ_SESSION_COOKIE_SECRET` | — | hex string **(secret)** | HMAC-SHA-256 signing key for the `embediq_session_owner` cookie. Required when auth is off. 32 bytes recommended. |
 | `EMBEDIQ_SESSION_COOKIE_SECRET_PREV` | — | hex string **(secret)** | Previous cookie signing key accepted during rotation. |
 | `EMBEDIQ_SESSION_DATA_KEY` | — | hex string **(secret)** | AES-256-GCM key for payload encryption. 64-character hex (32 bytes). Optional but recommended in production. |

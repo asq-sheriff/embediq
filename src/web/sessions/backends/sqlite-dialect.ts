@@ -23,7 +23,7 @@ export class SqliteDialect implements SqlDialect {
     this.db.pragma('journal_mode = WAL');
   }
 
-  ensureSchema(): void {
+  async init(): Promise<void> {
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS embediq_sessions (
         session_id      TEXT PRIMARY KEY,
@@ -91,24 +91,24 @@ export class SqliteDialect implements SqlDialect {
     );
   }
 
-  get(sessionId: string): SessionRow | undefined {
+  async get(sessionId: string): Promise<SessionRow | undefined> {
     return this.stmtGet.get(sessionId) as SessionRow | undefined;
   }
 
-  upsert(row: SessionRow): void {
+  async upsert(row: SessionRow): Promise<void> {
     this.stmtUpsert.run(row);
   }
 
-  delete(sessionId: string): boolean {
+  async delete(sessionId: string): Promise<boolean> {
     const info = this.stmtDelete.run(sessionId);
     return info.changes > 0;
   }
 
-  touch(sessionId: string, expiresAt: string): void {
+  async touch(sessionId: string, expiresAt: string): Promise<void> {
     this.stmtTouch.run(expiresAt, sessionId);
   }
 
-  list(filter: SessionRowFilter): SessionRow[] {
+  async list(filter: SessionRowFilter): Promise<SessionRow[]> {
     if (filter.userId !== undefined && filter.updatedAfter) {
       return this.stmtListUserAfter.all(filter.userId, filter.updatedAfter) as SessionRow[];
     }
@@ -121,7 +121,7 @@ export class SqliteDialect implements SqlDialect {
     return this.stmtListAll.all() as SessionRow[];
   }
 
-  close(): void {
+  async close(): Promise<void> {
     this.db.close();
   }
 }

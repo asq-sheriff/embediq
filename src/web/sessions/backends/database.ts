@@ -42,15 +42,24 @@ export interface SessionRowFilter {
  * SQL-dialect interface so a single DatabaseBackend class can serve
  * SQLite today and PostgreSQL in a later iteration. Dialects are
  * deliberately thin: they execute SQL, nothing else.
+ *
+ * All methods return a Promise so the same interface fits synchronous
+ * drivers (better-sqlite3) and asynchronous drivers (node-postgres)
+ * without forking the backend.
  */
 export interface SqlDialect {
-  ensureSchema(): void;
-  get(sessionId: string): SessionRow | undefined;
-  upsert(row: SessionRow): void;
-  delete(sessionId: string): boolean;
-  list(filter: SessionRowFilter): SessionRow[];
-  touch(sessionId: string, expiresAt: string): void;
-  close(): void;
+  /**
+   * One-time setup — create tables, indexes, prepare statements. Called
+   * lazily by the backend on first use; safe to invoke multiple times
+   * (idempotent CREATE TABLE IF NOT EXISTS).
+   */
+  init(): Promise<void>;
+  get(sessionId: string): Promise<SessionRow | undefined>;
+  upsert(row: SessionRow): Promise<void>;
+  delete(sessionId: string): Promise<boolean>;
+  list(filter: SessionRowFilter): Promise<SessionRow[]>;
+  touch(sessionId: string, expiresAt: string): Promise<void>;
+  close(): Promise<void>;
 }
 
 export interface DatabaseBackendOptions {
@@ -68,38 +77,46 @@ export interface DatabaseBackendOptions {
  */
 export class DatabaseBackend implements SessionBackend {
   readonly name = 'database' as const;
+  private initPromise: Promise<void> | null = null;
 
   constructor(
     private readonly dialect: SqlDialect,
     private readonly opts: DatabaseBackendOptions = {},
-  ) {
-    dialect.ensureSchema();
+  ) {}
+
+  private ensureInit(): Promise<void> {
+    if (!this.initPromise) this.initPromise = this.dialect.init();
+    return this.initPromise;
   }
 
   async get(sessionId: string): Promise<WizardSession | null> {
-    const row = this.dialect.get(sessionId);
+    await this.ensureInit();
+    const row = await this.dialect.get(sessionId);
     if (!row) return null;
     if (new Date(row.expires_at).getTime() < Date.now()) {
-      this.dialect.delete(sessionId);
+      await this.dialect.delete(sessionId);
       return null;
     }
     return this.rowToSession(row);
   }
 
   async put(session: WizardSession): Promise<WizardSession> {
-    const existing = this.dialect.get(session.sessionId);
+    await this.ensureInit();
+    const existing = await this.dialect.get(session.sessionId);
     const baseline = Math.max(existing?.version ?? 0, session.version ?? 0);
     const stored: WizardSession = { ...session, version: baseline + 1 };
-    this.dialect.upsert(this.sessionToRow(stored));
+    await this.dialect.upsert(this.sessionToRow(stored));
     return stored;
   }
 
   async delete(sessionId: string): Promise<boolean> {
+    await this.ensureInit();
     return this.dialect.delete(sessionId);
   }
 
   async list(filter: SessionListFilter = {}): Promise<SessionListResult> {
-    const rows = this.dialect.list({
+    await this.ensureInit();
+    const rows = await this.dialect.list({
       userId: filter.userId,
       updatedAfter: filter.updatedAfter,
     });
@@ -107,7 +124,7 @@ export class DatabaseBackend implements SessionBackend {
     const live: SessionRow[] = [];
     for (const row of rows) {
       if (new Date(row.expires_at).getTime() < now) {
-        this.dialect.delete(row.session_id);
+        await this.dialect.delete(row.session_id);
         continue;
       }
       live.push(row);
@@ -129,11 +146,13 @@ export class DatabaseBackend implements SessionBackend {
   }
 
   async touch(sessionId: string, expiresAt: string): Promise<void> {
-    this.dialect.touch(sessionId, expiresAt);
+    await this.ensureInit();
+    await this.dialect.touch(sessionId, expiresAt);
   }
 
   async close(): Promise<void> {
-    this.dialect.close();
+    if (this.initPromise) await this.initPromise.catch(() => undefined);
+    await this.dialect.close();
   }
 
   private sessionToRow(session: WizardSession): SessionRow {

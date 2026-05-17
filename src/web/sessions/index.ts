@@ -23,6 +23,7 @@ export {
   type SessionRowFilter,
 } from './backends/database.js';
 export { SqliteDialect } from './backends/sqlite-dialect.js';
+export { PostgresDialect, type PgPoolLike } from './backends/postgres-dialect.js';
 export { PayloadCipher } from './encryption.js';
 export { RequestSessionStore, type SessionStore } from './session-store.js';
 export { sessionMiddleware, flushSessionWrites } from './middleware.js';

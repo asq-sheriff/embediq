@@ -15,12 +15,13 @@ rotation. If sessions don't matter to your deployment, leave
 | **None** (`NullBackend`) | `EMBEDIQ_SESSION_BACKEND=none` (default) | Stateless single-user | Volatile (in-process) | ✅ (nothing shared) |
 | **JSON file** | `EMBEDIQ_SESSION_BACKEND=json-file` | Local dev, single-node | One file per session under `EMBEDIQ_SESSION_DIR` | ❌ |
 | **SQLite** (via `database` backend) | `EMBEDIQ_SESSION_BACKEND=database` + `EMBEDIQ_SESSION_DB_DRIVER=sqlite` | Single-node production, modest volume | Single SQLite file at `EMBEDIQ_SESSION_DB_URL` | ❌ (file locked per process) |
-| **Postgres** / **Redis** | `database` + `postgres` / `redis` | *(reserved — not wired in this build; selecting them errors at startup)* | — | — |
+| **Postgres** (via `database` backend) | `EMBEDIQ_SESSION_BACKEND=database` + `EMBEDIQ_SESSION_DB_DRIVER=postgres` | **Multi-node production** | Shared `embediq_sessions` table over a libpq connection string | ✅ |
+| **Redis** | `database` + `redis` | *(reserved — not wired in this build; selecting it errors at startup)* | — | — |
 
-Multi-node / HA deployments need an external store (Postgres, Redis)
-— the `SessionBackend` interface is ready for it, but no adapter
-ships today. See [the architecture docs](../architecture/sessions.md)
-for what an external adapter needs to implement.
+Multi-node / HA deployments should use the Postgres driver. The
+`pg` package is an `optionalDependency` — install it in the runtime
+image alongside `@types/pg`. The `embediq_sessions` schema is portable
+(only `TEXT` / `INTEGER` columns, no Postgres-specific extensions).
 
 ## Configuration
 
@@ -40,8 +41,9 @@ for what an external adapter needs to implement.
 | Env var | When it applies | Purpose |
 |---|---|---|
 | `EMBEDIQ_SESSION_DIR` | `json-file` | Directory holding one JSON file per session. Must be writable by the server process. Default `./.embediq/sessions`. |
-| `EMBEDIQ_SESSION_DB_DRIVER` | `database` | `sqlite` (default) / `postgres` (reserved). |
+| `EMBEDIQ_SESSION_DB_DRIVER` | `database` | `sqlite` (default, single-node) / `postgres` (multi-node-ready). |
 | `EMBEDIQ_SESSION_DB_URL` | `database`+`sqlite` | Path to the SQLite file. Auto-created on first write. Default `./.embediq/sessions.db`. `:memory:` is supported for tests. |
+| `EMBEDIQ_SESSION_DB_URL` | `database`+`postgres` | libpq connection string (e.g. `postgres://user:pass@host:5432/embediq`). Required — no default. Schema is auto-created on first use. |
 
 ### Production defaults
 
