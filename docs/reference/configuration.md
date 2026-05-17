@@ -68,6 +68,7 @@ See [operator-guide/authentication.md](../operator-guide/authentication.md).
 | `EMBEDIQ_SESSION_COOKIE_SECRET` | — | hex string **(secret)** | HMAC-SHA-256 signing key for the `embediq_session_owner` cookie. Required when auth is off. 32 bytes recommended. |
 | `EMBEDIQ_SESSION_COOKIE_SECRET_PREV` | — | hex string **(secret)** | Previous cookie signing key accepted during rotation. |
 | `EMBEDIQ_SESSION_DATA_KEY` | — | hex string **(secret)** | AES-256-GCM key for payload encryption. 64-character hex (32 bytes). Optional but recommended in production. |
+| `EMBEDIQ_SESSION_DATA_KEY_PREV` | — | hex string(s) **(secret)** | Previous data key(s) accepted during rotation. Comma-separated for multi-step rotation. Each entry must be a 64-char hex string. Used for decryption only — new writes always use the active key. See [session rotation runbook](../operator-guide/session-backends.md#rotating-the-payload-encryption-key). |
 | `EMBEDIQ_DUMP_DIR` | `./.embediq/dumps` | path | Where admin session-dump tarballs land before download. |
 
 See [operator-guide/session-backends.md](../operator-guide/session-backends.md).

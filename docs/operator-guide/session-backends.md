@@ -125,8 +125,55 @@ Use it when:
 - Answers may contain sensitive project metadata (compliance-framework
   selections, team sizes, industry identifiers).
 - Disk isn't encrypted at rest (e.g. a shared dev VM).
-- A future HA adapter backed by a shared store needs encryption in
-  transit to/from that store.
+- An HA Postgres deployment carries session data over a network path
+  not separately protected.
+
+### Rotating the payload-encryption key
+
+The `PayloadCipher` accepts a current key plus any number of previous
+keys for decrypt-only fallback. New writes always use the active key;
+sessions encrypted under previous keys keep working until they're
+either touched (re-encrypted on `put()`) or expire via TTL.
+
+```bash
+# Phase 1 — generate the new key and keep the old one as previous.
+export EMBEDIQ_SESSION_DATA_KEY_PREV=$EMBEDIQ_SESSION_DATA_KEY
+export EMBEDIQ_SESSION_DATA_KEY=$(openssl rand -hex 32)
+# Restart every replica. Reads of old session blobs still succeed
+# (they fall through to the PREV key); writes use the new key.
+
+# Phase 2 — wait. Two ways to complete the rotation:
+#   (a) Wait `EMBEDIQ_SESSION_TTL_MS` for the old sessions to expire.
+#       The slowest path but requires no operator action.
+#   (b) For regulated workloads that can't tolerate the wait, lower
+#       EMBEDIQ_SESSION_TTL_MS during the rotation window to force
+#       sessions to expire faster. New sessions inherit the lower TTL.
+
+# Phase 3 — drop the PREV var and restart. Any blob that still
+# decrypts only under PREV (i.e. an idle session that never expired)
+# becomes unreadable; the wizard will start a fresh session for that
+# user. This is the deliberate end-state — the old key is gone.
+unset EMBEDIQ_SESSION_DATA_KEY_PREV
+```
+
+**Multi-step rotation.** When two or more rotations are in flight (e.g.
+during a longer regulated rotation window), `EMBEDIQ_SESSION_DATA_KEY_PREV`
+accepts a comma-separated list. The cipher tries each previous key in
+order on decrypt failure.
+
+```bash
+# After two rotations the key chain might look like:
+export EMBEDIQ_SESSION_DATA_KEY=$KEY_C       # current
+export EMBEDIQ_SESSION_DATA_KEY_PREV=$KEY_B,$KEY_A
+# Sessions encrypted under any of A/B/C decrypt; new writes use C.
+```
+
+**Audit + compliance notes.** When `EMBEDIQ_SESSION_DATA_KEY_PREV` is
+configured, the audit log entry on session writes still records `userId`
++ `sessionId` + timestamps only — keys never appear in logs. For a
+SOC 2 / HIPAA rotation evidence trail, snapshot the env-var change set
+into your secrets manager's audit history and pair it with the
+deployment timestamp on the corresponding release.
 
 ## Owner-cookie signing
 

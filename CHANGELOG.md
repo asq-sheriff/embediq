@@ -9,6 +9,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.6.1] — Session payload-encryption key rotation
+
+Closes the last remaining v3.2 follow-up. `PayloadCipher` now accepts
+a current key plus any number of decrypt-only previous keys, so
+operators can rotate `EMBEDIQ_SESSION_DATA_KEY` without invalidating
+in-flight sessions.
+
+### Added
+
+- **`EMBEDIQ_SESSION_DATA_KEY_PREV`** env var — single hex string or
+  comma-separated list of previous keys. Used for decryption only;
+  new writes always use the active `EMBEDIQ_SESSION_DATA_KEY`. Each
+  entry must decode to a 32-byte AES key.
+- **`PayloadCipher.fromHexKeys(active, previous[])`** — explicit
+  multi-key constructor for tests and callers that don't read from
+  the environment. `fromHexKey(hex)` remains as a single-key
+  back-compat shim.
+- **`PayloadCipher.previousKeyCount`** — diagnostics getter, useful
+  in operator scripts checking which replicas have a PREV configured.
+- **Rotation runbook** in `docs/operator-guide/session-backends.md` —
+  the canonical phase-1 / phase-2 / phase-3 flow plus the multi-step
+  rotation case and audit / compliance notes.
+
+### Changed
+
+- **`PayloadCipher.decrypt()`** now walks every configured key (active
+  first, then each previous in order) before throwing. On total
+  failure the error message names how many keys were tried, so the
+  operator sees "rotation may have removed the encrypting key
+  prematurely" rather than a generic GCM auth-tag mismatch.
+
+### Compatibility
+
+- **No breaking changes.** Existing single-key deployments behave
+  exactly as before — `EMBEDIQ_SESSION_DATA_KEY_PREV` is optional.
+- All shipped goldens regenerate byte-identically.
+- `PayloadCipher.fromHexKey(hex)` is preserved as a back-compat
+  alias; the constructor still accepts a single key.
+
+### Test suite
+
+15 new tests targeting the rotation primitives (single-key
+back-compat, single-step rotation, multi-step three-key chain,
+malformed key rejection, comma-separated parsing, the natural
+re-encrypt-on-write completion path). Full suite **1093 passing
+across 73 files** (was 1078/72).
+
 ## [3.6.0] — SQL-backed autopilot store with multi-replica scheduling
 
 Closes the second half of the SQL-backed multi-node story. The
@@ -693,7 +740,8 @@ targeting, and the composable skills system.
   17 questions, 10 compliance frameworks, 18 DLP patterns, 8 rule
   templates, 20 ignore patterns, 13 validation checks.
 
-[Unreleased]: https://github.com/asq-sheriff/embediq/compare/v3.6.0...HEAD
+[Unreleased]: https://github.com/asq-sheriff/embediq/compare/v3.6.1...HEAD
+[3.6.1]: https://github.com/asq-sheriff/embediq/compare/v3.6.0...v3.6.1
 [3.6.0]: https://github.com/asq-sheriff/embediq/compare/v3.5.0...v3.6.0
 [3.5.0]: https://github.com/asq-sheriff/embediq/compare/v3.4.0...v3.5.0
 [3.4.0]: https://github.com/asq-sheriff/embediq/compare/v3.3.1...v3.4.0
