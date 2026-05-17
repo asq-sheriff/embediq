@@ -65,15 +65,45 @@ curl -X POST http://localhost:3000/api/autopilot/schedules \
 ```
 
 Response includes the generated `id` and the computed `nextRunAt`.
-Cadences: `@hourly`, `@daily`, `@weekly`, `@monthly` (all UTC in v1 —
-see [known limitations](#known-limitations)).
+
+### Cadence formats
+
+Two cadence forms are supported:
+
+- **Presets** — `@hourly`, `@daily`, `@weekly`, `@monthly`. All fire on
+  UTC boundaries.
+- **Standard 5-field cron expressions** — `minute hour day-of-month
+  month day-of-week`. Wildcards (`*`), ranges (`1-5`), lists (`1,3,5`),
+  and steps (`*/15`, `0-30/5`) are all supported. Month and
+  day-of-week alias names (`JAN-DEC`, `SUN-SAT`) are accepted
+  case-insensitively. POSIX day-of-month / day-of-week OR-semantics
+  apply.
+
+Cron expressions optionally accept a `timezone` field on the schedule
+(any IANA identifier, e.g. `America/Los_Angeles`). Wall-clock times
+are interpreted in that zone, with DST forward / back handled. Without
+`timezone`, cron expressions are also interpreted in UTC.
+
+```bash
+# Every weekday at 09:00 Pacific
+curl -X POST http://localhost:3000/api/autopilot/schedules \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "name": "business-hours-LA",
+    "cadence": "0 9 * * MON-FRI",
+    "timezone": "America/Los_Angeles",
+    "answerSourcePath": "/ops/answers.yaml",
+    "targetDir": "/srv/my-project"
+  }'
+```
 
 ### Fields
 
 | Field | Required | Notes |
 |---|---|---|
 | `name` | ✅ | Displayed in run records and notifications. |
-| `cadence` | ✅ | `@hourly` / `@daily` / `@weekly` / `@monthly`. |
+| `cadence` | ✅ | Preset (`@hourly` / `@daily` / `@weekly` / `@monthly`) or a 5-field cron expression. |
+| `timezone` | — | IANA timezone for cron expressions (e.g. `America/Los_Angeles`). Ignored for presets — they always fire on UTC boundaries. |
 | `answerSourcePath` | ✅ | Path to an `answers.yaml` readable by the server process. |
 | `targetDir` | ✅ | Directory whose managed subtrees get scanned. |
 | `targets` | — | Output-target filter (default: `claude`). See [multi-agent targets](05-multi-agent-targets.md). |
@@ -184,11 +214,8 @@ value depends on how strict you want to be:
   path issue). Paths are relative to the server's CWD; absolute paths
   are safer.
 
-## Known limitations (v3.2)
+## Known limitations
 
-- Cadences are UTC-only. Arbitrary cron expressions and timezone-aware
-  scheduling are on the roadmap. Use an external cron job firing the
-  manual-trigger webhook if you need finer control today.
 - The store is JSON-file backed and single-node. For HA, pin autopilot
   to one replica.
 - The autopilot run is a drift scan today. Once

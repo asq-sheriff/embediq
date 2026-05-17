@@ -1,20 +1,52 @@
 import type { TargetFormat } from '../synthesizer/target-format.js';
+import { parseCron, nextCronRun, looksLikeCron, CronParseError } from './cron.js';
+import { assertValidTimezone, InvalidTimezoneError } from './timezone.js';
 
 /**
- * Cadence presets for v1. Real cron strings are deferred to a follow-up
- * iteration; the four named presets cover the common autopilot use cases
- * (hourly drift scans, nightly regen checks, weekly compliance audits).
- * All cadences fire on UTC boundaries — timezone-aware scheduling is
- * also a deliberate v1 deferral, called out in the ROADMAP follow-ups.
+ * Cadence accepts either a named preset (`@hourly` / `@daily` /
+ * `@weekly` / `@monthly`) or a standard 5-field cron expression.
+ * Presets remain the v1 convention and continue to fire on UTC
+ * boundaries; cron expressions optionally accept an IANA `timezone`
+ * field on the surrounding `AutopilotSchedule` for true wall-clock
+ * scheduling (with DST handled).
  */
-export type Cadence = '@hourly' | '@daily' | '@weekly' | '@monthly';
+export type CadencePreset = '@hourly' | '@daily' | '@weekly' | '@monthly';
+export type Cadence = CadencePreset | string;
 
-export const CADENCE_VALUES: readonly Cadence[] = ['@hourly', '@daily', '@weekly', '@monthly'];
+export const CADENCE_PRESETS: readonly CadencePreset[] = ['@hourly', '@daily', '@weekly', '@monthly'];
+/** Back-compat alias — the preset list was previously named CADENCE_VALUES. */
+export const CADENCE_VALUES = CADENCE_PRESETS;
+
+export function isCadencePreset(value: string): value is CadencePreset {
+  return (CADENCE_PRESETS as readonly string[]).includes(value);
+}
+
+/**
+ * Validate a cadence string. Accepts a preset or a parseable 5-field
+ * cron expression. Re-throws the underlying error message so callers
+ * can surface it to the user.
+ */
+export function assertValidCadence(value: string): void {
+  if (isCadencePreset(value)) return;
+  if (!looksLikeCron(value)) {
+    throw new CronParseError(
+      `cadence "${value}" is neither a preset (${CADENCE_PRESETS.join(', ')}) nor a 5-field cron expression`,
+    );
+  }
+  parseCron(value);
+}
 
 export interface AutopilotSchedule {
   id: string;
   name: string;
   cadence: Cadence;
+  /**
+   * IANA timezone identifier (e.g. `America/Los_Angeles`) used to
+   * interpret cron expressions on this schedule. Ignored for the
+   * preset cadences — they always fire on UTC boundaries. When unset,
+   * cron expressions are also interpreted in UTC.
+   */
+  timezone?: string;
   /** Path (relative to CWD or absolute) to a YAML answers file. */
   answerSourcePath: string;
   /** Project directory whose managed subtrees are scanned for drift. */
@@ -74,6 +106,7 @@ export interface AutopilotRun {
 export interface ScheduleCreateInput {
   name: string;
   cadence: Cadence;
+  timezone?: string;
   answerSourcePath: string;
   targetDir: string;
   targets?: TargetFormat[];
@@ -86,25 +119,38 @@ export interface ScheduleCreateInput {
  * Compute the next fire time for a cadence after the supplied reference
  * timestamp. Pure function — used by both the scheduler tick and tests.
  *
- * Hourly: 60 minutes after `from`.
- * Daily/weekly/monthly: snap to the next UTC midnight boundary aligned to
- * the cadence (so all daily schedules fire at 00:00 UTC). This is a
- * conscious simplification for v1 — see the ROADMAP follow-ups for the
- * full timezone + arbitrary-time-of-day story.
+ * Presets:
+ *   - `@hourly`  — 60 minutes after `from`.
+ *   - `@daily`   — next UTC midnight.
+ *   - `@weekly`  — next UTC Monday at 00:00.
+ *   - `@monthly` — first of the next UTC month at 00:00.
+ *
+ * Cron expressions are interpreted in the supplied IANA `timezone` (or
+ * UTC when omitted), with DST handled by the underlying cron evaluator.
  */
-export function nextRunAt(cadence: Cadence, from: Date = new Date()): Date {
-  const ms = from.getTime();
-  switch (cadence) {
-    case '@hourly':
-      return new Date(ms + 60 * 60 * 1000);
-    case '@daily':
-      return nextUtcMidnight(from);
-    case '@weekly':
-      return nextUtcMonday(from);
-    case '@monthly':
-      return nextUtcMonthStart(from);
+export function nextRunAt(
+  cadence: Cadence,
+  from: Date = new Date(),
+  timezone?: string,
+): Date {
+  if (isCadencePreset(cadence)) {
+    const ms = from.getTime();
+    switch (cadence) {
+      case '@hourly':
+        return new Date(ms + 60 * 60 * 1000);
+      case '@daily':
+        return nextUtcMidnight(from);
+      case '@weekly':
+        return nextUtcMonday(from);
+      case '@monthly':
+        return nextUtcMonthStart(from);
+    }
   }
+  return nextCronRun(parseCron(cadence), from, timezone);
 }
+
+/** Re-export so callers can identify parse / timezone errors structurally. */
+export { CronParseError, InvalidTimezoneError, assertValidTimezone };
 
 function nextUtcMidnight(from: Date): Date {
   const d = new Date(Date.UTC(from.getUTCFullYear(), from.getUTCMonth(), from.getUTCDate() + 1));

@@ -214,6 +214,53 @@ describe('Autopilot REST + webhook', () => {
     expect(res.body).toHaveProperty('error');
   });
 
+  it('POST accepts a 5-field cron expression as cadence', async () => {
+    const res = await request(app).post('/api/autopilot/schedules').send({
+      name: 'every 15 minutes',
+      cadence: '*/15 * * * *',
+      answerSourcePath: FIXTURE_ANSWERS,
+      targetDir: projectDir,
+    });
+    expect(res.status).toBe(201);
+    expect(res.body.cadence).toBe('*/15 * * * *');
+    expect(res.body.nextRunAt).toBeDefined();
+  });
+
+  it('POST accepts a cron expression plus an IANA timezone', async () => {
+    const res = await request(app).post('/api/autopilot/schedules').send({
+      name: 'business-hours LA',
+      cadence: '0 9 * * MON-FRI',
+      timezone: 'America/Los_Angeles',
+      answerSourcePath: FIXTURE_ANSWERS,
+      targetDir: projectDir,
+    });
+    expect(res.status).toBe(201);
+    expect(res.body.timezone).toBe('America/Los_Angeles');
+  });
+
+  it('POST rejects a malformed cron expression with 400', async () => {
+    const res = await request(app).post('/api/autopilot/schedules').send({
+      name: 'busted',
+      cadence: '99 99 * * *',
+      answerSourcePath: FIXTURE_ANSWERS,
+      targetDir: projectDir,
+    });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/range|invalid/i);
+  });
+
+  it('POST rejects an unknown IANA timezone with 400', async () => {
+    const res = await request(app).post('/api/autopilot/schedules').send({
+      name: 'bad-tz',
+      cadence: '0 9 * * *',
+      timezone: 'Mars/Olympus_Mons',
+      answerSourcePath: FIXTURE_ANSWERS,
+      targetDir: projectDir,
+    });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/timezone/i);
+  });
+
   it('DELETE /api/autopilot/schedules/:id removes the schedule', async () => {
     const create = await request(app).post('/api/autopilot/schedules').send({
       name: 'doomed',

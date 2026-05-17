@@ -43,6 +43,36 @@ describe('JsonAutopilotStore — schedule CRUD', () => {
     expect(await store.deleteSchedule(created.id)).toBe(false);
   });
 
+  it('accepts a 5-field cron expression as cadence and computes nextRunAt accordingly', async () => {
+    const created = await store.addSchedule({
+      name: 'business hours daily',
+      cadence: '0 9 * * *',
+      answerSourcePath: '/tmp/a.yaml',
+      targetDir: '/tmp/project',
+    });
+    expect(created.cadence).toBe('0 9 * * *');
+    // nextRunAt should land at HH:00 UTC with HH=09 (no timezone supplied).
+    const next = new Date(created.nextRunAt);
+    expect(next.getUTCHours()).toBe(9);
+    expect(next.getUTCMinutes()).toBe(0);
+  });
+
+  it('persists the timezone field and uses it to compute nextRunAt', async () => {
+    const created = await store.addSchedule({
+      name: 'daily 9am LA',
+      cadence: '0 9 * * *',
+      timezone: 'America/Los_Angeles',
+      answerSourcePath: '/tmp/a.yaml',
+      targetDir: '/tmp/project',
+    });
+    expect(created.timezone).toBe('America/Los_Angeles');
+    // 9am LA is either 16:00 UTC (PDT) or 17:00 UTC (PST) depending on
+    // the season. Either is acceptable; both are non-09.
+    const next = new Date(created.nextRunAt);
+    expect([16, 17]).toContain(next.getUTCHours());
+    expect(next.getUTCMinutes()).toBe(0);
+  });
+
   it('persists schedules across a fresh store instance (round-trip)', async () => {
     await store.addSchedule({
       name: 'persisted',

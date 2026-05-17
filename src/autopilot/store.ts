@@ -53,6 +53,7 @@ export class JsonAutopilotStore {
       id: randomUUID(),
       name: input.name,
       cadence: input.cadence,
+      timezone: input.timezone,
       answerSourcePath: input.answerSourcePath,
       targetDir: input.targetDir,
       targets: input.targets,
@@ -61,7 +62,7 @@ export class JsonAutopilotStore {
       enabled: input.enabled ?? true,
       createdAt: now.toISOString(),
       updatedAt: now.toISOString(),
-      nextRunAt: nextRunAt(input.cadence, now).toISOString(),
+      nextRunAt: nextRunAt(input.cadence, now, input.timezone).toISOString(),
     };
     this.schedules.push(schedule);
     await this.persistSchedules();

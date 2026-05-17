@@ -86,7 +86,7 @@ export async function runAutopilot(
   await store.recordRun(run);
   await store.updateSchedule(schedule.id, {
     lastRunAt: completedAt.toISOString(),
-    nextRunAt: nextRunAt(schedule.cadence, completedAt).toISOString(),
+    nextRunAt: nextRunAt(schedule.cadence, completedAt, schedule.timezone).toISOString(),
   });
 
   // Suppress unused-variable warning while keeping perf metric live for

@@ -171,7 +171,7 @@ require `X-EmbedIQ-Autopilot-Secret: <value>`.
 |---|---|---|---|
 | GET | `/api/autopilot/schedules` | (feature) | List all schedules. |
 | GET | `/api/autopilot/schedules/:id` | (feature) | One schedule by id. |
-| POST | `/api/autopilot/schedules` | (feature) | Create. Body: `{ name, cadence, answerSourcePath, targetDir, targets?, driftAlertThreshold?, complianceFrameworks?, enabled? }`. |
+| POST | `/api/autopilot/schedules` | (feature) | Create. Body: `{ name, cadence, timezone?, answerSourcePath, targetDir, targets?, driftAlertThreshold?, complianceFrameworks?, enabled? }`. `cadence` accepts a preset (`@hourly` / `@daily` / `@weekly` / `@monthly`) or a 5-field cron expression; `timezone` (IANA, e.g. `America/Los_Angeles`) pairs with cron expressions for wall-clock scheduling. |
 | DELETE | `/api/autopilot/schedules/:id` | (feature) | Delete. |
 | GET | `/api/autopilot/runs` | (feature) | Runs list. Query: `scheduleId?`, `limit?`. |
 | POST | `/api/autopilot/webhook/:scheduleId` | shared secret | Manual trigger — returns the run record (`202`). |

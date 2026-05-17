@@ -51,7 +51,11 @@ import {
   JsonAutopilotStore,
   runAutopilot,
   summarizeSchedule,
-  CADENCE_VALUES,
+  CADENCE_PRESETS,
+  assertValidCadence,
+  assertValidTimezone,
+  CronParseError,
+  InvalidTimezoneError,
   type Cadence,
   type AutopilotSchedule,
   type ScheduleCreateInput,
@@ -679,8 +683,27 @@ function validateScheduleInput(body: Partial<ScheduleCreateInput>):
   if (!body.name || typeof body.name !== 'string') {
     return { error: '`name` is required and must be a string' };
   }
-  if (!body.cadence || !(CADENCE_VALUES as readonly string[]).includes(body.cadence)) {
-    return { error: `\`cadence\` must be one of ${CADENCE_VALUES.join(', ')}` };
+  if (!body.cadence || typeof body.cadence !== 'string') {
+    return {
+      error: `\`cadence\` must be a preset (${CADENCE_PRESETS.join(', ')}) or a 5-field cron expression`,
+    };
+  }
+  try {
+    assertValidCadence(body.cadence);
+  } catch (err) {
+    if (err instanceof CronParseError) return { error: err.message };
+    throw err;
+  }
+  if (body.timezone !== undefined) {
+    if (typeof body.timezone !== 'string' || body.timezone.length === 0) {
+      return { error: '`timezone` must be a non-empty IANA timezone string' };
+    }
+    try {
+      assertValidTimezone(body.timezone);
+    } catch (err) {
+      if (err instanceof InvalidTimezoneError) return { error: err.message };
+      throw err;
+    }
   }
   if (!body.answerSourcePath || typeof body.answerSourcePath !== 'string') {
     return { error: '`answerSourcePath` is required and must be a string' };
@@ -692,6 +715,7 @@ function validateScheduleInput(body: Partial<ScheduleCreateInput>):
     value: {
       name: body.name,
       cadence: body.cadence as Cadence,
+      timezone: body.timezone,
       answerSourcePath: body.answerSourcePath,
       targetDir: body.targetDir,
       targets: body.targets,

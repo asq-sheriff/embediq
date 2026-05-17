@@ -9,6 +9,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.4.0] — Arbitrary cron + timezone-aware autopilot scheduling
+
+### Added — Arbitrary cron + timezone-aware autopilot scheduling
+
+The v3.2 follow-up item that's been outstanding since v3.2.0 close.
+Autopilot schedules previously accepted only the four UTC presets;
+they now also accept a standard 5-field cron expression plus an
+optional IANA timezone for true wall-clock scheduling.
+
+- **`cadence`** now accepts either a preset (`@hourly` / `@daily` /
+  `@weekly` / `@monthly`) **or** a standard 5-field cron expression
+  (`minute hour day-of-month month day-of-week`). Wildcards (`*`),
+  ranges (`1-5`), lists (`1,3,5`), and steps (`*/15`, `0-30/5`) are
+  all supported. Month / day-of-week alias names (`JAN-DEC` /
+  `SUN-SAT`) accepted case-insensitively. POSIX day-of-month /
+  day-of-week OR-semantics (when both fields are restricted, the
+  schedule fires when *either* matches).
+- **New `timezone`** field on `AutopilotSchedule` and
+  `ScheduleCreateInput`. Any IANA timezone identifier
+  (`America/Los_Angeles`, `Asia/Kolkata`, `UTC`, …). Pairs with cron
+  expressions for wall-clock scheduling; ignored for presets. With no
+  timezone, cron expressions are interpreted in UTC.
+- **DST handled correctly.** "Daily 09:00 in `America/Los_Angeles`"
+  fires at 16:00 UTC during PDT and 17:00 UTC during PST — the
+  evaluator converts each firing through `Intl.DateTimeFormat`.
+  Spring-forward gaps resolve to the first valid instant after the
+  jump; fall-back overlaps choose the first occurrence.
+- **REST validation** — `POST /api/autopilot/schedules` rejects
+  unparseable cron expressions and unknown timezones with `400` and
+  the underlying error message.
+- **Pure TypeScript** — no new runtime dependency. Built on
+  `Intl.DateTimeFormat` from Node 18+ full-ICU.
+- **41 new tests** — 29 cron parser (valid + invalid + DST + tz),
+  2 store-level (cron + timezone round-trip), 4 REST validator
+  (cron accepted, tz accepted, malformed cron rejected, unknown tz
+  rejected) plus the existing autopilot integration coverage. Full
+  suite: 1008 passing across 70 files (was 973/69).
+
+### Compatibility
+
+- All existing `@hourly` / `@daily` / `@weekly` / `@monthly` schedules
+  continue to fire on UTC boundaries with no change to their
+  `nextRunAt`. The `CADENCE_VALUES` export is kept as an alias of the
+  new `CADENCE_PRESETS` so external callers still compile.
+- All shipped goldens regenerate byte-identically — no synthesizer
+  surface changed.
+
 ## [3.3.1] — Local AI Integration Layer (Phases 2 + 3)
 
 Bundles two phases of the v3.3 Local AI Integration Layer together —
@@ -516,7 +563,8 @@ targeting, and the composable skills system.
   17 questions, 10 compliance frameworks, 18 DLP patterns, 8 rule
   templates, 20 ignore patterns, 13 validation checks.
 
-[Unreleased]: https://github.com/asq-sheriff/embediq/compare/v3.3.1...HEAD
+[Unreleased]: https://github.com/asq-sheriff/embediq/compare/v3.4.0...HEAD
+[3.4.0]: https://github.com/asq-sheriff/embediq/compare/v3.3.1...v3.4.0
 [3.3.1]: https://github.com/asq-sheriff/embediq/compare/v3.3.0...v3.3.1
 [3.2.0]: https://github.com/asq-sheriff/embediq/releases/tag/v3.2.0
 [3.1.0]: https://github.com/asq-sheriff/embediq/releases/tag/v3.1.0

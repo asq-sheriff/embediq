@@ -15,16 +15,23 @@ export {
 } from './drift-reporter.js';
 
 export {
+  CADENCE_PRESETS,
   CADENCE_VALUES,
+  isCadencePreset,
   isDue,
   nextRunAt,
   summarizeSchedule,
+  assertValidCadence,
+  assertValidTimezone,
+  CronParseError,
+  InvalidTimezoneError,
   type AutopilotRun,
   type AutopilotRunDriftSummary,
   type AutopilotRunStatus,
   type AutopilotSchedule,
   type AutopilotTrigger,
   type Cadence,
+  type CadencePreset,
   type ScheduleCreateInput,
 } from './types.js';
 
