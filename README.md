@@ -3,7 +3,8 @@
 # EmbedIQ
 
 **One adaptive interview → production-ready configs for six AI coding agents.**
-A [Praglogic](https://pragmaticlogic.ai) project.
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) **Stable** · v3.2.0 shipped 2026-04-22
 
 EmbedIQ interviews you about your project, team, and compliance
 obligations, then generates a complete agent harness — 15–40 files —
@@ -19,6 +20,51 @@ no telemetry, no database. Same answers in → byte-identical files out.
 [Security model](SECURITY.md)
 
 ![EmbedIQ demo — drift, evaluation, and multi-engagement scoping in ~70 seconds](docs/assets/demo.gif)
+
+---
+
+## Why this exists
+
+Teams adopting AI coding agents today juggle four to six tools — Claude
+Code, Cursor, Copilot, Gemini, Windsurf — each with its own config
+language and capability surface. Configurations duplicate, drift, and
+decay. Compliance teams have no single artifact to audit. Security
+postures vary per developer's local setup, and every new hire rebuilds
+the harness from scratch.
+
+EmbedIQ produces a governed multi-agent harness from one structured
+interview, and keeps it that way via drift detection, scheduled
+regeneration, and byte-identical re-runs. No LLM in the generator path,
+so the same answers always produce the same output — including under
+regulatory audit.
+
+---
+
+## Who this is for
+
+**Best fit**
+
+- **Regulated industries** — healthcare, financial services, government —
+  where compliance auditors block non-deterministic tooling and a
+  byte-identical regeneration story is a regulatory requirement, not a
+  preference.
+- **Multi-agent enterprise environments** already standardizing on
+  `AGENTS.md` plus tool-specific files, where keeping six configs
+  consistent by hand has become a recurring tax.
+- **Consulting firms and systems integrators** running multiple client
+  engagements from the same checkout, who need isolated state per
+  engagement without a hosted control plane. See the
+  [per-engagement deployment pattern](docs/CONSULTING-FIRM-DEPLOYMENT.md).
+- **Teams whose AI workforce includes non-developers** — business
+  analysts, product managers, executives — who need role-adaptive
+  output rather than a flattened `CLAUDE.md`.
+
+**Not for**
+
+- **Hobbyist solo developers** who want a one-page `CLAUDE.md`. Shallow
+  generators serve that case well and a 71-question wizard would
+  over-serve it — even with the engine's short-circuiting for
+  minimal-compliance profiles.
 
 ---
 
@@ -43,7 +89,54 @@ npm run evaluate           # replay answer sets against golden references
 npm run benchmark -- --candidate ./other-tool-output --candidate-label claude-init
 ```
 
+> **Prefer a browser?** `npm run start:web` launches a vanilla-JS SPA on
+> port 3000 with the same wizard, same generators, same output —
+> stateless by default. Full walkthrough:
+> [`docs/user-guide/01-wizard-walkthrough.md`](docs/user-guide/01-wizard-walkthrough.md).
+
 Guided 10-minute tour: [`docs/getting-started.md`](docs/getting-started.md).
+
+---
+
+## What you get
+
+A snippet from a generated `CLAUDE.md` — HIPAA-scoped TypeScript + Python
+team, developer role, strict security tier:
+
+````markdown
+# Patient portal
+
+## Tech Stack
+
+- Languages: typescript, python
+- Build: npm
+- CI/CD: github_actions
+
+## Security Requirements
+
+- Never commit secrets, API keys, or credentials
+- NEVER include PHI in any form: code, comments, test fixtures, logs
+- NEVER include PII in any form: code, comments, test fixtures, logs
+- DLP hooks actively scan all edits for sensitive data patterns
+- Follow OWASP Top 10 guidelines for all user-facing code
+
+## Compliance
+
+- HIPAA compliance is mandatory
+- Never include PHI in code, comments, logs, or test data
+- For PHI handling details, see .claude/rules/hipaa-compliance.md
+````
+
+That `CLAUDE.md` is one of ~25 files for this profile. Backing it up:
+path-scoped rule files (`.claude/rules/hipaa-phi-handling.md`,
+`.claude/rules/healthcare-interop.md`, `.claude/rules/security.md`),
+Python DLP and audit hooks under `.claude/hooks/`, a permissions-tier
+`.claude/settings.json`, custom slash commands and agents, plus an
+`AGENTS.md` cross-agent file. Same answer set generates the equivalents
+for Cursor, Copilot, Gemini, and Windsurf when you opt those targets in.
+
+See the full file inventory in
+[`docs/user-guide/02-generated-files.md`](docs/user-guide/02-generated-files.md).
 
 ---
 
@@ -65,28 +158,60 @@ Non-technical roles (Business Analyst, Product Manager, Executive) get
 coworker-shaped variants focused on research, analysis, and documentation
 instead of code.
 
+---
+
+## How it stacks up
+
+EmbedIQ ships an evaluation harness that scores its output against
+golden references and against what other tools produce — Claude
+`/init`, hand-rolled configs, shallow template generators. The same
+harness that gates internal quality is yours to run end-to-end:
+
+```bash
+npm run evaluate            # score EmbedIQ vs golden references
+npm run benchmark           # score another tool's output vs the same goldens
+```
+
+Methodology, scoring weights, and per-archetype scorecards in
+[`docs/evaluators/competitive-comparison.md`](docs/evaluators/competitive-comparison.md).
+"Prove it" beats "trust me" in regulated procurement.
+
+---
+
 ## Feature matrix
 
-| Area                           | What ships today                                                                                    |
-| ------------------------------ | --------------------------------------------------------------------------------------------------- |
-| **Adaptive Q&A**               | 71 questions · 7 dimensions · 40 with conditional branching                                         |
-| **Role adaptation**            | 8 roles (developer, devops, lead, BA, PM, executive, QA, data); role-specific output variants       |
-| **Domain packs**               | Built-in Healthcare / Finance / Education; external packs via `EMBEDIQ_PLUGINS_DIR`                 |
-| **Composable skills**          | `SKILL.md` format for granular composition; external skills via `EMBEDIQ_SKILLS_DIR`                |
-| **Output validation**          | Pre-write compliance checks (HIPAA, PCI-DSS, SOC2, GDPR, universal)                                 |
-| **Multi-agent targets**        | Claude, AGENTS.md, Cursor, Copilot, Gemini, Windsurf from one interview                             |
-| **Evaluation framework**       | Golden-config replay scoring, benchmark mode vs. competing tools, CI-gatekeeping exit codes        |
-| **Drift detection**            | `npm run drift` classifies files as match / missing / modified / stale / version-mismatch / extra |
-| **Autopilot**                  | `@hourly` / `@daily` / `@weekly` / `@monthly` scheduled drift scans + webhook triggers              |
-| **Interrupt & resume**         | Shareable `?session=<id>` URLs; per-answer attribution for multi-stakeholder workflows              |
-| **Multi-platform PR integration** | `--git-pr` opens a PR via GitHub, GitLab, or Bitbucket Cloud (atomic multi-file commit through each platform's native API) |
-| **Multi-engagement scoping**   | One process per client engagement via `EMBEDIQ_ENGAGEMENT_ID`; isolated session/autopilot/audit state under `.embediq/engagements/<id>/`                |
-| **Outbound notifications**     | Slack Block Kit / Teams MessageCard / generic JSON formatters via `EMBEDIQ_WEBHOOK_URLS`            |
-| **Compliance webhooks**        | Drata / Vanta / generic adapters translate external findings into autopilot runs                    |
-| **Authentication**             | Basic / OIDC / reverse-proxy header; RBAC with `wizard-user` + `wizard-admin`                       |
-| **Session persistence**        | Null (default) / JSON file / SQLite backends; AES-256-GCM optional payload encryption               |
-| **Observability**              | Optional OpenTelemetry (`EMBEDIQ_OTEL_ENABLED=true`); JSONL audit log                               |
-| **Deployment**                 | Docker, docker-compose, Kubernetes manifests with health/readiness probes                           |
+### Core differentiators
+
+| Area | What ships today |
+|---|---|
+| **Adaptive Q&A** | 71 questions · 7 dimensions · 40 with conditional branching |
+| **Role adaptation** | 8 roles (developer, devops, lead, BA, PM, executive, QA, data); role-specific output variants |
+| **Multi-agent targets** | Claude Code, `AGENTS.md`, Cursor, Copilot, Gemini, Windsurf — from one interview |
+| **Compliance-aware output** | Pre-write validators (HIPAA, PCI-DSS, SOC2, GDPR, universal); refused — not warned about |
+| **Determinism + audit-readiness** | Zero LLM calls in the generator path; same answers → byte-identical files; CI-gateable |
+| **Evaluation framework** | Golden-config replay scoring; benchmark mode against competing tools |
+| **Domain packs + composable skills** | Built-in Healthcare / Finance / Education plus `SKILL.md` authoring format; external packs via `EMBEDIQ_PLUGINS_DIR` / `EMBEDIQ_SKILLS_DIR` |
+
+### Operational features
+
+| Area | What ships today |
+|---|---|
+| **Drift detection** | `npm run drift` classifies files as match / missing / modified / stale / version-mismatch / extra |
+| **Autopilot** | `@hourly` / `@daily` / `@weekly` / `@monthly` scheduled drift scans plus webhook triggers |
+| **Interrupt & resume** | Shareable `?session=<id>` URLs; per-answer contributor attribution for multi-stakeholder workflows |
+| **Multi-platform PR integration** | `--git-pr` opens a PR via GitHub, GitLab, or Bitbucket Cloud (atomic multi-file commits through each platform's native API) |
+| **Outbound notifications** | Slack Block Kit / Teams MessageCard / generic JSON via `EMBEDIQ_WEBHOOK_URLS` |
+| **Compliance webhooks** | Drata, Vanta, and generic adapters translate external findings into autopilot runs; HMAC-SHA256 signature verification opt-in per adapter |
+
+### Infrastructure & deployment
+
+| Area | What ships today |
+|---|---|
+| **Authentication** | Basic / OIDC / reverse-proxy header; RBAC with `wizard-user` and `wizard-admin` |
+| **Session persistence** | Null (default) / JSON file / SQLite backends; AES-256-GCM optional payload encryption |
+| **Multi-engagement scoping** | `EMBEDIQ_ENGAGEMENT_ID` isolates session, autopilot, and audit state under `.embediq/engagements/<id>/` — one process per engagement |
+| **Observability** | Optional OpenTelemetry (`EMBEDIQ_OTEL_ENABLED=true`); JSONL audit log |
+| **Deployment** | Docker, docker-compose, Kubernetes manifests with health and readiness probes |
 
 ---
 
@@ -207,5 +332,5 @@ Full threat model and compliance-framework coverage in
 
 ## License
 
-[MIT](LICENSE). Contributions welcome — see
-[`CONTRIBUTING.md`](CONTRIBUTING.md).
+[MIT](LICENSE). A [Praglogic](https://pragmaticlogic.ai) project.
+Contributions welcome — see [`CONTRIBUTING.md`](CONTRIBUTING.md).
