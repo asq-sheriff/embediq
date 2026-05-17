@@ -11,6 +11,65 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _No unreleased changes yet._
 
+## [3.2.2] — GTM Enablement
+
+Three deliverables that turn the existing evaluation framework and
+positioning work into client-presentable assets. The eval framework
+gates internal quality today; this release makes the same data
+presentable externally for sales conversations, procurement, and
+client deliverables. Pure additions — no behavior changes to the
+core wizard or generators.
+
+### Added
+- **Customer-facing HTML scorecards (6N).** `--format scorecard` turns
+  `npm run evaluate` or `npm run benchmark` into a standalone HTML
+  scorecard suitable for a sales email, audit packet, or compliance
+  reviewer. Two layouts (`full` with optional multi-archetype TOC;
+  `email-safe` table-based for email clients), two themes (`light`,
+  `dark`), white-label logo embed via `--scorecard-logo`,
+  side-by-side benchmark comparison, deterministic output, audit-
+  stamped provenance footer. Optional PDF output via `--format pdf`
+  using puppeteer as an optional peer dependency.
+- **Healthcare BPO deployment runbook
+  ([`docs/HEALTHCARE-BPO-DEPLOYMENT.md`](docs/HEALTHCARE-BPO-DEPLOYMENT.md)).**
+  Synthesis runbook for healthcare BPOs and regulated services
+  firms — two deployment topologies (air-gapped single-node,
+  controlled-outbound), seven-step setup walking through HIPAA pack
+  resolution, encrypted SQLite sessions, OIDC + RBAC, autopilot +
+  compliance feedback loop with HMAC verification, six-year audit
+  retention, optional per-engagement scoping, and customer-facing
+  scorecard for client deliverables. Includes a BAA-survivable
+  evidence checklist mapping eight common auditor questions to the
+  artifacts EmbedIQ produces.
+- **Industry case-study fixtures (6P).** Two new golden archetypes
+  prospects can run end-to-end:
+  - `healthcare-bpo-strict` — tech-lead persona at a healthcare BPO
+    claims platform, full HIPAA + strict tier, TypeScript + Python.
+    16 generated files.
+  - `consulting-engagement-default` — developer persona at a systems
+    integrator, SaaS + SOC 2 + audit logging, balanced security,
+    multi-agent target set (Claude + AGENTS.md + Cursor). 16
+    generated files.
+- **Scorecard renderer module** (`src/evaluation/scorecard-renderer.ts`
+  + `scorecard-template.ts`) — pure HTML+CSS templates, deterministic
+  output, inline CSS only, no external assets, optional peer-dep
+  puppeteer for PDF.
+- **CLI flags** for the scorecard format: `--scorecard-title`,
+  `--scorecard-subtitle`, `--scorecard-theme`, `--scorecard-layout`,
+  `--scorecard-logo`, `--scorecard-include-failures`.
+
+### Tests
+- 40 new tests across the scorecard renderer (25 unit + 15 end-to-end
+  integration) covering themes, layouts, logo embed, benchmark
+  side-by-side, deterministic output, error paths.
+- Both new archetypes hit the existing `evaluator.test.ts`
+  end-to-end test and score 100% with zero validator failures.
+
+### Compatibility
+- All five pre-existing golden archetypes regenerate byte-identically.
+- New optional peer dependency (`puppeteer`) only needed for
+  `--format pdf`; HTML scorecard works with zero new dependencies.
+
 ## [3.2.1] — Operational Consolidation
 
 Five v3.2.x follow-ups landing as a single patch release. All non-gated
