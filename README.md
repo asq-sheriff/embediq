@@ -18,7 +18,7 @@ no telemetry, no database. Same answers in → byte-identical files out.
 [Full changelog](CHANGELOG.md) ·
 [Security model](SECURITY.md)
 
-![EmbedIQ demo — drift detection and evaluation in 60 seconds](docs/assets/demo.gif)
+![EmbedIQ demo — drift, evaluation, and multi-engagement scoping in ~70 seconds](docs/assets/demo.gif)
 
 ---
 

@@ -1,6 +1,6 @@
 # EmbedIQ — VHS demo tape
 #
-# Renders a ~60-second terminal gif for the README.
+# Renders a ~70-second terminal gif for the README.
 #
 # Prerequisite: install VHS from https://github.com/charmbracelet/vhs
 #   brew install vhs
@@ -85,6 +85,19 @@ Type "npm run evaluate -- --no-color 2>&1 | tail -25"
 Sleep 500ms
 Enter
 Sleep 7s
+
+Type "clear"
+Enter
+Sleep 300ms
+
+# ── 5. Multi-engagement scoping ──────────────────────────────────────
+Type "# v3.2.x: per-engagement state for consulting firms / SIs"
+Sleep 800ms
+Enter
+Type "head -26 docs/CONSULTING-FIRM-DEPLOYMENT.md"
+Sleep 500ms
+Enter
+Sleep 5s
 
 Type "clear"
 Enter
