@@ -41,6 +41,16 @@ export enum TargetFormat {
   // Drata, Vanta, FedRAMP-style audit pipelines, and any OSCAL-aware
   // compliance platform.
   OSCAL_COMPONENT = 'oscal-component',
+  // v4.0 / 8C — OSCAL System Security Plan (SSP) FRAGMENT export. Opt-in
+  // only. When selected, a post-pass step emits
+  // `.embediq/oscal/ssp-fragment.json` — the control-implementation +
+  // harness-component sections of a full SSP. NOT a complete SSP: the
+  // surrounding system context (authorization boundary, leveraged
+  // authorizations, system-owner identity, network architecture, etc.)
+  // is the operator's responsibility to fill in. Document is stamped
+  // with `document-completion-status=fragment` so audit pipelines know
+  // it's not a standalone artifact.
+  OSCAL_SSP_FRAGMENT = 'oscal-ssp-fragment',
 }
 
 export const ALL_TARGETS: readonly TargetFormat[] = [
@@ -57,6 +67,7 @@ export const ALL_TARGETS: readonly TargetFormat[] = [
   TargetFormat.RAG_SCAFFOLD,
   TargetFormat.LOCAL_ROUTER,
   TargetFormat.OSCAL_COMPONENT,
+  TargetFormat.OSCAL_SSP_FRAGMENT,
 ];
 
 /** When the caller supplies nothing, we emit the native Claude Code setup only. */

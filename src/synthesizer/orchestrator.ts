@@ -29,6 +29,7 @@ import { OllamaSetupGenerator } from './generators/ollama-setup.js';
 import { RagScaffoldGenerator } from './generators/rag-scaffold.js';
 import { LocalRouterGenerator } from './generators/local-router.js';
 import { generateOscalComponentDefinition } from './generators/oscal-component.js';
+import { generateOscalSspFragment } from './generators/oscal-ssp-fragment.js';
 import { readFile } from 'node:fs/promises';
 
 export class SynthesizerOrchestrator {
@@ -168,17 +169,30 @@ export class SynthesizerOrchestrator {
         }
       }
 
-      // v4.0 / 8B — OSCAL Component Definition post-pass. Opt-in only via
-      // explicit `--targets oscal-component`, so existing goldens stay
-      // byte-identical. Runs AFTER the parallel batch so the document's
-      // artifact manifest names every file emitted in this run.
+      // v4.0 / 8B + 8C — OSCAL post-pass outputs. Opt-in only via the
+      // explicit OSCAL targets; existing goldens stay byte-identical.
+      // Run AFTER the parallel batch so each document's artifact
+      // manifest names every file emitted in this run. The version
+      // resolver is cached so multiple OSCAL outputs share one read.
+      const needsEmbediqVersion = targets.has(TargetFormat.OSCAL_COMPONENT)
+        || targets.has(TargetFormat.OSCAL_SSP_FRAGMENT);
+      const embediqVersion = needsEmbediqVersion ? await resolveEmbediqVersion() : '';
+
       if (targets.has(TargetFormat.OSCAL_COMPONENT)) {
-        const embediqVersion = await resolveEmbediqVersion();
         const componentDef = generateOscalComponentDefinition(config, allFiles, embediqVersion);
         allFiles.push(componentDef);
         this.bus.emit('file:generated', {
           relativePath: componentDef.relativePath,
           size: componentDef.content.length,
+        });
+      }
+
+      if (targets.has(TargetFormat.OSCAL_SSP_FRAGMENT)) {
+        const sspFragment = generateOscalSspFragment(config, allFiles, embediqVersion);
+        allFiles.push(sspFragment);
+        this.bus.emit('file:generated', {
+          relativePath: sspFragment.relativePath,
+          size: sspFragment.content.length,
         });
       }
 
