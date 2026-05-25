@@ -51,6 +51,16 @@ export enum TargetFormat {
   // with `document-completion-status=fragment` so audit pipelines know
   // it's not a standalone artifact.
   OSCAL_SSP_FRAGMENT = 'oscal-ssp-fragment',
+  // v4.0 / 8D — CycloneDX-ML AI Bill of Materials. Opt-in only. When
+  // selected, a post-pass step emits `.embediq/cyclonedx/aibom.json`
+  // enumerating every AI model, agent, and service the generated
+  // harness invokes (Ollama local models, hosted APIs like Anthropic
+  // and OpenAI, IDE-resident agents like Continue.dev / Aider / Zed AI,
+  // the local-router service). Conforms to CycloneDX 1.6 with ML-BOM
+  // extensions (modelCard fields on machine-learning-model components).
+  // Procurement-relevant — EO 14110 and emerging FedRAMP guidance
+  // expect AI/ML BOMs as part of supply-chain disclosure.
+  CYCLONEDX_AIBOM = 'cyclonedx-aibom',
 }
 
 export const ALL_TARGETS: readonly TargetFormat[] = [
@@ -68,6 +78,7 @@ export const ALL_TARGETS: readonly TargetFormat[] = [
   TargetFormat.LOCAL_ROUTER,
   TargetFormat.OSCAL_COMPONENT,
   TargetFormat.OSCAL_SSP_FRAGMENT,
+  TargetFormat.CYCLONEDX_AIBOM,
 ];
 
 /** When the caller supplies nothing, we emit the native Claude Code setup only. */

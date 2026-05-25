@@ -30,6 +30,7 @@ import { RagScaffoldGenerator } from './generators/rag-scaffold.js';
 import { LocalRouterGenerator } from './generators/local-router.js';
 import { generateOscalComponentDefinition } from './generators/oscal-component.js';
 import { generateOscalSspFragment } from './generators/oscal-ssp-fragment.js';
+import { generateCycloneDxAibom } from './generators/cyclonedx-aibom.js';
 import { readFile } from 'node:fs/promises';
 
 export class SynthesizerOrchestrator {
@@ -169,14 +170,30 @@ export class SynthesizerOrchestrator {
         }
       }
 
-      // v4.0 / 8B + 8C — OSCAL post-pass outputs. Opt-in only via the
-      // explicit OSCAL targets; existing goldens stay byte-identical.
-      // Run AFTER the parallel batch so each document's artifact
-      // manifest names every file emitted in this run. The version
-      // resolver is cached so multiple OSCAL outputs share one read.
+      // v4.0 / 8B + 8C + 8D — governance-output post-pass. Opt-in only
+      // via the explicit OSCAL / CycloneDX targets; existing goldens
+      // stay byte-identical. Run AFTER the parallel batch so each
+      // document's artifact manifest names every file emitted in this
+      // run. The version resolver is cached so multiple governance
+      // outputs share one read.
+      //
+      // Order matters: AIBOM (8D) describes the AI components, the
+      // OSCAL component-definition (8B) describes the product, and
+      // the OSCAL SSP fragment (8C) describes the deployment — each
+      // later step's manifest includes the earlier files.
       const needsEmbediqVersion = targets.has(TargetFormat.OSCAL_COMPONENT)
-        || targets.has(TargetFormat.OSCAL_SSP_FRAGMENT);
+        || targets.has(TargetFormat.OSCAL_SSP_FRAGMENT)
+        || targets.has(TargetFormat.CYCLONEDX_AIBOM);
       const embediqVersion = needsEmbediqVersion ? await resolveEmbediqVersion() : '';
+
+      if (targets.has(TargetFormat.CYCLONEDX_AIBOM)) {
+        const aibom = generateCycloneDxAibom(config, allFiles, embediqVersion);
+        allFiles.push(aibom);
+        this.bus.emit('file:generated', {
+          relativePath: aibom.relativePath,
+          size: aibom.content.length,
+        });
+      }
 
       if (targets.has(TargetFormat.OSCAL_COMPONENT)) {
         const componentDef = generateOscalComponentDefinition(config, allFiles, embediqVersion);
