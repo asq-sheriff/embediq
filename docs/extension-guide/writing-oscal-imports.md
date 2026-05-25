@@ -113,6 +113,23 @@ try {
 }
 ```
 
+## Verifying against real NIST catalogs
+
+EmbedIQ ships a slice of the actual NIST SP 800-53 Rev 5 catalog under
+`tests/fixtures/oscal/nist-800-53-rev5-ir-slice.json` (the IR control
+family, ~400 KB, sourced verbatim from
+[`usnistgov/oscal-content`](https://github.com/usnistgov/oscal-content)).
+The integration test at
+`tests/integration/governance-oscal-real-catalog.test.ts` round-trips
+the slice end-to-end and asserts on real-world counts (42 controls
+total, 32 enhancements, 2 withdrawn entries including the top-level
+`ir-10`, the known `ir-8` / `ir-8.1` parent-child relationship, NIST's
+stable catalog UUID, OSCAL schema version), so a future loader change
+that silently breaks compatibility with real NIST data fails CI.
+
+Refreshing the slice when NIST publishes catalog updates is documented
+in [`tests/fixtures/oscal/README.md`](../../tests/fixtures/oscal/README.md).
+
 ## What's not in 8A
 
 These ship in later v4.0 phases:
