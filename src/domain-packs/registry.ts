@@ -3,6 +3,11 @@ import { resolve } from 'node:path';
 import type { DomainPack } from './index.js';
 import { skillRegistry } from '../skills/skill-registry.js';
 import { composeSkills } from '../skills/skill-composer.js';
+import {
+  readOscalCatalog,
+  oscalCatalogToFramework,
+  type OscalToFrameworkOptions,
+} from '../governance/oscal/index.js';
 
 const PLUGINS_DIR = () => process.env.EMBEDIQ_PLUGINS_DIR || './plugins';
 
@@ -110,6 +115,42 @@ export class DomainPackRegistry {
       ignorePatterns: composed.ignorePatterns,
       validationChecks: composed.validationChecks,
     };
+  }
+
+  /**
+   * Build a thin DomainPack whose only payload is the compliance-framework
+   * identity drawn from an OSCAL catalog (800-53 Rev 5, SSDF / SP 800-218,
+   * SP 800-171, etc.). Registers it under `meta.id`. Returns the pack so
+   * callers can compose further (e.g. merge it with an industry pack to
+   * get OSCAL-controlled HIPAA or PCI generation).
+   *
+   * Throws `OscalLoadError` on parse failure — the pack is not registered
+   * in that case. Re-registering the same id is a no-op (warns and returns
+   * the existing pack); operators rotating an updated OSCAL catalog
+   * should delete-then-register or use a versioned id.
+   */
+  async loadFromOscalCatalog(
+    catalogPath: string,
+    meta: { id: string; name: string; version: string; description?: string },
+    options: OscalToFrameworkOptions = {},
+  ): Promise<DomainPack> {
+    const catalog = await readOscalCatalog(catalogPath);
+    const framework = oscalCatalogToFramework(catalog, options);
+    const pack: DomainPack = {
+      id: meta.id,
+      name: meta.name,
+      version: meta.version,
+      description: meta.description ?? framework.description,
+      questions: [],
+      complianceFrameworks: [framework],
+      priorityCategories: {},
+      dlpPatterns: [],
+      ruleTemplates: [],
+      ignorePatterns: [],
+      validationChecks: [],
+    };
+    this.register(pack);
+    return pack;
   }
 }
 
