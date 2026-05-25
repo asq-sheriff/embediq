@@ -31,6 +31,7 @@ export const DEFAULT_NOTIFICATION_EVENTS: readonly EventName[] = [
   'validation:completed',
   'session:started',
   'session:completed',
+  'autopilot:alerting',
 ];
 
 export function isDefaultEvent(name: EventName): boolean {
@@ -185,6 +186,21 @@ function summarizeForChat(env: EventEnvelope): ChatSummary | null {
         subtitle: `${env.payload.fileCount} file${env.payload.fileCount === 1 ? '' : 's'} generated in session \`${env.payload.sessionId}\`.`,
         fields: env.userId ? [{ label: 'User', value: env.userId }] : [],
       };
+
+    case 'autopilot:alerting': {
+      const { scheduleName, scheduleId, failureCount, mostRecentError, lastSuccessAt } = env.payload;
+      const fields: Array<{ label: string; value: string }> = [
+        { label: 'Schedule', value: `${scheduleName} (${scheduleId})` },
+        { label: 'Consecutive failures', value: String(failureCount) },
+      ];
+      if (mostRecentError) fields.push({ label: 'Most recent error', value: mostRecentError });
+      if (lastSuccessAt) fields.push({ label: 'Last success', value: lastSuccessAt });
+      return {
+        title: `EmbedIQ: 🚨 autopilot alerting — ${scheduleName}`,
+        subtitle: `Schedule has failed ${failureCount} consecutive runs.`,
+        fields,
+      };
+    }
 
     // Profile / question / answer / dimension / file events aren't mapped —
     // they'd flood chat. Generic JSON is still available via the event filter.

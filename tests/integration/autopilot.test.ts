@@ -95,6 +95,76 @@ describe('runAutopilot', () => {
     expect(run.status).toBe('failure');
     expect(run.error).toMatch(/Answer source/);
   });
+
+  it('emits autopilot:alerting exactly once when the failure streak crosses the threshold', async () => {
+    const { getEventBus, resetEventBus } = await import('../../src/events/bus.js');
+    resetEventBus();
+    const bus = getEventBus();
+
+    type AlertingPayload = {
+      scheduleId: string;
+      scheduleName: string;
+      failureCount: number;
+      mostRecentError?: string;
+    };
+    const captured: AlertingPayload[] = [];
+    bus.on('autopilot:alerting', (env) => {
+      captured.push(env.payload);
+    });
+
+    const schedule = await store.addSchedule({
+      name: 'alerting-test',
+      cadence: '@daily',
+      answerSourcePath: '/tmp/embediq-nonexistent-answers.yaml',
+      targetDir: projectDir,
+      alertOnFailureStreak: 2,
+    });
+
+    // First failure — below threshold, no emit.
+    await runAutopilot(schedule, store, { trigger: 'cron' });
+    await new Promise<void>((r) => queueMicrotask(r));
+    expect(captured).toHaveLength(0);
+
+    // Second failure — crosses threshold (window of 2 failures, no run
+    // behind it), exactly one emit.
+    await runAutopilot(schedule, store, { trigger: 'cron' });
+    await new Promise<void>((r) => queueMicrotask(r));
+    expect(captured).toHaveLength(1);
+    expect(captured[0]!.scheduleId).toBe(schedule.id);
+    expect(captured[0]!.scheduleName).toBe('alerting-test');
+    expect(captured[0]!.failureCount).toBe(2);
+    expect(captured[0]!.mostRecentError).toMatch(/Answer source/);
+
+    // Third failure — already alerting, suppressed.
+    await runAutopilot(schedule, store, { trigger: 'cron' });
+    await new Promise<void>((r) => queueMicrotask(r));
+    expect(captured).toHaveLength(1);
+
+    resetEventBus();
+  });
+
+  it('does not emit autopilot:alerting when the schedule disables alerting (threshold = 0)', async () => {
+    const { getEventBus, resetEventBus } = await import('../../src/events/bus.js');
+    resetEventBus();
+    const captured: unknown[] = [];
+    getEventBus().on('autopilot:alerting', (env) => captured.push(env.payload));
+
+    const schedule = await store.addSchedule({
+      name: 'no-alerts',
+      cadence: '@daily',
+      answerSourcePath: '/tmp/embediq-nonexistent-answers.yaml',
+      targetDir: projectDir,
+      alertOnFailureStreak: 0,
+    });
+
+    for (let i = 0; i < 5; i++) {
+      await runAutopilot(schedule, store, { trigger: 'cron' });
+    }
+    await new Promise<void>((r) => queueMicrotask(r));
+    expect(captured).toHaveLength(0);
+
+    resetEventBus();
+  });
 });
 
 describe('AutopilotScheduler', () => {

@@ -100,7 +100,7 @@ embediq/
     │   ├── priority-analyzer.ts  # Tag-weight priority derivation
     │   └── dimension-tracker.ts  # Progress tracking per dimension
     ├── synthesizer/
-    │   ├── orchestrator.ts       # Coordinates 22 generators (12 Claude + 5 multi-agent + 4 local-AI + 1 RAG scaffold) + validation
+    │   ├── orchestrator.ts       # Coordinates 23 generators (12 Claude + 5 multi-agent + 4 local-AI + 1 RAG scaffold + 1 local-router) + validation
     │   ├── generator.ts          # ConfigGenerator interface
     │   ├── output-validator.ts   # Post-generation compliance verification
     │   ├── generation-header.ts  # Version stamps for generated files
@@ -1007,7 +1007,7 @@ Three pluggable auth strategies via `EMBEDIQ_AUTH_STRATEGY`:
 - **oidc**: JWT validation from OIDC providers (Okta, Azure AD, Auth0)
 - **proxy**: Trusts reverse proxy headers (X-Forwarded-User, X-EmbedIQ-Roles)
 
-Two RBAC roles: `wizard-user` (answer questions, preview) and `wizard-admin` (generate/write files).
+Three-tier RBAC: `wizard-viewer` (read-only on generations, audit, skills, autopilot status), `wizard-user` / `wizard-contributor` (answer questions, preview, generate; the two names are aliases — `wizard-user` is the legacy form preserved for backwards compatibility with existing auth strategies), and `wizard-admin` (generate-to-disk, list all sessions, rotate keys, full audit visibility). Higher tiers strictly include lower-tier permissions. Unknown roles emitted by external OIDC/header strategies fall back to literal-match semantics.
 
 ### Session Persistence
 Client-side encrypted checkpoint using Web Crypto API (AES-256-GCM). The encryption key exists only in JavaScript memory — never persisted to disk or sessionStorage. Survives page refresh, destroyed on tab close.

@@ -29,16 +29,22 @@ startup and every route is anonymous.
 
 ## Roles (RBAC)
 
-EmbedIQ recognizes two roles:
+EmbedIQ uses a three-tier role hierarchy. Higher tiers strictly include
+lower-tier permissions, so granting `wizard-admin` covers everything a
+contributor and viewer can do.
 
-| Role | Capabilities |
-|---|---|
-| `wizard-user` | Run the wizard, read their own session, generate output, consume compliance/autopilot webhooks when routed via normal auth. |
-| `wizard-admin` | All `wizard-user` capabilities **plus** generate-to-disk (`POST /api/generate`), list all sessions, export session dumps. |
+| Role | Tier | Capabilities |
+|---|---|---|
+| `wizard-viewer` | 1 (lowest) | Read generations, audit log, skills, autopilot status. No mutations. |
+| `wizard-user` ≡ `wizard-contributor` | 2 | Everything a viewer can do **plus** run the wizard, read own session, generate output, open PRs, create/edit own autopilot schedules, consume compliance/autopilot webhooks. `wizard-user` is the legacy alias preserved verbatim so existing basic / OIDC / proxy-header strategies continue working unchanged. |
+| `wizard-admin` | 3 (highest) | Everything a contributor can do **plus** generate-to-disk (`POST /api/generate`), list all sessions, export session dumps, manage all autopilot schedules, rotate keys. |
 
 Role enforcement is handled by [`requireRole()`](../../src/web/middleware/rbac.ts).
-Users without a role are treated as anonymous and cannot touch role-
-gated endpoints.
+Unknown roles emitted by external auth strategies fall back to literal-
+match semantics — a role outside the EmbedIQ namespace (e.g. an OIDC
+group named `external:billing`) matches only an exact `requireRole('external:billing')`
+call, with `wizard-admin` always overriding. Users without any role are
+treated as anonymous and cannot touch role-gated endpoints.
 
 ## Strategy 1 — Basic auth
 
@@ -81,8 +87,8 @@ Behavior:
 - The `sub` claim becomes the user's `userId`; the `name` / `email`
   claim becomes `displayName`.
 - The claim named in `EMBEDIQ_OIDC_ROLES_CLAIM` (default `roles`) is
-  parsed as an array of strings — assign `wizard-user` or
-  `wizard-admin` here.
+  parsed as an array of strings — assign `wizard-viewer`,
+  `wizard-user` / `wizard-contributor`, or `wizard-admin` here.
 - Token expiry + signature validation happens on every request.
 
 ### Okta
@@ -128,8 +134,8 @@ Behavior:
 
 1. **App registrations** → **New registration** → platform
    **Web**, redirect `https://embediq.example.com/callback`.
-2. **App roles** → add `wizard-user` and `wizard-admin` with member
-   type **User/Group**.
+2. **App roles** → add `wizard-viewer`, `wizard-user` (or `wizard-contributor`),
+   and `wizard-admin` with member type **User/Group**.
 3. **Token configuration** → add an optional ID-token claim for
    `roles`.
 4. Env vars:

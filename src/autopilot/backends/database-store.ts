@@ -29,6 +29,7 @@ export interface ScheduleRow {
   targets: string | null; // JSON array
   drift_alert_threshold: number | null;
   compliance_frameworks: string | null; // JSON array
+  alert_on_failure_streak: number | null;
   enabled: number; // 0 or 1 (SQLite portability — Postgres reads as same value)
   created_at: string;
   updated_at: string;
@@ -129,6 +130,7 @@ export class DatabaseAutopilotStore implements AutopilotStore {
       targets: input.targets,
       driftAlertThreshold: input.driftAlertThreshold,
       complianceFrameworks: input.complianceFrameworks,
+      alertOnFailureStreak: input.alertOnFailureStreak,
       enabled: input.enabled ?? true,
       createdAt: now.toISOString(),
       updatedAt: now.toISOString(),
@@ -201,6 +203,7 @@ function scheduleToRow(schedule: AutopilotSchedule): ScheduleRow {
     compliance_frameworks: schedule.complianceFrameworks
       ? JSON.stringify(Array.from(schedule.complianceFrameworks))
       : null,
+    alert_on_failure_streak: schedule.alertOnFailureStreak ?? null,
     enabled: schedule.enabled ? 1 : 0,
     created_at: schedule.createdAt,
     updated_at: schedule.updatedAt,
@@ -229,6 +232,9 @@ function scheduleToRowPatch(
       ? JSON.stringify(Array.from(patch.complianceFrameworks))
       : null;
   }
+  if (patch.alertOnFailureStreak !== undefined) {
+    out.alert_on_failure_streak = patch.alertOnFailureStreak ?? null;
+  }
   if (patch.enabled !== undefined) out.enabled = patch.enabled ? 1 : 0;
   if (patch.updatedAt !== undefined) out.updated_at = patch.updatedAt;
   if (patch.lastRunAt !== undefined) out.last_run_at = patch.lastRunAt ?? null;
@@ -249,6 +255,7 @@ function rowToSchedule(row: ScheduleRow): AutopilotSchedule {
     complianceFrameworks: row.compliance_frameworks
       ? (JSON.parse(row.compliance_frameworks) as readonly string[])
       : undefined,
+    alertOnFailureStreak: row.alert_on_failure_streak ?? undefined,
     enabled: row.enabled === 1 || (row.enabled as unknown) === true,
     createdAt: row.created_at,
     updatedAt: row.updated_at,

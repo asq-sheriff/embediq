@@ -18,7 +18,7 @@ import { SynthesizerOrchestrator } from '../synthesizer/orchestrator.js';
 import { FileOutputManager } from '../util/file-output.js';
 import { analyzeDiffs } from '../synthesizer/diff-analyzer.js';
 import { createAuthMiddleware, authenticateRequest, type AuthStrategy } from './middleware/auth.js';
-import { requireRole } from './middleware/rbac.js';
+import { requireRole, effectiveRoleLevel, ROLE_HIERARCHY } from './middleware/rbac.js';
 import { BasicAuthStrategy } from './middleware/strategies/basic.js';
 import { OidcAuthStrategy } from './middleware/strategies/oidc.js';
 import { ProxyHeaderStrategy } from './middleware/strategies/header.js';
@@ -816,7 +816,7 @@ if (isDirectRun) {
         socket.destroy();
         return;
       }
-      if (!result.roles.includes('wizard-user') && !result.roles.includes('wizard-admin')) {
+      if (effectiveRoleLevel(result.roles) < ROLE_HIERARCHY['wizard-viewer']!) {
         socket.write('HTTP/1.1 403 Forbidden\r\n\r\n');
         socket.destroy();
         return;

@@ -10,6 +10,8 @@ import type {
   AutopilotSchedule,
   AutopilotTrigger,
 } from './types.js';
+import { detectFailureStreak, resolveFailureStreakThreshold } from './failure-monitor.js';
+import { getEventBus } from '../events/bus.js';
 
 export interface RunOptions {
   trigger: AutopilotTrigger;
@@ -100,9 +102,44 @@ export async function runAutopilot(
   }
   await store.updateSchedule(schedule.id, patch);
 
+  if (status === 'failure') {
+    await maybeEmitFailureAlert(schedule, store);
+  }
+
   // Suppress unused-variable warning while keeping perf metric live for
   // future telemetry hookup.
   void (performance.now() - t0);
 
   return run;
+}
+
+/**
+ * After recording a failure run, query recent runs and fire
+ * `autopilot:alerting` if (and only if) the consecutive-failure streak
+ * just crossed the schedule's effective threshold. Suppression rules and
+ * exact-crossing semantics live in `detectFailureStreak`.
+ */
+async function maybeEmitFailureAlert(
+  schedule: AutopilotSchedule,
+  store: AutopilotStore,
+): Promise<void> {
+  const threshold = resolveFailureStreakThreshold(schedule.alertOnFailureStreak);
+  if (threshold <= 0) return;
+
+  // Pull one extra so detectFailureStreak can inspect the run just before
+  // the window and avoid re-emitting on a streak that was already alerting.
+  const recent = await store.listRuns({
+    scheduleId: schedule.id,
+    limit: threshold + 1,
+  });
+  const alert = detectFailureStreak(recent, threshold);
+  if (!alert) return;
+
+  getEventBus().emit('autopilot:alerting', {
+    scheduleId: alert.scheduleId,
+    scheduleName: schedule.name,
+    failureCount: alert.failureCount,
+    mostRecentError: alert.mostRecentError,
+    lastSuccessAt: alert.lastSuccessAt,
+  });
 }

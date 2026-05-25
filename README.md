@@ -237,7 +237,7 @@ output) in
 | Area | What ships today |
 |---|---|
 | **Drift detection** | `npm run drift` classifies files as match / missing / modified / stale / version-mismatch / extra |
-| **Autopilot** | `@hourly` / `@daily` / `@weekly` / `@monthly` scheduled drift scans plus webhook triggers |
+| **Autopilot** | Scheduled drift scans (`@hourly` / `@daily` / `@weekly` / `@monthly` presets or arbitrary 5-field cron expressions in any IANA timezone with DST handling) plus webhook triggers. Multi-replica scheduling via the Postgres-backed store (`claimSchedule()` CAS — every replica reads the shared table, each due schedule fires exactly once). |
 | **Interrupt & resume** | Shareable `?session=<id>` URLs; per-answer contributor attribution for multi-stakeholder workflows |
 | **Multi-platform PR integration** | `--git-pr` opens a PR via GitHub, GitLab, or Bitbucket Cloud (atomic multi-file commits through each platform's native API) |
 | **Outbound notifications** | Slack Block Kit / Teams MessageCard / generic JSON via `EMBEDIQ_WEBHOOK_URLS` |
@@ -247,8 +247,8 @@ output) in
 
 | Area | What ships today |
 |---|---|
-| **Authentication** | Basic / OIDC / reverse-proxy header; RBAC with `wizard-user` and `wizard-admin` |
-| **Session persistence** | Null (default) / JSON file / SQLite backends; AES-256-GCM optional payload encryption |
+| **Authentication** | Basic / OIDC / reverse-proxy header; three-tier RBAC (`wizard-viewer` / `wizard-user` ≡ `wizard-contributor` / `wizard-admin`) with legacy `wizard-user` preserved as a contributor alias |
+| **Session persistence** | Null (default) / JSON file / SQLite / Postgres backends; AES-256-GCM optional payload encryption with side-by-side key rotation (`EMBEDIQ_SESSION_DATA_KEY_PREV`). Postgres backend supports horizontal scale-out — every web replica reads the same session table |
 | **Multi-engagement scoping** | `EMBEDIQ_ENGAGEMENT_ID` isolates session, autopilot, and audit state under `.embediq/engagements/<id>/` — one process per engagement |
 | **Observability** | Optional OpenTelemetry (`EMBEDIQ_OTEL_ENABLED=true`); JSONL audit log |
 | **Deployment** | Docker, docker-compose, Kubernetes manifests with health and readiness probes |

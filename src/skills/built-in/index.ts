@@ -3,6 +3,7 @@ import { healthcareFullSkill } from './healthcare-full.js';
 import { healthcareRagSkill } from './healthcare-rag.js';
 import { financeFullSkill } from './finance-full.js';
 import { educationFullSkill } from './education-full.js';
+import { karpathyGuidelinesSkill } from './karpathy-guidelines.js';
 
 /**
  * Built-in skills registered at module load by `SkillRegistry`. Adding
@@ -15,4 +16,5 @@ export const BUILT_IN_SKILLS: readonly Skill[] = [
   healthcareRagSkill,
   financeFullSkill,
   educationFullSkill,
+  karpathyGuidelinesSkill,
 ];

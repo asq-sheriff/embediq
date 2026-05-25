@@ -45,7 +45,7 @@ Metadata (`requestId`, `userId`, `sessionId`) is auto-populated from
 the `AsyncLocalStorage` request context at emit time. Callers don't
 thread them through function signatures.
 
-## Nine core events
+## Ten core events
 
 ```ts
 interface WizardEvents {
@@ -58,8 +58,16 @@ interface WizardEvents {
   'validation:completed':{ passCount; failCount; checks };
   'session:started':    { sessionId; templateId? };
   'session:completed':  { sessionId; fileCount };
+  'autopilot:alerting': { scheduleId; scheduleName; failureCount; mostRecentError?; lastSuccessAt? };
 }
 ```
+
+The `autopilot:alerting` event fires exactly once per consecutive-failure
+streak that crosses a schedule's `alertOnFailureStreak` threshold (default
+3, configurable globally via `EMBEDIQ_AUTOPILOT_ALERT_FAILURE_STREAK` or
+per-schedule via the `alertOnFailureStreak` field). One-shot semantics —
+the event does not re-fire while the same streak continues, and a single
+success resets the counter so the next failure streak can alert again.
 
 Adding a new event: extend `WizardEvents` + the enum in
 `src/events/types.ts`, update emitters to fire it, update subscribers

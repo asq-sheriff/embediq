@@ -54,6 +54,14 @@ const SKIP_DIRS: readonly string[] = [
 const PRIVATE_PATH_PREFIXES: readonly string[] = [
   'docs/internal/',
   '.claude/',
+  // Customer-named demo material and golden archetypes — kept private
+  // so the public repo doesn't carry the customer's name. The role
+  // archetypes that exercise the same surface generically (architect,
+  // developer, devops, etc.) are covered by the non-namespaced
+  // archetypes (consulting-engagement-default, healthcare-bpo-strict,
+  // etc.) that DO ship publicly.
+  'tests/fixtures/golden-configs/sagility-',
+  'docs/showcase/sagility-demo/',
 ];
 
 /** Hard leak markers — appearing in a public-tagged file is a defect. */

@@ -28,6 +28,19 @@ export interface WizardEvents {
   'validation:completed': { passCount: number; failCount: number; checks: ValidationCheck[] };
   'session:started': { sessionId: string; templateId?: string };
   'session:completed': { sessionId: string; fileCount: number };
+  /**
+   * Emitted exactly once when an autopilot schedule's consecutive-failure
+   * count first crosses its alert threshold. Suppressed on subsequent
+   * failures until a success resets the streak. The webhook subscriber
+   * picks it up by default (chat-worthy).
+   */
+  'autopilot:alerting': {
+    scheduleId: string;
+    scheduleName: string;
+    failureCount: number;
+    mostRecentError?: string;
+    lastSuccessAt?: string;
+  };
 }
 
 export type EventName = keyof WizardEvents;

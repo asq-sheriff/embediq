@@ -61,6 +61,7 @@ export class JsonAutopilotStore implements AutopilotStore {
       targets: input.targets,
       driftAlertThreshold: input.driftAlertThreshold,
       complianceFrameworks: input.complianceFrameworks,
+      alertOnFailureStreak: input.alertOnFailureStreak,
       enabled: input.enabled ?? true,
       createdAt: now.toISOString(),
       updatedAt: now.toISOString(),

@@ -45,6 +45,7 @@ describe('DEFAULT_NOTIFICATION_EVENTS / isDefaultEvent', () => {
       'validation:completed',
       'session:started',
       'session:completed',
+      'autopilot:alerting',
     ]);
   });
 
@@ -53,6 +54,7 @@ describe('DEFAULT_NOTIFICATION_EVENTS / isDefaultEvent', () => {
     expect(isDefaultEvent('answer:received')).toBe(false);
     expect(isDefaultEvent('file:generated')).toBe(false);
     expect(isDefaultEvent('generation:started')).toBe(true);
+    expect(isDefaultEvent('autopilot:alerting')).toBe(true);
   });
 });
 

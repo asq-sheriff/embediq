@@ -30,9 +30,11 @@ Behavior when enabled:
 | Env var | Default | Purpose |
 |---|---|---|
 | `EMBEDIQ_AUTOPILOT_ENABLED` | `false` | Must be `true` to mount the autopilot routes and start the scheduler. |
-| `EMBEDIQ_AUTOPILOT_DIR` | `.embediq/autopilot/` | JSON store for schedules and run history. Make it persistent (volume mount) in production. |
+| `EMBEDIQ_AUTOPILOT_STORE` | `json-file` | `json-file` (single-node, dev convenience) / `database` (**recommended for production**, multi-node-ready via SQLite or Postgres). |
+| `EMBEDIQ_AUTOPILOT_DIR` | `.embediq/autopilot/` | JSON store directory; applies only when `EMBEDIQ_AUTOPILOT_STORE=json-file`. Make it persistent (volume mount) in production. |
 | `EMBEDIQ_AUTOPILOT_TICK_MS` | `60000` | How often the scheduler polls for due schedules. |
 | `EMBEDIQ_AUTOPILOT_WEBHOOK_SECRET` | — | Optional shared secret. When set, webhooks must pass `X-EmbedIQ-Autopilot-Secret: <value>`. Use this in production. |
+| `EMBEDIQ_AUTOPILOT_ALERT_FAILURE_STREAK` | `3` | Consecutive-failure count above which `autopilot:alerting` fires for any schedule that doesn't set its own `alertOnFailureStreak`. Set to `0` to disable failure-streak alerting globally. |
 
 ## Lifecycle
 
@@ -60,7 +62,8 @@ curl -X POST http://localhost:3000/api/autopilot/schedules \
     "answerSourcePath": "/ops/hipaa-answers.yaml",
     "targetDir": "/srv/my-project",
     "driftAlertThreshold": 0,
-    "complianceFrameworks": ["hipaa"]
+    "complianceFrameworks": ["hipaa"],
+    "alertOnFailureStreak": 2
   }'
 ```
 
@@ -109,6 +112,7 @@ curl -X POST http://localhost:3000/api/autopilot/schedules \
 | `targets` | — | Output-target filter (default: `claude`). See [multi-agent targets](05-multi-agent-targets.md). |
 | `driftAlertThreshold` | — | Run marked `success-alerting` when `totalDrift > threshold`. Defaults to 0 (any drift alerts). |
 | `complianceFrameworks` | — | Used by inbound compliance webhooks to decide which schedules to fire. |
+| `alertOnFailureStreak` | — | Consecutive-failure count above which `autopilot:alerting` fires. Set `0` to disable; omit to use the global `EMBEDIQ_AUTOPILOT_ALERT_FAILURE_STREAK` env var (default `3`). |
 | `enabled` | — | Defaults to `true`. Set `false` to pause without deleting. |
 
 ### Trigger a run manually

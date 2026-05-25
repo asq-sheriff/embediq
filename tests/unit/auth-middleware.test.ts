@@ -174,6 +174,74 @@ describe('requireRole', () => {
     expect(res.status).toBe(403);
     expect(res.body.error).toContain('Insufficient permissions');
   });
+
+  // Three-tier hierarchy: viewer < user/contributor < admin
+  describe('three-tier hierarchy', () => {
+    function appWith(roles: string[] | null) {
+      const app = express();
+      if (roles !== null) {
+        app.use((req, _res, next) => {
+          req.embediqUser = {
+            authenticated: true,
+            userId: 'tier-test',
+            displayName: 'Tier',
+            roles,
+            groups: [],
+            source: 'test',
+          };
+          next();
+        });
+      }
+      app.get('/viewer', requireRole('wizard-viewer'), (_req, res) => res.json({ ok: true }));
+      app.get('/contributor', requireRole('wizard-contributor'), (_req, res) => res.json({ ok: true }));
+      app.get('/admin', requireRole('wizard-admin'), (_req, res) => res.json({ ok: true }));
+      app.get('/legacy-user', requireRole('wizard-user'), (_req, res) => res.json({ ok: true }));
+      return app;
+    }
+
+    it('viewer can read viewer routes but not contributor or admin', async () => {
+      expect((await request(appWith(['wizard-viewer'])).get('/viewer')).status).toBe(200);
+      expect((await request(appWith(['wizard-viewer'])).get('/contributor')).status).toBe(403);
+      expect((await request(appWith(['wizard-viewer'])).get('/admin')).status).toBe(403);
+    });
+
+    it('contributor can read viewer + contributor routes but not admin', async () => {
+      expect((await request(appWith(['wizard-contributor'])).get('/viewer')).status).toBe(200);
+      expect((await request(appWith(['wizard-contributor'])).get('/contributor')).status).toBe(200);
+      expect((await request(appWith(['wizard-contributor'])).get('/admin')).status).toBe(403);
+    });
+
+    it('admin can read every tier', async () => {
+      expect((await request(appWith(['wizard-admin'])).get('/viewer')).status).toBe(200);
+      expect((await request(appWith(['wizard-admin'])).get('/contributor')).status).toBe(200);
+      expect((await request(appWith(['wizard-admin'])).get('/admin')).status).toBe(200);
+    });
+
+    it('legacy wizard-user role is treated as contributor — preserves existing deployments', async () => {
+      // Existing deployments emit wizard-user from basic/oidc/header strategies.
+      // wizard-user must continue to mean "contributor" — same level as the
+      // new wizard-contributor role.
+      expect((await request(appWith(['wizard-user'])).get('/viewer')).status).toBe(200);
+      expect((await request(appWith(['wizard-user'])).get('/contributor')).status).toBe(200);
+      expect((await request(appWith(['wizard-user'])).get('/legacy-user')).status).toBe(200);
+      expect((await request(appWith(['wizard-user'])).get('/admin')).status).toBe(403);
+    });
+
+    it('unknown roles fall back to literal-match (does not crash, denies by default)', async () => {
+      // A custom role outside the EmbedIQ namespace neither matches nor
+      // unlocks the hierarchy. Without wizard-admin as a fallback role,
+      // access is denied.
+      expect((await request(appWith(['external:billing'])).get('/admin')).status).toBe(403);
+      // But the legacy "any role + wizard-admin in the set" path still works.
+      expect((await request(appWith(['external:billing', 'wizard-admin'])).get('/admin')).status).toBe(200);
+    });
+
+    it('empty roles array denies authenticated requests at every tier', async () => {
+      expect((await request(appWith([])).get('/viewer')).status).toBe(403);
+      expect((await request(appWith([])).get('/contributor')).status).toBe(403);
+      expect((await request(appWith([])).get('/admin')).status).toBe(403);
+    });
+  });
 });
 
 describe('server auth integration', () => {

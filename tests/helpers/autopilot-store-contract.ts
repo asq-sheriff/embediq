@@ -77,7 +77,7 @@ export function autopilotStoreContract(label: string, factory: StoreFactory) {
         expect(await store.listSchedules()).toEqual([]);
       });
 
-      it('persists optional fields (timezone, targets, frameworks)', async () => {
+      it('persists optional fields (timezone, targets, frameworks, alert streak)', async () => {
         const created = await store.addSchedule(makeInput({
           name: 'with-options',
           cadence: '0 9 * * MON-FRI',
@@ -85,12 +85,33 @@ export function autopilotStoreContract(label: string, factory: StoreFactory) {
           targets: ['claude' as const],
           driftAlertThreshold: 3,
           complianceFrameworks: ['hipaa', 'soc2'],
+          alertOnFailureStreak: 5,
         }));
         const refetched = await store.getSchedule(created.id);
         expect(refetched?.timezone).toBe('America/Los_Angeles');
         expect(refetched?.targets).toEqual(['claude']);
         expect(refetched?.driftAlertThreshold).toBe(3);
         expect(refetched?.complianceFrameworks).toEqual(['hipaa', 'soc2']);
+        expect(refetched?.alertOnFailureStreak).toBe(5);
+      });
+
+      it('round-trips alertOnFailureStreak=0 (alerting disabled) distinctly from undefined', async () => {
+        // 0 is a meaningful value (disables alerting for the schedule);
+        // it must survive a write/read cycle and not coerce to null/undefined.
+        const created = await store.addSchedule(makeInput({
+          name: 'no-alerts',
+          alertOnFailureStreak: 0,
+        }));
+        const refetched = await store.getSchedule(created.id);
+        expect(refetched?.alertOnFailureStreak).toBe(0);
+      });
+
+      it('updateSchedule can change alertOnFailureStreak', async () => {
+        const created = await store.addSchedule(makeInput({ alertOnFailureStreak: 3 }));
+        const updated = await store.updateSchedule(created.id, { alertOnFailureStreak: 7 });
+        expect(updated?.alertOnFailureStreak).toBe(7);
+        const refetched = await store.getSchedule(created.id);
+        expect(refetched?.alertOnFailureStreak).toBe(7);
       });
 
       it('updateSchedule patches mutable fields', async () => {

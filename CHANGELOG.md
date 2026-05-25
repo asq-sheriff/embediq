@@ -9,6 +9,95 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.7.0] — Drop-in enterprise wins
+
+Three additive wins surfaced during the v4.0 restructure conversation,
+plus the SQL-backend round-trip that closes the per-schedule
+`alertOnFailureStreak` story. Total effort ~1 week. Zero strategic
+commitment to v4.0 — the work is independently valuable.
+
+### Added
+
+- **Karpathy-guidelines built-in skill**
+  ([`src/skills/built-in/karpathy-guidelines.ts`](src/skills/built-in/karpathy-guidelines.ts))
+  packaging four behavioral principles (Think Before Coding · Simplicity
+  First · Surgical Changes · Goal-Driven Execution) as a composable
+  skill. MIT-licensed content from
+  [multica-ai/andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills),
+  attribution preserved in the generated rule file. Opt-in via skill
+  composition; does not affect existing golden archetypes. The fifth
+  built-in skill alongside `healthcare.full`, `healthcare.rag`,
+  `finance.full`, and `education.full`.
+- **Autopilot failure-streak monitor**
+  ([`src/autopilot/failure-monitor.ts`](src/autopilot/failure-monitor.ts))
+  emits a new `autopilot:alerting` event when a schedule's consecutive-
+  failure count first crosses its threshold. One-shot semantics — does
+  not re-fire on subsequent failures within the same streak; a single
+  success resets the counter so the next streak can alert again.
+- **`alertOnFailureStreak` per-schedule field** on `AutopilotSchedule`
+  + `ScheduleCreateInput`. Overrides the global default. Set to `0` to
+  disable alerting for a specific schedule. **Round-trips through all
+  three backends** (JSON, SQLite, Postgres) — the shared contract suite
+  proves it. SQLite uses a `pragma_table_info` probe +
+  `ALTER TABLE ADD COLUMN` for existing-deployment upgrades; Postgres
+  uses native `ALTER TABLE ADD COLUMN IF NOT EXISTS`.
+- **`EMBEDIQ_AUTOPILOT_ALERT_FAILURE_STREAK`** env var sets the global
+  default failure-streak threshold (default `3`). Per-schedule
+  `alertOnFailureStreak` wins when set. Set to `0` globally to disable
+  failure-streak alerting across the deployment.
+- **`autopilot:alerting`** event in the typed `WizardEvents` map.
+  Auto-included in the default webhook subscriber notification set, so
+  Slack / Teams / generic chat formatters render it as a high-visibility
+  alert with schedule name, failure count, most-recent-error, and
+  last-success timestamp.
+- **`wizard-viewer`** role — new lowest tier in the RBAC hierarchy.
+  Read-only access to generations, audit log, skills, autopilot status.
+  Common fit for compliance auditors who need to verify evidence
+  without touching anything.
+- **`wizard-contributor`** role — explicit name for the middle tier
+  (equivalent to legacy `wizard-user`). Both names work identically; the
+  new name surfaces in OIDC group mappings and docs alongside the
+  legacy alias.
+
+### Changed
+
+- **`requireRole()`** now uses a strict three-tier hierarchy
+  (`wizard-viewer` < `wizard-user` ≡ `wizard-contributor` <
+  `wizard-admin`) instead of literal-match-plus-admin-override. Higher
+  tiers strictly include lower-tier permissions. Unknown roles outside
+  the EmbedIQ namespace (custom OIDC group emitters) fall back to the
+  legacy literal-match path, preserving backwards compatibility for
+  custom strategies.
+- **WS upgrade gate** in `src/web/server.ts` now allows any tier ≥
+  viewer rather than requiring `wizard-user` or `wizard-admin`
+  literally — viewers can now subscribe to event streams.
+- **`DEFAULT_NOTIFICATION_EVENTS`** in the webhook formatter now
+  includes `autopilot:alerting`. New chat-summary case in the Slack /
+  Teams formatters renders the alert with structured fields.
+
+### Compatibility
+
+- **No breaking changes.** Existing deployments continue working
+  unchanged:
+  - The legacy `wizard-user` role is preserved verbatim as a
+    contributor-tier alias — basic / OIDC / proxy-header strategies
+    that emit it keep working.
+  - Custom roles outside the EmbedIQ namespace fall back to literal-
+    match.
+  - Default failure-streak threshold of 3 is opinionated but
+    operationally safe; set `EMBEDIQ_AUTOPILOT_ALERT_FAILURE_STREAK=0`
+    to disable globally if needed.
+  - All shipped goldens regenerate byte-identically (karpathy-guidelines
+    is opt-in via skill composition, not auto-applied).
+
+### Test suite
+
+21 new tests (failure-monitor unit, autopilot runner alerting
+integration, three-tier RBAC scenarios, karpathy-skill registration,
+contract suite extensions for `alertOnFailureStreak` round-trips
+across JSON/SQLite/Postgres). Full suite **1120 passing across 74
+files** (was 1093/73).
+
 ## [3.6.1] — Session payload-encryption key rotation
 
 Closes the last remaining v3.2 follow-up. `PayloadCipher` now accepts

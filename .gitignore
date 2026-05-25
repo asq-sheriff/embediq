@@ -22,3 +22,6 @@ coverage/
 
 # Session backend runtime data (json-file backend default dir)
 .embediq/
+
+# Evaluation run outputs (transient — N/M/K/T snapshots live in STATUS.md instead)
+reports/

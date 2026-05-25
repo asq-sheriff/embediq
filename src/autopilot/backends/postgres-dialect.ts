@@ -22,21 +22,27 @@ export class PostgresAutopilotDialect implements SqlAutopilotDialect {
   async init(): Promise<void> {
     await this.pool.query(`
       CREATE TABLE IF NOT EXISTS embediq_autopilot_schedules (
-        id                       TEXT PRIMARY KEY,
-        name                     TEXT NOT NULL,
-        cadence                  TEXT NOT NULL,
-        timezone                 TEXT,
-        answer_source_path       TEXT NOT NULL,
-        target_dir               TEXT NOT NULL,
-        targets                  TEXT,
-        drift_alert_threshold    INTEGER,
-        compliance_frameworks    TEXT,
-        enabled                  INTEGER NOT NULL,
-        created_at               TEXT NOT NULL,
-        updated_at               TEXT NOT NULL,
-        last_run_at              TEXT,
-        next_run_at              TEXT NOT NULL
+        id                          TEXT PRIMARY KEY,
+        name                        TEXT NOT NULL,
+        cadence                     TEXT NOT NULL,
+        timezone                    TEXT,
+        answer_source_path          TEXT NOT NULL,
+        target_dir                  TEXT NOT NULL,
+        targets                     TEXT,
+        drift_alert_threshold       INTEGER,
+        compliance_frameworks       TEXT,
+        alert_on_failure_streak     INTEGER,
+        enabled                     INTEGER NOT NULL,
+        created_at                  TEXT NOT NULL,
+        updated_at                  TEXT NOT NULL,
+        last_run_at                 TEXT,
+        next_run_at                 TEXT NOT NULL
       )
+    `);
+    // Upgrade path for tables created before alert_on_failure_streak existed.
+    await this.pool.query(`
+      ALTER TABLE embediq_autopilot_schedules
+        ADD COLUMN IF NOT EXISTS alert_on_failure_streak INTEGER
     `);
     await this.pool.query(`
       CREATE INDEX IF NOT EXISTS idx_embediq_autopilot_schedules_next_run
@@ -63,7 +69,8 @@ export class PostgresAutopilotDialect implements SqlAutopilotDialect {
   async listSchedules(): Promise<ScheduleRow[]> {
     const result = await this.pool.query(
       `SELECT id, name, cadence, timezone, answer_source_path, target_dir,
-              targets, drift_alert_threshold, compliance_frameworks, enabled,
+              targets, drift_alert_threshold, compliance_frameworks,
+              alert_on_failure_streak, enabled,
               created_at, updated_at, last_run_at, next_run_at
        FROM embediq_autopilot_schedules
        ORDER BY created_at ASC`,
@@ -74,7 +81,8 @@ export class PostgresAutopilotDialect implements SqlAutopilotDialect {
   async getSchedule(id: string): Promise<ScheduleRow | undefined> {
     const result = await this.pool.query(
       `SELECT id, name, cadence, timezone, answer_source_path, target_dir,
-              targets, drift_alert_threshold, compliance_frameworks, enabled,
+              targets, drift_alert_threshold, compliance_frameworks,
+              alert_on_failure_streak, enabled,
               created_at, updated_at, last_run_at, next_run_at
        FROM embediq_autopilot_schedules WHERE id = $1`,
       [id],
@@ -86,15 +94,17 @@ export class PostgresAutopilotDialect implements SqlAutopilotDialect {
     await this.pool.query(
       `INSERT INTO embediq_autopilot_schedules (
          id, name, cadence, timezone, answer_source_path, target_dir,
-         targets, drift_alert_threshold, compliance_frameworks, enabled,
+         targets, drift_alert_threshold, compliance_frameworks,
+         alert_on_failure_streak, enabled,
          created_at, updated_at, last_run_at, next_run_at
        ) VALUES (
-         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
+         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15
        )`,
       [
         row.id, row.name, row.cadence, row.timezone,
         row.answer_source_path, row.target_dir,
         row.targets, row.drift_alert_threshold, row.compliance_frameworks,
+        row.alert_on_failure_streak,
         row.enabled,
         row.created_at, row.updated_at, row.last_run_at, row.next_run_at,
       ],
@@ -202,6 +212,12 @@ function scheduleRowFromPg(raw: Record<string, unknown>): ScheduleRow {
           : Number(raw.drift_alert_threshold),
     compliance_frameworks:
       raw.compliance_frameworks == null ? null : String(raw.compliance_frameworks),
+    alert_on_failure_streak:
+      raw.alert_on_failure_streak == null
+        ? null
+        : typeof raw.alert_on_failure_streak === 'string'
+          ? Number.parseInt(raw.alert_on_failure_streak, 10)
+          : Number(raw.alert_on_failure_streak),
     enabled:
       typeof raw.enabled === 'string'
         ? Number.parseInt(raw.enabled, 10)

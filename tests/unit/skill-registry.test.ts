@@ -40,6 +40,24 @@ describe('SkillRegistry — built-in registration', () => {
     // Should be JSON-serializable (no function bodies leak through).
     expect(() => JSON.stringify(summary)).not.toThrow();
   });
+
+  it('ships the karpathy-guidelines behavioral skill', () => {
+    const skill = skillRegistry.getById('karpathy-guidelines');
+    expect(skill).toBeDefined();
+    expect(skill!.source).toBe('built-in');
+    expect(skill!.tags).toContain('generic');
+    expect(skill!.ruleTemplates).toBeDefined();
+    expect(skill!.ruleTemplates!.length).toBe(1);
+    const rule = skill!.ruleTemplates![0]!;
+    expect(rule.filename).toBe('coding-guidelines.md');
+    // The four principles should be in the rule content.
+    expect(rule.content).toContain('Think Before Coding');
+    expect(rule.content).toContain('Simplicity First');
+    expect(rule.content).toContain('Surgical Changes');
+    expect(rule.content).toContain('Goal-Driven Execution');
+    // Attribution travels with the rule.
+    expect(rule.content).toContain('karpathy-guidelines');
+  });
 });
 
 describe('SkillRegistry — programmatic registration', () => {

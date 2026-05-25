@@ -72,7 +72,12 @@ not adjustable.
 | **OIDC** | Enterprise SSO | IdP JWT (Okta, Auth0, Azure AD, Keycloak, Google) |
 | **Proxy header** | Behind IAP / reverse proxy | Headers set by the proxy |
 
-RBAC ships with two roles (`wizard-user`, `wizard-admin`). Generation
+RBAC ships with a three-tier hierarchy: `wizard-viewer` (read-only on
+generations, audit, skills, autopilot status) < `wizard-user` ≡
+`wizard-contributor` (the legacy `wizard-user` role is preserved verbatim
+as a contributor-tier alias, so existing deployments emitting it from
+basic/OIDC/proxy-header strategies continue to work) < `wizard-admin`
+(generate-to-disk, list all sessions, rotate keys). Generation
 (`POST /api/generate`), admin session listing, and session dumps are
 gated on `wizard-admin`. Every PATCH to a session records
 `contributedBy` from the authenticated user — stamped server-side,

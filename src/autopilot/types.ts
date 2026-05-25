@@ -67,6 +67,13 @@ export interface AutopilotSchedule {
    * soc2, ferpa, sox, gdpr, etc.
    */
   complianceFrameworks?: readonly string[];
+  /**
+   * Consecutive-failure count above which an `autopilot:alerting` event
+   * fires (one-shot per crossing). Overrides the global
+   * `EMBEDIQ_AUTOPILOT_ALERT_FAILURE_STREAK` env var. Set to 0 to
+   * disable alerting for this schedule.
+   */
+  alertOnFailureStreak?: number;
   enabled: boolean;
   createdAt: string;
   updatedAt: string;
@@ -112,6 +119,8 @@ export interface ScheduleCreateInput {
   targets?: TargetFormat[];
   driftAlertThreshold?: number;
   complianceFrameworks?: readonly string[];
+  /** Consecutive-failure count above which an alerting event fires. Set to 0 to disable. */
+  alertOnFailureStreak?: number;
   enabled?: boolean;
 }
 

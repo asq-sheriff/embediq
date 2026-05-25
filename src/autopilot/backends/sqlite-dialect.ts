@@ -29,20 +29,21 @@ export class SqliteAutopilotDialect implements SqlAutopilotDialect {
   async init(): Promise<void> {
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS embediq_autopilot_schedules (
-        id                       TEXT PRIMARY KEY,
-        name                     TEXT NOT NULL,
-        cadence                  TEXT NOT NULL,
-        timezone                 TEXT,
-        answer_source_path       TEXT NOT NULL,
-        target_dir               TEXT NOT NULL,
-        targets                  TEXT,
-        drift_alert_threshold    INTEGER,
-        compliance_frameworks    TEXT,
-        enabled                  INTEGER NOT NULL,
-        created_at               TEXT NOT NULL,
-        updated_at               TEXT NOT NULL,
-        last_run_at              TEXT,
-        next_run_at              TEXT NOT NULL
+        id                          TEXT PRIMARY KEY,
+        name                        TEXT NOT NULL,
+        cadence                     TEXT NOT NULL,
+        timezone                    TEXT,
+        answer_source_path          TEXT NOT NULL,
+        target_dir                  TEXT NOT NULL,
+        targets                     TEXT,
+        drift_alert_threshold       INTEGER,
+        compliance_frameworks       TEXT,
+        alert_on_failure_streak     INTEGER,
+        enabled                     INTEGER NOT NULL,
+        created_at                  TEXT NOT NULL,
+        updated_at                  TEXT NOT NULL,
+        last_run_at                 TEXT,
+        next_run_at                 TEXT NOT NULL
       );
       CREATE INDEX IF NOT EXISTS idx_embediq_autopilot_schedules_next_run
         ON embediq_autopilot_schedules(next_run_at);
@@ -60,6 +61,20 @@ export class SqliteAutopilotDialect implements SqlAutopilotDialect {
       CREATE INDEX IF NOT EXISTS idx_embediq_autopilot_runs_sched
         ON embediq_autopilot_runs(schedule_id, started_at);
     `);
+
+    // Upgrade path for tables created before alert_on_failure_streak existed
+    // (any deployment that pre-dates this column). SQLite has no portable
+    // ADD COLUMN IF NOT EXISTS, so probe pragma_table_info first.
+    const hasColumn = this.db
+      .prepare(
+        `SELECT 1 FROM pragma_table_info('embediq_autopilot_schedules') WHERE name = ?`,
+      )
+      .get('alert_on_failure_streak');
+    if (!hasColumn) {
+      this.db.exec(
+        `ALTER TABLE embediq_autopilot_schedules ADD COLUMN alert_on_failure_streak INTEGER`,
+      );
+    }
   }
 
   async listSchedules(): Promise<ScheduleRow[]> {
@@ -79,11 +94,13 @@ export class SqliteAutopilotDialect implements SqlAutopilotDialect {
       .prepare(`
         INSERT INTO embediq_autopilot_schedules (
           id, name, cadence, timezone, answer_source_path, target_dir,
-          targets, drift_alert_threshold, compliance_frameworks, enabled,
+          targets, drift_alert_threshold, compliance_frameworks,
+          alert_on_failure_streak, enabled,
           created_at, updated_at, last_run_at, next_run_at
         ) VALUES (
           @id, @name, @cadence, @timezone, @answer_source_path, @target_dir,
-          @targets, @drift_alert_threshold, @compliance_frameworks, @enabled,
+          @targets, @drift_alert_threshold, @compliance_frameworks,
+          @alert_on_failure_streak, @enabled,
           @created_at, @updated_at, @last_run_at, @next_run_at
         )
       `)

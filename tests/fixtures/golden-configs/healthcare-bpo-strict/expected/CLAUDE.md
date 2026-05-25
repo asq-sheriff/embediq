@@ -40,6 +40,14 @@
 - Run tests before committing: see Build & Test section above
 - Use /clear between unrelated tasks to manage context
 
+## Your Role Focus
+
+- Architectural decisions live in ADRs — reference `.claude/rules/security.md` and any domain-specific rule files when proposing them
+- Cross-cutting concerns (auth, audit, observability) are the lead's ownership zone — review every PR that touches them
+- Coordinate code review across the team; agent teams (`.claude/agents/`) accelerate this when 3-5 parallel workstreams are active
+- Bridge product requirements and technical implementation: validate that each story has clear acceptance criteria, edge cases, and rollback plan
+- Technical-debt register: surface it in standups and roadmap discussions, not in a forgotten file
+
 ## Additional Context
 
 - Path-scoped rules: .claude/rules/*.md (auto-loaded when editing matching files)

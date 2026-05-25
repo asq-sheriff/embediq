@@ -173,10 +173,13 @@ export EMBEDIQ_PROXY_USER_HEADER=X-Forwarded-User
 export EMBEDIQ_PROXY_ROLES_HEADER=X-EmbedIQ-Roles
 ```
 
-Map the IdP groups that should hold `wizard-admin` (can manage
-schedules, view all dumps) versus `wizard-user` (can run the wizard).
-Compliance officers typically get `wizard-admin`; analysts get
-`wizard-user`.
+Map the IdP groups onto the three-tier RBAC hierarchy. `wizard-admin`
+can manage all schedules and view all dumps; `wizard-user` (or its
+alias `wizard-contributor`) can run the wizard; `wizard-viewer` has
+read-only access to generations, audit log, and autopilot status — a
+common fit for external auditors who need to verify evidence without
+touching anything. Compliance officers typically get `wizard-admin`;
+analysts get `wizard-user`; external auditors get `wizard-viewer`.
 
 See [`docs/operator-guide/authentication.md`](operator-guide/authentication.md).
 

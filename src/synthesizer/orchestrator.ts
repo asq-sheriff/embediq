@@ -1,4 +1,4 @@
-import type { SetupConfig, GeneratedFile, GenerationResult } from '../types/index.js';
+import type { SetupConfig, GeneratedFile, GenerationResult, UserProfile } from '../types/index.js';
 import { validateOutput } from './output-validator.js';
 import { stampGeneratedFile } from './generation-header.js';
 import { withSpan } from '../observability/telemetry.js';
@@ -121,7 +121,7 @@ export class SynthesizerOrchestrator {
       // Ollama / Aider setup.
       const applicable = this.generators.filter((g) => {
         if (!targets.has(g.target)) return false;
-        if (isNonTechnical && g.target === TargetFormat.CLAUDE && this.isTechnicalOnlyGenerator(g.name)) {
+        if (isNonTechnical && g.target === TargetFormat.CLAUDE && this.isTechnicalOnlyGenerator(g.name, config.profile)) {
           return false;
         }
         if (isNonTechnical && this.isLocalAiTarget(g.target)) {
@@ -193,9 +193,25 @@ export class SynthesizerOrchestrator {
     });
   }
 
-  private isTechnicalOnlyGenerator(name: string): boolean {
-    // These generators produce configs only relevant to developers/devops
-    return ['hooks', 'association-map'].includes(name);
+  private isTechnicalOnlyGenerator(name: string, profile?: UserProfile): boolean {
+    // `association-map` is genuinely dev-only (file path → owning team mapping)
+    // — non-technical roles have no use for it regardless of compliance.
+    if (name === 'association-map') return true;
+
+    // `hooks` are skipped for non-technical roles BY DEFAULT — but compliance
+    // frameworks override this. A clinical SME or BPO operations lead using
+    // Claude on PHI-bearing content still needs the DLP scanner, audit
+    // logger, and command guard. Compliance trumps role-based filtering.
+    if (name === 'hooks') {
+      if (!profile) return true;
+      const enforcedFrameworks = ['hipaa', 'pci', 'soc2', 'gdpr', 'ferpa'];
+      const hasEnforcedCompliance = profile.complianceFrameworks.some((fw) =>
+        enforcedFrameworks.includes(fw),
+      );
+      return !hasEnforcedCompliance;
+    }
+
+    return false;
   }
 
   private isLocalAiTarget(target: TargetFormat): boolean {
@@ -265,6 +281,8 @@ export class SynthesizerOrchestrator {
 
     lines.push('');
 
+    this.addIndustrySpecificWorkflows(lines, profile);
+
     if (profile.complianceFrameworks.length > 0) {
       lines.push('## Compliance Context', '');
       for (const fw of profile.complianceFrameworks) {
@@ -289,6 +307,66 @@ export class SynthesizerOrchestrator {
       content: lines.join('\n'),
       description: `Claude coworker instructions for ${roleTitle}`,
     };
+  }
+
+  /**
+   * Adds industry-specific workflow bullets to the non-technical
+   * coworker CLAUDE.md so the output reads as credible to a domain
+   * audience (BPO operations, clinical SMEs, healthcare executives).
+   *
+   * Industry-generic framing — bullets reference the role's
+   * responsibilities in the domain ("member services rep", "PA
+   * reviewer", "utilization-review committee") rather than any specific
+   * customer's terminology or systems. Per-customer customization is
+   * the job of external plugins, not the core generator.
+   *
+   * Currently covers healthcare for non-technical roles (ba / pm /
+   * executive). Other industries follow the same shape — add cases as
+   * domain content is validated against real customer conversations.
+   */
+  private addIndustrySpecificWorkflows(
+    lines: string[],
+    profile: UserProfile,
+  ): void {
+    if (profile.industry !== 'healthcare') return;
+    if (!['ba', 'pm', 'executive'].includes(profile.role)) return;
+
+    lines.push('## Industry-Specific Workflows', '');
+
+    switch (profile.role) {
+      case 'ba':
+        lines.push(
+          '- Review medical-necessity criteria from payer policies and clinical guidelines',
+          '- Map prior-authorization (PA) workflows from intake → determination → appeal',
+          '- Summarize provider documentation for utilization-review (UM) committees',
+          '- Validate claims-adjudication logic against HIPAA and state-specific requirements',
+          '- Translate between payer policy language and clinical decision-support content',
+          '- Identify audit-trail gaps when reviewing denied claims for appealability',
+        );
+        break;
+      case 'pm':
+        lines.push(
+          '- Design member-services and provider-services call scripts grounded in current payer policies',
+          '- Coordinate cross-functional workflows across claims, UM, member services, and appeals',
+          '- Build process documentation for new payer-client onboarding',
+          '- Track operational metrics (AHT, first-pass accuracy, denial overturn rate) and surface trends',
+          '- Maintain BAA-driven operational controls (minimum-necessary access, audit-log retention)',
+          '- Prepare client-facing operational dashboards and SLA reports',
+        );
+        break;
+      case 'executive':
+        lines.push(
+          '- Summarize regulatory exposure across HIPAA, state privacy laws, and payer BAA obligations',
+          '- Review AI deployment KPIs — workforce adoption, governance violations caught, cost per resolution',
+          '- Analyze strategic trade-offs between automation depth and clinical-defensibility risk',
+          '- Draft board-level communications on workforce AI strategy and outcomes',
+          '- Benchmark organizational AI maturity against industry peers',
+          '- Review compliance audit reports (Drata / Vanta / internal) for board-level attestation',
+        );
+        break;
+    }
+
+    lines.push('');
   }
 
   private getRoleTitle(role: string): string {
