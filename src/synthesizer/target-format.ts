@@ -61,6 +61,16 @@ export enum TargetFormat {
   // Procurement-relevant — EO 14110 and emerging FedRAMP guidance
   // expect AI/ML BOMs as part of supply-chain disclosure.
   CYCLONEDX_AIBOM = 'cyclonedx-aibom',
+  // v4.0 / 8E — Per-file provenance trace. Opt-in only. When selected,
+  // a post-pass step emits `.embediq/provenance/manifest.json` with one
+  // entry per generated file: authoritative generator attribution
+  // (which `ConfigGenerator` produced the file) + heuristic driver
+  // inference (which profile fields, target selections, and compliance
+  // frameworks caused the generator to emit it). Auditor-facing
+  // "why is this file present?" answer-key. The trace itself is always
+  // last in the post-pass chain so its manifest can include every
+  // other governance output (8B, 8C, 8D).
+  PROVENANCE = 'provenance',
 }
 
 export const ALL_TARGETS: readonly TargetFormat[] = [
@@ -79,6 +89,7 @@ export const ALL_TARGETS: readonly TargetFormat[] = [
   TargetFormat.OSCAL_COMPONENT,
   TargetFormat.OSCAL_SSP_FRAGMENT,
   TargetFormat.CYCLONEDX_AIBOM,
+  TargetFormat.PROVENANCE,
 ];
 
 /** When the caller supplies nothing, we emit the native Claude Code setup only. */

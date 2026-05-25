@@ -31,6 +31,7 @@ import { LocalRouterGenerator } from './generators/local-router.js';
 import { generateOscalComponentDefinition } from './generators/oscal-component.js';
 import { generateOscalSspFragment } from './generators/oscal-ssp-fragment.js';
 import { generateCycloneDxAibom } from './generators/cyclonedx-aibom.js';
+import { generateProvenanceTrace } from './generators/provenance-trace.js';
 import { readFile } from 'node:fs/promises';
 
 export class SynthesizerOrchestrator {
@@ -140,11 +141,19 @@ export class SynthesizerOrchestrator {
       // Run all generators in parallel — each is pure (reads config, returns files).
       // Emit file:generated per file as each generator completes so subscribers
       // see progress while others are still running.
+      // v4.0 / 8E — Track per-generator attribution so the provenance
+      // trace can record authoritative generator/target for each file.
+      // Safe to mutate from inside Promise callbacks because JavaScript's
+      // microtask scheduler runs them sequentially.
+      const generatorByPath = new Map<string, string>();
+      const targetByPath = new Map<string, string>();
       const results = await Promise.all(
         applicable.map(generator =>
           withSpan(`generator.${generator.name}`, undefined, async () => {
             const files = await generator.generate(config);
             for (const file of files) {
+              generatorByPath.set(file.relativePath, generator.name);
+              targetByPath.set(file.relativePath, generator.target);
               this.bus.emit('file:generated', {
                 relativePath: file.relativePath,
                 size: file.content.length,
@@ -168,6 +177,11 @@ export class SynthesizerOrchestrator {
         } else {
           allFiles.push(coworkerClaudeMd);
         }
+        // Mark the overlay's authoritative attribution so the provenance
+        // trace can record that CLAUDE.md is the coworker variant for this
+        // run, not the default claude-md generator output.
+        generatorByPath.set(coworkerClaudeMd.relativePath, 'coworker-claude-md');
+        targetByPath.set(coworkerClaudeMd.relativePath, TargetFormat.CLAUDE);
       }
 
       // v4.0 / 8B + 8C + 8D — governance-output post-pass. Opt-in only
@@ -183,12 +197,15 @@ export class SynthesizerOrchestrator {
       // later step's manifest includes the earlier files.
       const needsEmbediqVersion = targets.has(TargetFormat.OSCAL_COMPONENT)
         || targets.has(TargetFormat.OSCAL_SSP_FRAGMENT)
-        || targets.has(TargetFormat.CYCLONEDX_AIBOM);
+        || targets.has(TargetFormat.CYCLONEDX_AIBOM)
+        || targets.has(TargetFormat.PROVENANCE);
       const embediqVersion = needsEmbediqVersion ? await resolveEmbediqVersion() : '';
 
       if (targets.has(TargetFormat.CYCLONEDX_AIBOM)) {
         const aibom = generateCycloneDxAibom(config, allFiles, embediqVersion);
         allFiles.push(aibom);
+        generatorByPath.set(aibom.relativePath, 'cyclonedx-aibom');
+        targetByPath.set(aibom.relativePath, TargetFormat.CYCLONEDX_AIBOM);
         this.bus.emit('file:generated', {
           relativePath: aibom.relativePath,
           size: aibom.content.length,
@@ -198,6 +215,8 @@ export class SynthesizerOrchestrator {
       if (targets.has(TargetFormat.OSCAL_COMPONENT)) {
         const componentDef = generateOscalComponentDefinition(config, allFiles, embediqVersion);
         allFiles.push(componentDef);
+        generatorByPath.set(componentDef.relativePath, 'oscal-component');
+        targetByPath.set(componentDef.relativePath, TargetFormat.OSCAL_COMPONENT);
         this.bus.emit('file:generated', {
           relativePath: componentDef.relativePath,
           size: componentDef.content.length,
@@ -207,9 +226,42 @@ export class SynthesizerOrchestrator {
       if (targets.has(TargetFormat.OSCAL_SSP_FRAGMENT)) {
         const sspFragment = generateOscalSspFragment(config, allFiles, embediqVersion);
         allFiles.push(sspFragment);
+        generatorByPath.set(sspFragment.relativePath, 'oscal-ssp-fragment');
+        targetByPath.set(sspFragment.relativePath, TargetFormat.OSCAL_SSP_FRAGMENT);
         this.bus.emit('file:generated', {
           relativePath: sspFragment.relativePath,
           size: sspFragment.content.length,
+        });
+      }
+
+      // v4.0 / 8E — Provenance trace fires LAST so its manifest covers
+      // every other output (regular generators + coworker overlay +
+      // 8B + 8C + 8D). The trace records itself too: a placeholder
+      // manifest entry is added to the file list passed to the builder
+      // before the real content is computed, so the document includes
+      // its own row alongside every other file.
+      if (targets.has(TargetFormat.PROVENANCE)) {
+        const provenancePath = '.embediq/provenance/manifest.json';
+        generatorByPath.set(provenancePath, 'provenance-trace');
+        targetByPath.set(provenancePath, TargetFormat.PROVENANCE);
+        const placeholder: GeneratedFile = {
+          relativePath: provenancePath,
+          content: '',
+          description: 'Provenance trace — per-file authoritative generator attribution + heuristic driver inference',
+        };
+        const filesForTrace: readonly GeneratedFile[] = [...allFiles, placeholder];
+        const provenance = generateProvenanceTrace(
+          config,
+          filesForTrace,
+          generatorByPath,
+          targetByPath,
+          Array.from(targets),
+          embediqVersion,
+        );
+        allFiles.push(provenance);
+        this.bus.emit('file:generated', {
+          relativePath: provenance.relativePath,
+          size: provenance.content.length,
         });
       }
 
