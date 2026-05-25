@@ -1,6 +1,7 @@
 import { appendFileSync } from 'node:fs';
 import { getRequestContext } from '../context/request-context.js';
 import { resolveEngagementId } from './engagement.js';
+import { appendChainedEntry } from './audit-chain.js';
 
 export interface WizardAuditEntry {
   timestamp: string;
@@ -46,9 +47,21 @@ export function auditLog(entry: WizardAuditEntry): void {
     engagementId: entry.engagementId ?? ctx?.engagementId ?? resolveEngagementId(),
   };
 
+  // v4.0 / 8F — Tamper-evident chain mode. Opt-in via
+  // `EMBEDIQ_AUDIT_CHAIN_ENABLED=true`. When off, behavior is
+  // unchanged (plain JSONL). When on, every entry carries a
+  // `prevHash` field linking it to its predecessor (or to the
+  // EmbedIQ genesis hash for the first entry). See
+  // `src/util/audit-chain.ts` for the chain semantics + verifier.
+  const chainEnabled = process.env.EMBEDIQ_AUDIT_CHAIN_ENABLED === 'true';
+
   try {
-    const line = JSON.stringify(enriched);
-    appendFileSync(AUDIT_LOG_PATH, line + '\n', 'utf-8');
+    if (chainEnabled) {
+      appendChainedEntry(AUDIT_LOG_PATH, enriched as unknown as Record<string, unknown>);
+    } else {
+      const line = JSON.stringify(enriched);
+      appendFileSync(AUDIT_LOG_PATH, line + '\n', 'utf-8');
+    }
   } catch (err) {
     console.error('Wizard audit log write failed:', err);
   }

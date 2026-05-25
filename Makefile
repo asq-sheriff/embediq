@@ -1,7 +1,8 @@
 .PHONY: help install build check test test-watch test-coverage typecheck \
        start start-web dev dev-web \
        docker docker-up docker-down \
-       otel-dev evaluate benchmark drift sanitize-public publish-public-dry docs-lint clean
+       otel-dev evaluate benchmark drift sanitize-public publish-public-dry docs-lint \
+       verify-audit-log clean
 
 # ─── Default ─────────────────────────────────────────────────────────
 help: ## Show this help
@@ -67,6 +68,10 @@ publish-public-dry: ## Dry-run the full publish pipeline (sanitize + clone publi
 # ─── Docs hygiene ─────────────────────────────────────────────────────
 docs-lint: ## Lint markdown: audience frontmatter, leak markers in public files, broken links.
 	npm run docs-lint
+
+# ─── Governance ───────────────────────────────────────────────────────
+verify-audit-log: ## Verify integrity of a tamper-evident audit log (pass --input <path>).
+	npm run verify-audit-log --
 
 # ─── Docker ──────────────────────────────────────────────────────────
 docker: ## Build Docker image

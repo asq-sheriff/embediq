@@ -18,7 +18,8 @@
     "benchmark": "tsx src/evaluation/cli.ts --mode benchmark",
     "drift": "tsx src/autopilot/cli.ts",
     "sanitize-public": "tsx scripts/sanitize-for-public.ts",
-    "docs-lint": "tsx scripts/docs-lint.ts"
+    "docs-lint": "tsx scripts/docs-lint.ts",
+    "verify-audit-log": "tsx scripts/verify-audit-log.ts"
   },
   "keywords": [
     "claude-code",
