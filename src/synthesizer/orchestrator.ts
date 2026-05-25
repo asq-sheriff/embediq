@@ -28,6 +28,8 @@ import { ZedAiGenerator } from './generators/zed-ai.js';
 import { OllamaSetupGenerator } from './generators/ollama-setup.js';
 import { RagScaffoldGenerator } from './generators/rag-scaffold.js';
 import { LocalRouterGenerator } from './generators/local-router.js';
+import { generateOscalComponentDefinition } from './generators/oscal-component.js';
+import { readFile } from 'node:fs/promises';
 
 export class SynthesizerOrchestrator {
   private generators: ConfigGenerator[];
@@ -164,6 +166,20 @@ export class SynthesizerOrchestrator {
         } else {
           allFiles.push(coworkerClaudeMd);
         }
+      }
+
+      // v4.0 / 8B — OSCAL Component Definition post-pass. Opt-in only via
+      // explicit `--targets oscal-component`, so existing goldens stay
+      // byte-identical. Runs AFTER the parallel batch so the document's
+      // artifact manifest names every file emitted in this run.
+      if (targets.has(TargetFormat.OSCAL_COMPONENT)) {
+        const embediqVersion = await resolveEmbediqVersion();
+        const componentDef = generateOscalComponentDefinition(config, allFiles, embediqVersion);
+        allFiles.push(componentDef);
+        this.bus.emit('file:generated', {
+          relativePath: componentDef.relativePath,
+          size: componentDef.content.length,
+        });
       }
 
       span.setAttribute('embediq.files_generated', allFiles.length);
@@ -391,4 +407,26 @@ export class SynthesizerOrchestrator {
     };
     return map[industry] || industry;
   }
+}
+
+/**
+ * Resolve the EmbedIQ producer version for OSCAL outputs. Cached after
+ * first read; falls back to 'unknown' on filesystem failures so a
+ * malformed package.json never blocks generation. Same pattern as
+ * `evaluator.ts`'s generator-version cache (duplicated rather than
+ * shared because both call sites are small and the indirection cost
+ * outweighs the dedup).
+ */
+let cachedEmbediqVersion: string | null = null;
+async function resolveEmbediqVersion(): Promise<string> {
+  if (cachedEmbediqVersion != null) return cachedEmbediqVersion;
+  try {
+    const url = new URL('../../package.json', import.meta.url);
+    const raw = await readFile(url, 'utf-8');
+    const pkg = JSON.parse(raw) as { version?: string };
+    cachedEmbediqVersion = pkg.version ?? 'unknown';
+  } catch {
+    cachedEmbediqVersion = 'unknown';
+  }
+  return cachedEmbediqVersion;
 }

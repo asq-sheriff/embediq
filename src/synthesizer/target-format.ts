@@ -32,6 +32,15 @@ export enum TargetFormat {
   // local Ollama and escalates complex tasks (or low-confidence answers)
   // to a hosted LLM after optional PHI redaction.
   LOCAL_ROUTER = 'local-router',
+  // v4.0 / 8B — OSCAL Component Definition export. Opt-in only (never
+  // auto-included so existing goldens stay byte-identical). When selected,
+  // a post-pass step in the orchestrator emits
+  // `.embediq/oscal/component-definition.json` describing which compliance
+  // frameworks the generated harness addresses + the artifact manifest
+  // (every file emitted in the same run). Suitable for ingestion by
+  // Drata, Vanta, FedRAMP-style audit pipelines, and any OSCAL-aware
+  // compliance platform.
+  OSCAL_COMPONENT = 'oscal-component',
 }
 
 export const ALL_TARGETS: readonly TargetFormat[] = [
@@ -47,6 +56,7 @@ export const ALL_TARGETS: readonly TargetFormat[] = [
   TargetFormat.OLLAMA,
   TargetFormat.RAG_SCAFFOLD,
   TargetFormat.LOCAL_ROUTER,
+  TargetFormat.OSCAL_COMPONENT,
 ];
 
 /** When the caller supplies nothing, we emit the native Claude Code setup only. */
