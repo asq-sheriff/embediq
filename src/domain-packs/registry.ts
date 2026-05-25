@@ -3,10 +3,16 @@ import { resolve } from 'node:path';
 import type { DomainPack } from './index.js';
 import { skillRegistry } from '../skills/skill-registry.js';
 import { composeSkills } from '../skills/skill-composer.js';
+import { composePacks, type ComposePackOptions } from './composer.js';
 import {
   readOscalCatalog,
   oscalCatalogToFramework,
+  readOscalProfile,
+  resolveOscalProfile,
+  oscalProfileToFramework,
   type OscalToFrameworkOptions,
+  type ResolveProfileOptions,
+  type OscalProfileToFrameworkOptions,
 } from '../governance/oscal/index.js';
 
 const PLUGINS_DIR = () => process.env.EMBEDIQ_PLUGINS_DIR || './plugins';
@@ -118,6 +124,42 @@ export class DomainPackRegistry {
   }
 
   /**
+   * Compose a one-off DomainPack from a list of pack IDs already
+   * registered in this registry. Lets operators combine an OSCAL-imported
+   * pack (control identity only) with an industry pack like `healthcare`
+   * (HIPAA DLP + rules + questions) in a single call — the resulting
+   * pack carries both frameworks plus the union of the industry pack's
+   * generation-driving payload.
+   *
+   * Returns `undefined` when any of the requested pack IDs is not
+   * registered. Collisions are first-wins (composition order matters);
+   * pass `options.allowFirstWins = false` to throw on collision.
+   */
+  composeFromPacks(
+    packIds: readonly string[],
+    meta: { id: string; name: string; version: string; description: string },
+    options: ComposePackOptions = {},
+  ): DomainPack | undefined {
+    const packs: DomainPack[] = [];
+    for (const id of packIds) {
+      const p = this.packs.get(id);
+      if (!p) return undefined;
+      packs.push(p);
+    }
+    const composed = composePacks(packs, options);
+    return {
+      ...meta,
+      questions: composed.questions,
+      complianceFrameworks: composed.complianceFrameworks,
+      priorityCategories: composed.priorityCategories,
+      dlpPatterns: composed.dlpPatterns,
+      ruleTemplates: composed.ruleTemplates,
+      ignorePatterns: composed.ignorePatterns,
+      validationChecks: composed.validationChecks,
+    };
+  }
+
+  /**
    * Build a thin DomainPack whose only payload is the compliance-framework
    * identity drawn from an OSCAL catalog (800-53 Rev 5, SSDF / SP 800-218,
    * SP 800-171, etc.). Registers it under `meta.id`. Returns the pack so
@@ -136,6 +178,51 @@ export class DomainPackRegistry {
   ): Promise<DomainPack> {
     const catalog = await readOscalCatalog(catalogPath);
     const framework = oscalCatalogToFramework(catalog, options);
+    const pack: DomainPack = {
+      id: meta.id,
+      name: meta.name,
+      version: meta.version,
+      description: meta.description ?? framework.description,
+      questions: [],
+      complianceFrameworks: [framework],
+      priorityCategories: {},
+      dlpPatterns: [],
+      ruleTemplates: [],
+      ignorePatterns: [],
+      validationChecks: [],
+    };
+    this.register(pack);
+    return pack;
+  }
+
+  /**
+   * Import an OSCAL profile (FedRAMP Low / Moderate / High, agency
+   * overlays, etc.) by resolving its catalog imports against a
+   * caller-supplied `catalogPaths` map. The operator is in control of
+   * catalog location — the resolver never fetches over the network or
+   * follows `rlinks`.
+   *
+   * Produces a thin `DomainPack` whose only payload is a single
+   * `ComplianceFrameworkDef` describing the tailored baseline. Compose
+   * with industry packs via `composeFromPacks` to add DLP / rules /
+   * questions.
+   *
+   * Throws `OscalLoadError` and does NOT register the pack when:
+   *   - The profile file is missing, unreadable, or malformed.
+   *   - A required catalog reference cannot be resolved via `catalogPaths`.
+   *   - A resolved catalog itself fails to parse.
+   */
+  async loadFromOscalProfile(
+    profilePath: string,
+    options: ResolveProfileOptions & OscalProfileToFrameworkOptions,
+    meta: { id: string; name: string; version: string; description?: string },
+  ): Promise<DomainPack> {
+    const profile = await readOscalProfile(profilePath);
+    const resolved = await resolveOscalProfile(profile, { catalogPaths: options.catalogPaths });
+    const framework = oscalProfileToFramework(profile, resolved, {
+      keyOverride: options.keyOverride,
+      labelOverride: options.labelOverride,
+    });
     const pack: DomainPack = {
       id: meta.id,
       name: meta.name,

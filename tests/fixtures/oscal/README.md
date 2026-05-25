@@ -18,6 +18,22 @@ edge cases:
 Used by `tests/unit/governance-oscal-loader.test.ts`. Fast, deterministic,
 expected values hand-verifiable.
 
+## `nist-800-53-rev5-low-baseline-profile.json` — real FedRAMP-style profile
+
+The verbatim NIST SP 800-53 Rev 5 **LOW IMPACT BASELINE** profile sourced
+from [`usnistgov/oscal-content`](https://github.com/usnistgov/oscal-content)
+(`nist.gov/SP800-53/rev5/json/NIST_SP-800-53_rev5_LOW-baseline_profile.json`).
+~7 KB. Selects 149 controls from the 800-53 catalog including 7 IR
+controls (`ir-1`, `ir-2`, `ir-4`, `ir-5`, `ir-6`, `ir-7`, `ir-8`).
+
+Used by `tests/integration/governance-oscal-profile.test.ts` to exercise
+the profile resolver against real `#<uuid>` back-matter references, real
+`include-controls[].with-ids` arrays, and the partial-catalog round-trip
+(7 of 149 selected IDs match what's in the IR slice — the others land
+in `missingControlIds` per the resolver's diagnostics).
+
+Refreshing follows the same procedure as the catalog slice.
+
 ## `nist-800-53-rev5-ir-slice.json` — real NIST catalog slice
 
 A slice of the actual NIST SP 800-53 Rev 5 catalog containing only the

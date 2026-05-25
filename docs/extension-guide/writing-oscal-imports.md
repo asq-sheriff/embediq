@@ -68,7 +68,7 @@ The catalog's actual metadata still drives the description — overrides only af
 
 ## Composing OSCAL with industry packs
 
-OSCAL-imported packs are intentionally thin. To get HIPAA's DLP patterns + 800-53's control identity in a single profile, register both packs and the wizard resolves them in tandem:
+OSCAL-imported packs are intentionally thin. To get HIPAA's DLP patterns + 800-53's control identity in a single profile, register both packs and use `composeFromPacks` to merge them at archetype time:
 
 ```ts
 // Industry pack — HIPAA DLP, rules, questions
@@ -80,12 +80,103 @@ await domainPackRegistry.loadFromOscalCatalog(
   { id: 'nist-800-53-rev5', name: 'NIST SP 800-53 Rev 5', version: '5.1.1' },
 );
 
-// At wizard time both are queryable
-// domainPackRegistry.getForIndustry('healthcare') → healthcarePack
-// domainPackRegistry.getById('nist-800-53-rev5') → OSCAL-imported pack
+// Compose at archetype time — both frameworks land in one DomainPack
+const composed = domainPackRegistry.composeFromPacks(
+  ['nist-800-53-rev5', 'healthcare'],
+  {
+    id: 'oscal-controlled-healthcare',
+    name: 'OSCAL-controlled Healthcare',
+    version: '1.0.0',
+    description: 'NIST 800-53 Rev 5 control identity + HIPAA DLP / rules / questions',
+  },
+);
+// composed.complianceFrameworks → [nist-800-53-rev5, hipaa]
+// composed.dlpPatterns           → HIPAA's PHI patterns
+// composed.ruleTemplates         → HIPAA's rule templates
 ```
 
-A future iteration will add `composeFromPacks([packA, packB])` so a single archetype can declare both as its compliance source.
+Composition is **order-sensitive** — earlier packs win on collisions (overlapping question ids, framework keys, DLP names, rule filenames, validation-check names). Each collision is recorded in `out.warnings`. Pass `{ allowFirstWins: false }` to throw a `PackCompositionError` on collision instead.
+
+Ignore patterns are deduplicated silently; priority categories are merged with union semantics on their tag arrays.
+
+## Importing OSCAL Profiles (FedRAMP baselines, agency overlays)
+
+OSCAL **profiles** tailor a catalog into a baseline — FedRAMP Low / Moderate / High, agency-specific overlays, or anything that selects a subset of controls from one or more catalogs. EmbedIQ resolves profile imports against a caller-supplied catalog map so there's no network fetch and no `rlinks` chasing.
+
+```ts
+await domainPackRegistry.loadFromOscalProfile(
+  './fedramp-rev5-low-baseline-profile.json',
+  {
+    // Profile imports reference a catalog via `href: "#<uuid>"` (a
+    // back-matter resource pointer) or a plain href. Key your map by
+    // either — both forms resolve.
+    catalogPaths: {
+      // Key by the back-matter resource UUID:
+      '84cbf061-eb87-4ec1-8112-1f529232e907': './nist-800-53-rev5-catalog.json',
+      // Or by the raw href:
+      // '#84cbf061-eb87-4ec1-8112-1f529232e907': './nist-800-53-rev5-catalog.json',
+    },
+    keyOverride: 'fedramp-rev5-low',
+    labelOverride: 'FedRAMP Rev 5 LOW Baseline',
+  },
+  {
+    id: 'fedramp-rev5-low',
+    name: 'FedRAMP Rev 5 LOW',
+    version: '5.2.0',
+  },
+);
+```
+
+The resulting DomainPack's `complianceFrameworks[0].description` summarizes the tailoring:
+
+```
+NIST SP 800-53 Rev 5 LOW IMPACT BASELINE (5.2.0). Tailored OSCAL 1.2.2 profile
+selecting 149 controls — from #84cbf061-…: 149 selected.
+```
+
+### Partial catalogs and the `missingControlIds` diagnostic
+
+When a profile's `include-controls[].with-ids` references controls that aren't in the catalog you pointed at (e.g. a FedRAMP-LOW profile against a subset of 800-53), the resolver reports them as `missingControlIds` in the per-import breakdown. The summary description surfaces the count:
+
+```
+…selecting 7 controls — from #84cbf061-…: 7 selected (142 requested but absent from catalog).
+```
+
+This is exactly how operators know when they've pointed the resolver at the wrong catalog version, or when they're intentionally working with a sliced catalog for development.
+
+### Supported profile features
+
+8A supports the realistic subset operators hit when importing FedRAMP / agency baselines:
+
+| Profile feature | Status |
+|---|---|
+| `imports[].href` with `#<uuid>` back-matter resource references | ✅ Resolved via `catalogPaths` keyed by UUID or raw href |
+| `imports[].href` with direct URL or path | ✅ Resolved via `catalogPaths` keyed by the raw href |
+| `imports[].include-controls[].with-ids` | ✅ Explicit ID lists |
+| `imports[].include-all` | ✅ Selects everything in the imported catalog |
+| `imports[].exclude-controls[].with-ids` | ✅ Removes IDs from the include set |
+| Omitting all selection criteria | ✅ Defaults to include-all (per OSCAL convention) |
+| `imports[].include-controls[].matching` (pattern matching) | ⬜ Not yet — falls back to direct-ID matching |
+| `imports[].include-controls[].with-child-controls: yes` | ⬜ Not yet — controls are selected by literal ID only |
+| `modify.set-parameters` / `modify.alters` | ⬜ Not yet — parameter overrides aren't surfaced in the framework |
+| Multi-import profiles (extension stacks) | ✅ Resolver walks every import; selected IDs union across them |
+| Network catalog fetch via `rlinks` | ⬜ Out of scope by design — operators supply catalog paths explicitly |
+
+### Composing a profile pack with an industry pack
+
+The same `composeFromPacks` flow works whether the OSCAL pack came from `loadFromOscalCatalog` or `loadFromOscalProfile`:
+
+```ts
+await domainPackRegistry.loadFromOscalProfile(
+  profilePath, { catalogPaths }, { id: 'fedramp-low', name: 'FedRAMP LOW', version: '5.2.0' },
+);
+domainPackRegistry.register(healthcarePack);
+
+const composed = domainPackRegistry.composeFromPacks(
+  ['fedramp-low', 'healthcare'],
+  { id: 'fedramp-low-healthcare', name: 'FedRAMP LOW + HIPAA', version: '1.0.0', description: '…' },
+);
+```
 
 ## Error handling
 

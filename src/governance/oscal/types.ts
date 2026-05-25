@@ -108,6 +108,95 @@ export interface OscalResource {
   rlinks?: readonly OscalLink[];
 }
 
+// ─── Profile model ─────────────────────────────────────────────────────────
+// Profiles tailor a catalog into a baseline (FedRAMP Low / Moderate / High,
+// agency-specific overlays, etc.) by selecting a subset of controls and
+// optionally setting parameter values. We model the subset of fields the
+// resolver actually consumes.
+
+export interface OscalProfileDocument {
+  profile: OscalProfile;
+}
+
+export interface OscalProfile {
+  uuid: string;
+  metadata: OscalMetadata;
+  imports: readonly OscalProfileImport[];
+  merge?: OscalProfileMerge;
+  modify?: OscalProfileModify;
+  'back-matter'?: OscalBackMatter;
+}
+
+export interface OscalProfileImport {
+  /**
+   * Reference to the imported catalog. Two shapes:
+   *   "#<uuid>"   — points to a back-matter resource of the profile;
+   *                 follow that resource's `rlinks` for the actual file.
+   *   "<url|path>" — direct reference to the catalog.
+   *
+   * The resolver maps both shapes onto a caller-supplied
+   * `catalogPaths` map (keyed by either the bare UUID or the raw href).
+   */
+  href: string;
+  'include-all'?: Record<string, unknown> | OscalControlSelection;
+  'include-controls'?: readonly OscalControlSelection[];
+  'exclude-controls'?: readonly OscalControlSelection[];
+}
+
+export interface OscalControlSelection {
+  /** Explicit list of control IDs to include or exclude. */
+  'with-ids'?: readonly string[];
+  /**
+   * When `yes`, control enhancements of the listed controls are also
+   * pulled in. When `no` or unset, only the explicit IDs match.
+   */
+  'with-child-controls'?: 'yes' | 'no';
+  matching?: readonly { pattern: string }[];
+}
+
+export interface OscalProfileMerge {
+  combine?: { method?: 'use-first' | 'merge' | 'keep' };
+  'as-is'?: boolean;
+  flat?: Record<string, unknown>;
+  custom?: Record<string, unknown>;
+}
+
+export interface OscalProfileModify {
+  'set-parameters'?: readonly OscalProfileParameterSetting[];
+  alters?: readonly Record<string, unknown>[];
+}
+
+export interface OscalProfileParameterSetting {
+  'param-id': string;
+  values?: readonly string[];
+  select?: OscalParameter['select'];
+}
+
+/**
+ * Resolved view of a profile's selected controls. Produced by the
+ * profile resolver after applying include/exclude semantics to one or
+ * more imported catalogs.
+ */
+export interface ResolvedOscalProfile {
+  profileUuid: string;
+  profileTitle: string;
+  /** Distinct control IDs the profile selects, across all imports. */
+  selectedControlIds: readonly string[];
+  /** Per-import breakdown — useful for diagnostics + per-catalog stats. */
+  imports: readonly ResolvedOscalProfileImport[];
+}
+
+export interface ResolvedOscalProfileImport {
+  /** The raw href from the profile (`#<uuid>` or a literal href). */
+  href: string;
+  /** Local path the operator pointed the resolver at via `catalogPaths`. */
+  catalogPath: string;
+  /** Control IDs the operator's catalog contributed under this import's selection rules. */
+  selectedControlIds: readonly string[];
+  /** Control IDs from the include lists that were NOT found in this catalog. */
+  missingControlIds: readonly string[];
+}
+
 /** Flattened view of a control with its OSCAL family context. */
 export interface FlattenedOscalControl {
   /** Catalog-unique control id (e.g. "ac-1", "ac-1.1"). */
