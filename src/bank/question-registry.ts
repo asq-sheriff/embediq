@@ -796,6 +796,7 @@ export const questions: Question[] = [
       { key: 'gdpr', label: 'GDPR (EU data protection)' },
       { key: 'fda', label: 'FDA (medical devices / life sciences)' },
       { key: 'fedramp', label: 'FedRAMP (US government)' },
+      { key: 'nist-ai-rmf', label: 'NIST AI Risk Management Framework (AI RMF 1.0 + AI 600-1 GenAI Profile)' },
       { key: 'none', label: 'None / Not applicable' },
     ],
     required: true,
