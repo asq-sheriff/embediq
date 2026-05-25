@@ -1,6 +1,6 @@
 <!-- audience: public -->
 
-# Tamper-Evident Audit Chain (v4.0 / 8F)
+# Tamper-Evident Audit Chain (v4.0)
 
 EmbedIQ's audit log can run in a **tamper-evident chain** mode: every appended entry carries a SHA-256 `prevHash` linking it to the previous entry (or to a deterministic genesis hash for the first entry). Tampering with any entry breaks the chain from that entry forward, and the bundled `verify-audit-log` CLI walks the chain and reports the first break.
 
@@ -14,7 +14,7 @@ Two environment variables, both required to write a chained log:
 # 1. Audit log itself (existing — unchanged from prior versions)
 EMBEDIQ_AUDIT_LOG=/var/log/embediq/audit.jsonl
 
-# 2. Chain mode (new in v4.0 / 8F)
+# 2. Chain mode (new in v4.0)
 EMBEDIQ_AUDIT_CHAIN_ENABLED=true
 ```
 
@@ -96,17 +96,17 @@ The linked-log property defends against these attack vectors:
 It does **not** defend against:
 
 - ❌ **Truncation from the end** — removing the last N entries produces a shorter but still-valid chain. Detect by comparing entry counts against expectations (operators are responsible for knowing roughly how many entries to expect).
-- ❌ **Re-chaining the whole log** — an attacker who controls the file can rewrite every entry's `prevHash` to forge a clean chain. Defense requires external anchoring (publishing chain heads to a write-only store, signing with an HSM key the attacker can't access). Both are out of scope for 8F; reserved for a follow-up.
+- ❌ **Re-chaining the whole log** — an attacker who controls the file can rewrite every entry's `prevHash` to forge a clean chain. Defense requires external anchoring (publishing chain heads to a write-only store, signing with an HSM key the attacker can't access). Both are reserved for a follow-up.
 - ❌ **Race conditions with multiple writers** — the writer reads the last entry to compute `prevHash`, then appends. Two concurrent appends race on the read+write step and produce a broken chain. **Use a single-writer audit pipeline** — the existing `EMBEDIQ_AUDIT_LOG` writer is sync-fs-based and single-process by design.
 
 ## Composing with the rest of the v4.0 governance suite
 
 The audit chain provides the **WHEN-and-IN-WHAT-ORDER** dimension of the audit trail. It pairs with:
 
-- **8B** (OSCAL component-definition) — product-level compliance claim
-- **8C** (OSCAL SSP fragment) — deployment-level compliance claim
-- **8D** (CycloneDX-ML AIBOM) — AI supply-chain disclosure
-- **8E** (provenance trace) — per-file authoritative-attribution + heuristic-driver explanation
+- **OSCAL component-definition** — product-level compliance claim
+- **OSCAL SSP fragment** — deployment-level compliance claim
+- **CycloneDX-ML AIBOM** — AI supply-chain disclosure
+- **Provenance trace** — per-file authoritative-attribution + heuristic-driver explanation
 
 When an auditor asks *"who did what when, and is the record intact?"*, the answer is:
 - **who + what** — comes from the audit log's `userId` / `eventType` / `filePath` fields
@@ -118,6 +118,6 @@ For a clean handoff to an external compliance platform (Drata / Vanta / FedRAMP 
 ## See also
 
 - [`session-backends.md`](session-backends.md) — session-side persistence (separate from audit).
-- [`../extension-guide/exporting-provenance-trace.md`](../extension-guide/exporting-provenance-trace.md) — 8E provenance.
+- [`../extension-guide/exporting-provenance-trace.md`](../extension-guide/exporting-provenance-trace.md) — provenance.
 - [RFC 6962 — Certificate Transparency](https://www.rfc-editor.org/rfc/rfc6962) — the design lineage of the linked-log pattern.
 - [`src/util/audit-chain.ts`](../../src/util/audit-chain.ts) — implementation reference (hashEntry, canonicalize, verifyAuditChain).

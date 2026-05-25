@@ -225,7 +225,7 @@ export const DRIVER_HEURISTICS: readonly HeuristicRule[] = [
     ],
   },
 
-  // ── Multi-agent targets (v3.1 / 6G) ───────────────────────────────────
+  // ── Multi-agent targets (v3.1) ───────────────────────────────────
   {
     name: 'agents-md-output',
     pattern: /^AGENTS\.md$/,
@@ -262,7 +262,7 @@ export const DRIVER_HEURISTICS: readonly HeuristicRule[] = [
     ],
   },
 
-  // ── Local-AI targets (v3.3 / 6K) ──────────────────────────────────────
+  // ── Local-AI targets (v3.3) ──────────────────────────────────────
   {
     name: 'continue-dev-output',
     pattern: /^(\.continue\/|continue\/)/,
@@ -295,7 +295,7 @@ export const DRIVER_HEURISTICS: readonly HeuristicRule[] = [
     ],
   },
 
-  // ── RAG scaffold (v3.3 / 6L) ──────────────────────────────────────────
+  // ── RAG scaffold (v3.3) ──────────────────────────────────────────
   {
     name: 'rag-scaffold-output',
     pattern: /^rag\//,
@@ -310,7 +310,7 @@ export const DRIVER_HEURISTICS: readonly HeuristicRule[] = [
     },
   },
 
-  // ── Local router (v3.3 / 6M) ──────────────────────────────────────────
+  // ── Local router (v3.3) ──────────────────────────────────────────
   {
     name: 'local-router-output',
     pattern: /^router\//,

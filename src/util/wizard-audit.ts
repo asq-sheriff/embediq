@@ -47,7 +47,7 @@ export function auditLog(entry: WizardAuditEntry): void {
     engagementId: entry.engagementId ?? ctx?.engagementId ?? resolveEngagementId(),
   };
 
-  // v4.0 / 8F — Tamper-evident chain mode. Opt-in via
+  // v4.0 — Tamper-evident chain mode. Opt-in via
   // `EMBEDIQ_AUDIT_CHAIN_ENABLED=true`. When off, behavior is
   // unchanged (plain JSONL). When on, every entry carries a
   // `prevHash` field linking it to its predecessor (or to the

@@ -8,7 +8,7 @@ import type {
 
 const METHODOLOGY_NOTE =
   'Generator attribution is authoritative — recorded by the orchestrator as files '
-  + 'flow through the parallel batch. Driver attribution is heuristic in v4.0 / 8E: '
+  + 'flow through the parallel batch. Driver attribution is heuristic in v4.0: '
   + 'the trace infers which profile fields, target selections, and compliance '
   + 'frameworks cause each file from its relative path against a rule catalog '
   + '(src/governance/provenance/driver-heuristics.ts). Per-generator self-declared '

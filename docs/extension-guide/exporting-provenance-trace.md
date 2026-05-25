@@ -1,6 +1,6 @@
 <!-- audience: public -->
 
-# Exporting the Provenance Trace (v4.0 / 8E)
+# Exporting the Provenance Trace (v4.0)
 
 EmbedIQ can emit a per-file **provenance trace** answering the auditor question *"why is this file in the generated harness?"*. The trace records, for every file in the same generation run:
 
@@ -80,7 +80,7 @@ Existing goldens regenerate byte-identically when this target is omitted.
   "methodology": {
     "generatorAttribution": "authoritative",
     "driverInference": "heuristic",
-    "note": "Generator attribution is authoritative — recorded by the orchestrator as files flow through the parallel batch. Driver attribution is heuristic in v4.0 / 8E …"
+    "note": "Generator attribution is authoritative — recorded by the orchestrator as files flow through the parallel batch. Driver attribution is heuristic in v4.0 …"
   }
 }
 ```
@@ -103,10 +103,10 @@ The trace ships with a heuristic catalog at [`src/governance/provenance/driver-h
 | `rag/*` | localAiEnabled + industry=healthcare (FHIR-aware chunker variant) |
 | `router/*` | routerEnabled + confidenceEscalation + complianceFrameworks=hipaa (PHI redactor) |
 | `.continue/` / `.aider` / `.zed/` / `ollama*` | localAiEnabled + ideIntegrations |
-| `.embediq/oscal/component-definition.json` | target=oscal-component (8B) |
-| `.embediq/oscal/ssp-fragment.json` | target=oscal-ssp-fragment (8C) |
-| `.embediq/cyclonedx/aibom.json` | target=cyclonedx-aibom (8D) |
-| `.embediq/provenance/manifest.json` | target=provenance (this file, 8E) |
+| `.embediq/oscal/component-definition.json` | target=oscal-component |
+| `.embediq/oscal/ssp-fragment.json` | target=oscal-ssp-fragment |
+| `.embediq/cyclonedx/aibom.json` | target=cyclonedx-aibom |
+| `.embediq/provenance/manifest.json` | target=provenance (this file) |
 | anything else | (empty drivers, `matchedHeuristic: undefined`) |
 
 Files that don't match any rule (custom domain pack output, external skills, future generators that haven't been added to the catalog yet) record `drivers: []` and `matchedHeuristic: undefined`. The authoritative `generatorName` / `target` still surface, so reviewers see WHO produced the file even when they don't see WHY yet.
@@ -121,7 +121,7 @@ The document includes a `methodology.note` field stating the trace's epistemic s
 
 Auditors should treat the trace as evidence of intent + an explanation of likely causes, not a formal causation proof.
 
-## Composing with 8B / 8C / 8D
+## Composing with the v4.0 governance outputs
 
 The provenance target runs **last** in the post-pass chain, so its manifest naturally includes the OSCAL and CycloneDX outputs:
 
@@ -132,17 +132,14 @@ npm start -- --targets claude,cyclonedx-aibom,oscal-component,oscal-ssp-fragment
 Produces all five governance artifacts alongside the harness:
 
 ```
-.embediq/cyclonedx/aibom.json                  # 8D — AI bill of materials
-.embediq/oscal/component-definition.json       # 8B — product-level OSCAL claim
-.embediq/oscal/ssp-fragment.json               # 8C — deployment-level OSCAL claim
-.embediq/provenance/manifest.json              # 8E — per-file provenance trace
+.embediq/cyclonedx/aibom.json                  # AI bill of materials
+.embediq/oscal/component-definition.json       # product-level OSCAL claim
+.embediq/oscal/ssp-fragment.json               # deployment-level OSCAL claim
+.embediq/provenance/manifest.json              # per-file provenance trace (this file)
 ```
 
 The provenance manifest's `files[]` list will include entries for all four — every governance output references every other governance output transitively through the manifest.
 
 ## See also
 
-- [`exporting-oscal-component-definitions.md`](exporting-oscal-component-definitions.md) — 8B
-- [`exporting-oscal-ssp-fragments.md`](exporting-oscal-ssp-fragments.md) — 8C
-- [`exporting-cyclonedx-aibom.md`](exporting-cyclonedx-aibom.md) — 8D
-- [`writing-oscal-imports.md`](writing-oscal-imports.md) — 8A (OSCAL input direction)
+- [`exporting-oscal-component-definitions.md`](exporting-oscal-component-definitions.md) — - [`exporting-oscal-ssp-fragments.md`](exporting-oscal-ssp-fragments.md) — - [`exporting-cyclonedx-aibom.md`](exporting-cyclonedx-aibom.md) — - [`writing-oscal-imports.md`](writing-oscal-imports.md) — (OSCAL input direction)

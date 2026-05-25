@@ -2,7 +2,7 @@ import type { Skill } from '../skill.js';
 import { nistAiRmfPack } from '../../domain-packs/built-in/nist-ai-rmf.js';
 
 /**
- * v4.0 / 8G — Composable skill wrapping the NIST AI RMF domain pack.
+ * v4.0 — Composable skill wrapping the NIST AI RMF domain pack.
  *
  * Same shape as the other "*.full" skills (healthcare.full, finance.full,
  * education.full): one skill = one bundled domain pack. Available via the

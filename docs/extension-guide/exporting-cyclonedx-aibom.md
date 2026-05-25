@@ -1,10 +1,10 @@
 <!-- audience: public -->
 
-# Exporting CycloneDX-ML AI Bill of Materials (v4.0 / 8D)
+# Exporting CycloneDX-ML AI Bill of Materials (v4.0)
 
 EmbedIQ emits a [CycloneDX 1.6](https://cyclonedx.org/docs/1.6/json/) **AI Bill of Materials** (ML-BOM) describing every model, agent, and service the generated harness invokes. The document is procurement-relevant: EO 14110 and emerging FedRAMP supply-chain guidance both expect AI/ML BOMs alongside traditional SBOMs.
 
-8A/8B/8C cover the OSCAL track (catalog import, component definition, SSP fragment). 8D is the OWASP/CycloneDX track — a different lineage, a different consumer ecosystem (Dependency-Track, OSV-Scanner, AI-focused supply-chain tooling).
+The v4.0 governance suite covers two distinct standards tracks: the OSCAL track (catalog import, component definition, SSP fragment) and the OWASP/CycloneDX track described on this page — a different lineage, a different consumer ecosystem (Dependency-Track, OSV-Scanner, AI-focused supply-chain tooling).
 
 ## Opting in
 
@@ -131,7 +131,7 @@ A valid CycloneDX 1.6 BOM with ML-BOM extensions:
 }
 ```
 
-## Composing 8B + 8C + 8D outputs together
+## Composing the v4.0 governance outputs outputs together
 
 The three governance outputs compose. Adding all three to your targets:
 
@@ -142,9 +142,9 @@ npm start -- --targets claude,cyclonedx-aibom,oscal-component,oscal-ssp-fragment
 emits three governance artifacts alongside the harness:
 
 ```
-.embediq/cyclonedx/aibom.json                  # 8D — AI bill of materials
-.embediq/oscal/component-definition.json       # 8B — product-level OSCAL claim
-.embediq/oscal/ssp-fragment.json               # 8C — deployment-level OSCAL claim
+.embediq/cyclonedx/aibom.json                  # AI bill of materials (this file)
+.embediq/oscal/component-definition.json       # product-level OSCAL claim
+.embediq/oscal/ssp-fragment.json               # deployment-level OSCAL claim
 ```
 
 Post-pass ordering: **AIBOM first**, then component-definition, then SSP fragment. Later steps' artifact manifests include the earlier files, so the OSCAL outputs cite the AIBOM as part of their evidence.
@@ -156,9 +156,9 @@ The document conforms to the official CycloneDX 1.6 JSON schema, so any CycloneD
 - **[OWASP Dependency-Track](https://dependencytrack.org/)** — accepts CycloneDX BOMs as-is. The harness becomes a tracked project; each ML component appears in the bill-of-materials view; supply-chain advisories surface against the supplier URLs.
 - **[OSV-Scanner](https://github.com/google/osv-scanner)** — reads CycloneDX BOMs and matches components against OSV vulnerability databases.
 - **[CycloneDX cdxgen](https://github.com/CycloneDX/cdxgen)** — complementary; produces traditional SBOMs for the same project that the AIBOM can be merged into for unified supply-chain disclosure.
-- **OSCAL-aware compliance platforms (Drata / Vanta)** — increasingly accept CycloneDX evidence alongside OSCAL artifacts. Combine 8D's AIBOM with 8B's component-definition for the strongest claim.
+- **OSCAL-aware compliance platforms (Drata / Vanta)** — increasingly accept CycloneDX evidence alongside OSCAL artifacts. Combine the AIBOM with the OSCAL component-definition for the strongest claim.
 
-## What's NOT in 8D
+## What's NOT in the initial AIBOM
 
 - **Specific hosted-model versions.** The wizard doesn't ask which Claude or GPT version the operator will invoke (version is pinned at runtime), so the AIBOM records the provider-level identity. Operators who want version-pinned ML components can hand-edit the JSON or extend the builder.
 - **Vulnerability annotations.** EmbedIQ does not pull from CVE / OSV / NVD databases at generation time. Downstream tools attach vulnerability data when they ingest the BOM.
@@ -167,9 +167,9 @@ The document conforms to the official CycloneDX 1.6 JSON schema, so any CycloneD
 
 ## See also
 
-- [`exporting-oscal-component-definitions.md`](exporting-oscal-component-definitions.md) — 8B product-level OSCAL output.
-- [`exporting-oscal-ssp-fragments.md`](exporting-oscal-ssp-fragments.md) — 8C deployment-level OSCAL output.
-- [`writing-oscal-imports.md`](writing-oscal-imports.md) — OSCAL input direction (8A).
+- [`exporting-oscal-component-definitions.md`](exporting-oscal-component-definitions.md) — product-level OSCAL output.
+- [`exporting-oscal-ssp-fragments.md`](exporting-oscal-ssp-fragments.md) — deployment-level OSCAL output.
+- [`writing-oscal-imports.md`](writing-oscal-imports.md) — OSCAL input direction.
 - [CycloneDX 1.6 JSON specification](https://cyclonedx.org/docs/1.6/json/) — the schema this output conforms to.
 - [CycloneDX ML-BOM capability page](https://cyclonedx.org/capabilities/mlbom/) — the ML-BOM extension this output uses.
 - [OWASP AI Exchange](https://owaspai.org/) — broader AI-supply-chain context.

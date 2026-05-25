@@ -2,7 +2,7 @@ import { Dimension, QuestionType, ConditionOperator } from '../../types/index.js
 import type { DomainPack } from '../index.js';
 
 /**
- * v4.0 / 8G — NIST AI Risk Management Framework domain pack.
+ * v4.0 — NIST AI Risk Management Framework domain pack.
  *
  * Maps NIST AI RMF 1.0 (Govern / Map / Measure / Manage) and the
  * AI 600-1 Generative AI Profile onto EmbedIQ's domain-pack interface:
@@ -270,7 +270,7 @@ rule asks the agent to honor them.
 - Record the user-provided business domain, industry, and
   compliance frameworks in every generated artifact's header so
   downstream reviewers can trace the context the work was done in.
-- The provenance trace (v4.0 / 8E) is the structured form of this
+- The provenance trace (v4.0) is the structured form of this
   expectation; the rule is a reminder for the agent.
 `,
     },
@@ -300,8 +300,7 @@ for it.
   an existing artifact, update the stamp rather than silently
   overwriting it.
 - Audit-log entries (audit.jsonl) are the canonical record of what
-  changed when. Do not delete or rewrite past entries — the v4.0 /
-  8F audit chain catches that anyway, but the rule sets the
+  changed when. Do not delete or rewrite past entries — the v4.0 audit chain catches that anyway, but the rule sets the
   expectation up front.
 
 ### Document confidence

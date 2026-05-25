@@ -5,7 +5,7 @@ import {
 import type { SetupConfig, GeneratedFile } from '../../types/index.js';
 
 /**
- * v4.0 / 8B — OSCAL Component Definition emitter.
+ * v4.0 — OSCAL Component Definition emitter.
  *
  * Not a `ConfigGenerator`-style parallel generator: it needs the
  * full manifest of files emitted by the rest of the synthesizer run, so

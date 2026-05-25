@@ -5,7 +5,8 @@
 A **domain pack** is the coarse-grained extension point for an entire
 industry vertical — it adds questions, compliance frameworks, DLP
 patterns, rule templates, ignore patterns, and validation checks in
-one bundle. The three built-in packs (Healthcare, Finance, Education)
+one bundle. The four built-in packs (Healthcare, Finance, Education,
+NIST AI RMF — the last is a cross-industry pack added in v4.0)
 are domain packs; so is anything you drop into `EMBEDIQ_PLUGINS_DIR`.
 
 For finer-grained composition (mix-and-match), see

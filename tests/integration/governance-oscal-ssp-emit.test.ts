@@ -18,7 +18,7 @@ async function runOrchestrator(config: SetupConfig) {
 const SSP_PATH = '.embediq/oscal/ssp-fragment.json';
 const COMPONENT_DEF_PATH = '.embediq/oscal/component-definition.json';
 
-describe('SynthesizerOrchestrator — OSCAL SSP-fragment post-pass (8C)', () => {
+describe('SynthesizerOrchestrator — OSCAL SSP-fragment post-pass', () => {
   it('does NOT emit the SSP fragment by default — opt-in via target only', async () => {
     const files = await runOrchestrator({
       profile: buildProfile({ role: 'developer', languages: ['typescript'] }),
@@ -42,7 +42,7 @@ describe('SynthesizerOrchestrator — OSCAL SSP-fragment post-pass (8C)', () => 
     expect(ssp).toBeDefined();
     const doc = JSON.parse(ssp!.content) as OscalSspDocument;
     expect(doc['system-security-plan'].metadata['oscal-version']).toBe('1.1.2');
-    // Fragment marker is the headline contract of 8C.
+    // Fragment marker is the headline contract of.
     const props = doc['system-security-plan'].metadata.props ?? [];
     expect(props.some((p) => p.name === 'document-completion-status' && p.value === 'fragment')).toBe(true);
   });

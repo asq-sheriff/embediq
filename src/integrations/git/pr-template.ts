@@ -5,7 +5,7 @@ export interface BuildPrTemplateInput {
   profile: UserProfile;
   files: readonly GeneratedFile[];
   validation?: ValidationResult;
-  /** When launched from autopilot (6E), attach the drift summary that triggered the PR. */
+  /** When launched from autopilot, attach the drift summary that triggered the PR. */
   driftSummary?: {
     totalDrift: number;
     missing: number;
@@ -15,7 +15,7 @@ export interface BuildPrTemplateInput {
     extra: number;
   };
   /**
-   * Contributors map from session data (6C). Shown as an attribution table
+   * Contributors map from session data. Shown as an attribution table
    * when supplied so compliance reviewers can see who answered what.
    */
   contributors?: Record<string, number>;

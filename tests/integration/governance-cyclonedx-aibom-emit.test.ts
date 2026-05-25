@@ -18,7 +18,7 @@ async function runOrchestrator(config: SetupConfig) {
 const AIBOM_PATH = '.embediq/cyclonedx/aibom.json';
 const OSCAL_COMPONENT_PATH = '.embediq/oscal/component-definition.json';
 
-describe('SynthesizerOrchestrator — CycloneDX-ML AIBOM post-pass (8D)', () => {
+describe('SynthesizerOrchestrator — CycloneDX-ML AIBOM post-pass', () => {
   it('does NOT emit the AIBOM by default — opt-in via target only', async () => {
     const files = await runOrchestrator({
       profile: buildProfile({ role: 'developer', languages: ['typescript'] }),

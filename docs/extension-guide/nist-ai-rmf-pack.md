@@ -1,8 +1,8 @@
 <!-- audience: public -->
 
-# NIST AI RMF + AI 600-1 Domain Pack (v4.0 / 8G)
+# NIST AI RMF + AI 600-1 Domain Pack (v4.0)
 
-The `nist-ai-rmf` built-in domain pack maps [NIST AI Risk Management Framework 1.0](https://www.nist.gov/itl/ai-risk-management-framework) (Govern / Map / Measure / Manage) and the [NIST AI 600-1 Generative AI Profile](https://www.nist.gov/itl/ai-risk-management-framework/nist-ai-600-1-generative-artificial-intelligence-profile) onto EmbedIQ's wizard + harness. The pack closes the v4.0 governance suite — together with 8A-8F it gives operators a coherent federal-procurement-ready AI governance story.
+The `nist-ai-rmf` built-in domain pack maps [NIST AI Risk Management Framework 1.0](https://www.nist.gov/itl/ai-risk-management-framework) (Govern / Map / Measure / Manage) and the [NIST AI 600-1 Generative AI Profile](https://www.nist.gov/itl/ai-risk-management-framework/nist-ai-600-1-generative-artificial-intelligence-profile) onto EmbedIQ's wizard + harness. The pack closes the v4.0 governance suite — together with the v4.0 governance suite it gives operators a coherent federal-procurement-ready AI governance story.
 
 ## Honest scope boundary
 
@@ -50,7 +50,7 @@ Which compliance frameworks apply to your project?
 [ ] GDPR (EU data protection)
 [ ] FDA (medical devices / life sciences)
 [ ] FedRAMP (US government)
-[x] NIST AI Risk Management Framework (AI RMF 1.0 + AI 600-1 GenAI Profile)   ← new in 8G
+[x] NIST AI Risk Management Framework (AI RMF 1.0 + AI 600-1 GenAI Profile)   ← new in v4.0
 [ ] None / Not applicable
 ```
 
@@ -130,16 +130,11 @@ That's the full v4.0 audit-evidence package: AI RMF posture + supply chain + pro
 ## What's reserved for follow-up
 
 - **Per-control mapping** — AI RMF subcategories (e.g. GV-1.1, MP-2.3) are not yet bound to specific rule sections. The current 4-rule structure is function-level; a follow-up will add subcategory-level mapping so audit pipelines can claim coverage by subcategory.
-- **AI RMF Profile import** — when NIST or an industry consortium publishes a machine-readable AI RMF profile (analogous to a FedRAMP baseline), 8A's profile importer will resolve it.
+- **AI RMF Profile import** — when NIST or an industry consortium publishes a machine-readable AI RMF profile (analogous to a FedRAMP baseline), the v4.0 OSCAL profile importer will resolve it.
 - **AI 600-1-specific rule files** — the current pack carries one combined `manage` rule mentioning AI 600-1 considerations. As the GenAI Profile matures, a dedicated rule file per GenAI risk category (confabulation, dangerous content, value-chain integrity) is a natural extension.
 
 ## See also
 
 - [NIST AI RMF 1.0 home](https://www.nist.gov/itl/ai-risk-management-framework)
 - [NIST AI 600-1 Generative AI Profile](https://www.nist.gov/itl/ai-risk-management-framework/nist-ai-600-1-generative-artificial-intelligence-profile)
-- [`writing-oscal-imports.md`](writing-oscal-imports.md) — 8A
-- [`exporting-oscal-component-definitions.md`](exporting-oscal-component-definitions.md) — 8B
-- [`exporting-oscal-ssp-fragments.md`](exporting-oscal-ssp-fragments.md) — 8C
-- [`exporting-cyclonedx-aibom.md`](exporting-cyclonedx-aibom.md) — 8D
-- [`exporting-provenance-trace.md`](exporting-provenance-trace.md) — 8E
-- [`../operator-guide/audit-chain.md`](../operator-guide/audit-chain.md) — 8F
+- [`writing-oscal-imports.md`](writing-oscal-imports.md) — - [`exporting-oscal-component-definitions.md`](exporting-oscal-component-definitions.md) — - [`exporting-oscal-ssp-fragments.md`](exporting-oscal-ssp-fragments.md) — - [`exporting-cyclonedx-aibom.md`](exporting-cyclonedx-aibom.md) — - [`exporting-provenance-trace.md`](exporting-provenance-trace.md) — - [`../operator-guide/audit-chain.md`](../operator-guide/audit-chain.md) — 

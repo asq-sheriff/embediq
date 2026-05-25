@@ -37,7 +37,7 @@ type ClientMessage =
  *
  * Server frames are the full EventEnvelope as JSON. Late subscribers only
  * see events emitted after their subscribe frame lands — there is no
- * backfill or replay in 6A.
+ * backfill or replay in.
  */
 export interface WebSocketHubOptions {
   backpressureLimitBytes?: number;

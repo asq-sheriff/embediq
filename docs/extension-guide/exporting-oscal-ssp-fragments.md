@@ -1,6 +1,6 @@
 <!-- audience: public -->
 
-# Exporting OSCAL System Security Plan Fragments (v4.0 / 8C)
+# Exporting OSCAL System Security Plan Fragments (v4.0)
 
 EmbedIQ can emit an OSCAL [System Security Plan](https://pages.nist.gov/OSCAL-Reference/models/v1.1.2/system-security-plan/json-outline/) **fragment** — the control-implementation and harness-component sections that follow deterministically from the synthesized harness. This is the per-engagement complement to the org-wide [component-definition](exporting-oscal-component-definitions.md): where the component-definition describes the EmbedIQ product, the SSP fragment describes a specific deployment of that product within an operator's authorization boundary.
 
@@ -86,8 +86,8 @@ npm start -- --targets claude,oscal-component,oscal-ssp-fragment
 emits two OSCAL artifacts alongside the harness:
 
 ```
-.embediq/oscal/component-definition.json    # 8B — product-level claim
-.embediq/oscal/ssp-fragment.json            # 8C — deployment-level claim
+.embediq/oscal/component-definition.json    # product-level claim
+.embediq/oscal/ssp-fragment.json            # deployment-level claim (this file)
 ```
 
 The SSP fragment is emitted **after** the component-definition, so the SSP's artifact manifest includes the component-definition file. The SSP does not list itself (avoiding the recursive-manifest problem — it's always last).
@@ -100,11 +100,11 @@ The generated fragment is intentionally a starting point. Before submitting:
 2. Add organization-specific sections OSCAL supports but EmbedIQ does not generate (`network-architecture`, `data-flow`, `leveraged-authorizations`, additional `inventory-items`, additional `users`, `authorized-privileges`, etc.).
 3. Add `responsible-parties` referencing the operator's authoring officials.
 4. Update `system-characteristics.status.state` from `under-development` to `operational` when authorization is in place.
-5. Per-control implemented-requirements: when the harness is intended to claim coverage of specific control IDs (e.g. `ac-1`, `au-2`), add those as additional entries alongside the framework-level claims. EmbedIQ's 8C output doesn't make per-control claims today; the per-control mapping is reserved for a follow-up iteration.
+5. Per-control implemented-requirements: when the harness is intended to claim coverage of specific control IDs (e.g. `ac-1`, `au-2`), add those as additional entries alongside the framework-level claims. EmbedIQ's SSP fragment doesn't make per-control claims today; the per-control mapping is reserved for a follow-up iteration.
 
 ## See also
 
-- [`exporting-oscal-component-definitions.md`](exporting-oscal-component-definitions.md) — the product-level OSCAL output (8B).
+- [`exporting-oscal-component-definitions.md`](exporting-oscal-component-definitions.md) — the product-level OSCAL output.
 - [`writing-oscal-imports.md`](writing-oscal-imports.md) — the input direction (catalog + profile import).
 - [NIST OSCAL SSP Model](https://pages.nist.gov/OSCAL-Reference/models/v1.1.2/system-security-plan/json-outline/) — the JSON outline this output conforms to.
 - [NIST OSCAL SSP concept](https://pages.nist.gov/OSCAL/learn/concepts/layer/implementation/ssp/) — the role of SSPs in the OSCAL stack.

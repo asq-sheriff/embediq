@@ -17,7 +17,7 @@ async function runOrchestrator(config: SetupConfig) {
 
 const PROVENANCE_PATH = '.embediq/provenance/manifest.json';
 
-describe('SynthesizerOrchestrator — provenance trace post-pass (8E)', () => {
+describe('SynthesizerOrchestrator — provenance trace post-pass', () => {
   it('does NOT emit the provenance manifest by default — opt-in via target only', async () => {
     const files = await runOrchestrator({
       profile: buildProfile({ role: 'developer', languages: ['typescript'] }),
@@ -67,7 +67,7 @@ describe('SynthesizerOrchestrator — provenance trace post-pass (8E)', () => {
     expect(claudeEntry!.target).toBe('claude');
   });
 
-  it('runs LAST in the post-pass chain — manifest includes 8B + 8C + 8D outputs', async () => {
+  it('runs LAST in the post-pass chain — manifest includes the v4.0 governance outputs outputs', async () => {
     const files = await runOrchestrator({
       profile: buildProfile({
         role: 'developer',
@@ -92,7 +92,7 @@ describe('SynthesizerOrchestrator — provenance trace post-pass (8E)', () => {
     expect(paths).toContain(PROVENANCE_PATH);  // The trace records itself.
   });
 
-  it('records authoritative attribution for governance post-pass outputs (8B/8C/8D)', async () => {
+  it('records authoritative attribution for governance post-pass outputs (the v4.0 governance outputs)', async () => {
     const files = await runOrchestrator({
       profile: buildProfile({ role: 'developer', industry: 'healthcare', complianceFrameworks: ['hipaa'] }),
       targetDir: '/tmp/out',

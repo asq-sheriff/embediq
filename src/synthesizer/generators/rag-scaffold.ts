@@ -3,7 +3,7 @@ import { TargetFormat } from '../target-format.js';
 import type { SetupConfig, GeneratedFile, UserProfile } from '../../types/index.js';
 
 /**
- * v3.3 / 6L — RAG scaffold generator (industry-agnostic).
+ * v3.3 — RAG scaffold generator (industry-agnostic).
  *
  * Emits a small runnable retrieval-augmented-generation application
  * under `rag/` plus a root-level `RAG_RUNBOOK.md` and one or more

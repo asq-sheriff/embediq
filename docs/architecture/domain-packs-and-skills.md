@@ -65,7 +65,7 @@ Singleton registry at
 [`src/domain-packs/registry.ts`](../../src/domain-packs/registry.ts).
 Responsibilities:
 
-- Register built-in packs (healthcare, finance, education).
+- Register built-in packs (healthcare, finance, education, nist-ai-rmf — the last is the v4.0 cross-industry AI-governance pack).
 - Load external packs from `EMBEDIQ_PLUGINS_DIR` (ESM files whose
   default export satisfies `DomainPack`).
 - Map industry keys to pack IDs via `INDUSTRY_TO_PACK` (the
@@ -109,12 +109,16 @@ Two key differences from `DomainPack`:
 
 Registry: singleton at
 [`src/skills/skill-registry.ts`](../../src/skills/skill-registry.ts).
-Loads five built-in skills (`healthcare.full`, `healthcare.rag`,
-`finance.full`, `education.full`, `karpathy-guidelines`) plus external
-skills from `EMBEDIQ_SKILLS_DIR`. The first four are domain-pack-shaped
-(compliance frameworks, DLP, ignore patterns); `karpathy-guidelines` is
-a generic behavioral skill (one repo-wide rule file, no compliance/DLP)
-that can be composed alongside any domain pack.
+Loads six built-in skills (`healthcare.full`, `healthcare.rag`,
+`finance.full`, `education.full`, `karpathy-guidelines`,
+`nist-ai-rmf.full`) plus external skills from `EMBEDIQ_SKILLS_DIR`.
+The first four are domain-pack-shaped (compliance frameworks, DLP,
+ignore patterns); `karpathy-guidelines` is a generic behavioral skill
+(one repo-wide rule file, no compliance/DLP) that can be composed
+alongside any domain pack; `nist-ai-rmf.full` is the v4.0
+cross-industry AI-governance pack (4 path-scoped rules, 2 compliance
+frameworks, zero DLP — designed to compose with industry packs via
+`composeFromPacks(['healthcare', 'nist-ai-rmf'], …)`).
 
 Composer: pure function at
 [`src/skills/skill-composer.ts`](../../src/skills/skill-composer.ts).

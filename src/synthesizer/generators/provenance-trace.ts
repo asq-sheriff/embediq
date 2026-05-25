@@ -5,11 +5,11 @@ import {
 import type { SetupConfig, GeneratedFile } from '../../types/index.js';
 
 /**
- * v4.0 / 8E — Provenance Trace emitter.
+ * v4.0 — Provenance Trace emitter.
  *
  * Post-pass step (not a parallel `ConfigGenerator`). Runs LAST in the
  * post-pass chain so its manifest can include every other governance
- * output (8B component-def, 8C SSP fragment, 8D AIBOM) alongside the
+ * output (component-def SSP fragment AIBOM) alongside the
  * regular generator output.
  *
  * Output: `.embediq/provenance/manifest.json`.

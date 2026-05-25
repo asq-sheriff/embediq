@@ -17,7 +17,7 @@ async function runOrchestrator(config: SetupConfig) {
 
 const COMPONENT_DEF_PATH = '.embediq/oscal/component-definition.json';
 
-describe('SynthesizerOrchestrator — OSCAL component-definition post-pass (8B)', () => {
+describe('SynthesizerOrchestrator — OSCAL component-definition post-pass', () => {
   it('does NOT emit the OSCAL file by default — opt-in via target only', async () => {
     const files = await runOrchestrator({
       profile: buildProfile({

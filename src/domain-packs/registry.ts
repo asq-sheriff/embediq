@@ -250,7 +250,7 @@ export const domainPackRegistry = new DomainPackRegistry();
 domainPackRegistry.register(healthcarePack);
 domainPackRegistry.register(financePack);
 domainPackRegistry.register(educationPack);
-// v4.0 / 8G — NIST AI RMF + AI 600-1 Generative AI Profile. Cross-industry
+// v4.0 — NIST AI RMF + AI 600-1 Generative AI Profile. Cross-industry
 // pack; not in INDUSTRY_TO_PACK. Compose with the operator's industry pack
 // via DomainPackRegistry.composeFromPacks(['healthcare','nist-ai-rmf'], ...)
 // when AI RMF coverage is wanted alongside HIPAA / PCI / FERPA / etc.

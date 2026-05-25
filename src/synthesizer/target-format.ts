@@ -15,24 +15,24 @@ export enum TargetFormat {
   COPILOT = 'copilot',
   GEMINI = 'gemini',
   WINDSURF = 'windsurf',
-  // v3.3 / 6K — local-AI targets. Opt-in only — never included in DEFAULT_TARGETS.
+  // v3.3 — local-AI targets. Opt-in only — never included in DEFAULT_TARGETS.
   // Auto-included by the orchestrator when the user has answered the local-AI
   // wizard questions; selectable explicitly via --targets / EMBEDIQ_OUTPUT_TARGETS.
   CONTINUE_DEV = 'continue-dev',
   AIDER = 'aider',
   ZED_AI = 'zed-ai',
   OLLAMA = 'ollama',
-  // v3.3 / 6L — HIPAA-aware RAG scaffold. Auto-included when the user picks
+  // v3.3 — HIPAA-aware RAG scaffold. Auto-included when the user picks
   // healthcare industry AND opts into local AI. Generates a small runnable
   // RAG application under rag/, not just config files.
   RAG_SCAFFOLD = 'rag-scaffold',
-  // v3.3 / 6M — Local router with confidence-based escalation. Auto-included
+  // v3.3 — Local router with confidence-based escalation. Auto-included
   // when the user opts into the router (TECH_019). Generates a runnable
   // Express dispatch service under router/ that routes simple tasks to
   // local Ollama and escalates complex tasks (or low-confidence answers)
   // to a hosted LLM after optional PHI redaction.
   LOCAL_ROUTER = 'local-router',
-  // v4.0 / 8B — OSCAL Component Definition export. Opt-in only (never
+  // v4.0 — OSCAL Component Definition export. Opt-in only (never
   // auto-included so existing goldens stay byte-identical). When selected,
   // a post-pass step in the orchestrator emits
   // `.embediq/oscal/component-definition.json` describing which compliance
@@ -41,7 +41,7 @@ export enum TargetFormat {
   // Drata, Vanta, FedRAMP-style audit pipelines, and any OSCAL-aware
   // compliance platform.
   OSCAL_COMPONENT = 'oscal-component',
-  // v4.0 / 8C — OSCAL System Security Plan (SSP) FRAGMENT export. Opt-in
+  // v4.0 — OSCAL System Security Plan (SSP) FRAGMENT export. Opt-in
   // only. When selected, a post-pass step emits
   // `.embediq/oscal/ssp-fragment.json` — the control-implementation +
   // harness-component sections of a full SSP. NOT a complete SSP: the
@@ -51,7 +51,7 @@ export enum TargetFormat {
   // with `document-completion-status=fragment` so audit pipelines know
   // it's not a standalone artifact.
   OSCAL_SSP_FRAGMENT = 'oscal-ssp-fragment',
-  // v4.0 / 8D — CycloneDX-ML AI Bill of Materials. Opt-in only. When
+  // v4.0 — CycloneDX-ML AI Bill of Materials. Opt-in only. When
   // selected, a post-pass step emits `.embediq/cyclonedx/aibom.json`
   // enumerating every AI model, agent, and service the generated
   // harness invokes (Ollama local models, hosted APIs like Anthropic
@@ -61,7 +61,7 @@ export enum TargetFormat {
   // Procurement-relevant — EO 14110 and emerging FedRAMP guidance
   // expect AI/ML BOMs as part of supply-chain disclosure.
   CYCLONEDX_AIBOM = 'cyclonedx-aibom',
-  // v4.0 / 8E — Per-file provenance trace. Opt-in only. When selected,
+  // v4.0 — Per-file provenance trace. Opt-in only. When selected,
   // a post-pass step emits `.embediq/provenance/manifest.json` with one
   // entry per generated file: authoritative generator attribution
   // (which `ConfigGenerator` produced the file) + heuristic driver
@@ -69,7 +69,7 @@ export enum TargetFormat {
   // frameworks caused the generator to emit it). Auditor-facing
   // "why is this file present?" answer-key. The trace itself is always
   // last in the post-pass chain so its manifest can include every
-  // other governance output (8B, 8C, 8D).
+  // other governance output (the v4.0 governance phases).
   PROVENANCE = 'provenance',
 }
 

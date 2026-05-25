@@ -1,7 +1,7 @@
 #!/usr/bin/env -S npx tsx
 /**
  * verify-audit-log — offline integrity check for an EmbedIQ
- * tamper-evident audit log (v4.0 / 8F).
+ * tamper-evident audit log (v4.0).
  *
  * Usage:
  *   npm run verify-audit-log -- --input <path/to/audit.jsonl>

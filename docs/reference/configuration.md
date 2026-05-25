@@ -91,6 +91,19 @@ See [operator-guide/session-backends.md](../operator-guide/session-backends.md).
 
 Custom adapters follow the same convention: `EMBEDIQ_COMPLIANCE_SECRET_<ADAPTER_ID_UPPERCASED>`.
 
+## v4.0 governance outputs
+
+| Env var | Default | Type | Purpose |
+|---|---|---|---|
+| `EMBEDIQ_AUDIT_CHAIN_ENABLED` | `false` | boolean | v4.0. When `true` and `EMBEDIQ_AUDIT_LOG` is also set, every audit entry carries a SHA-256 `prevHash` linking it to its predecessor (RFC-6962-pattern linked log). Verify with `npm run verify-audit-log -- --input <path>`. Mixing chain-mode + plain-JSONL entries against the same file produces a broken chain — rotate the file when switching modes. |
+| `EMBEDIQ_OSCAL_SSP_PROFILE_HREF` | placeholder | string | v4.0. Stamped into the generated SSP fragment's `import-profile.href`. Operators set this to the operator-owned reference (relative path / URL / `#<uuid>`) so audit-pipeline reviewers can resolve the profile this SSP claims compliance against. |
+| `EMBEDIQ_OSCAL_SSP_SYSTEM_NAME` | placeholder | string | v4.0. Stamped into `system-characteristics.system-name` + the SSP's metadata title. Operators set this to the authoritative system name from their authorization paperwork. |
+| `EMBEDIQ_OSCAL_SSP_SENSITIVITY` | `fips-199-moderate` | enum | v4.0. FIPS-199 categorization for the system. Valid values: `fips-199-low`, `fips-199-moderate`, `fips-199-high`. Unknown values silently fall back to the default. |
+
+See `docs/operator-guide/audit-chain.md` for the chain-mode threat
+model and `docs/extension-guide/exporting-oscal-ssp-fragments.md` for
+the SSP fragment's operator-completion checklist.
+
 See [user-guide/08-autopilot.md](../user-guide/08-autopilot.md) and
 [user-guide/11-compliance-webhooks.md](../user-guide/11-compliance-webhooks.md).
 

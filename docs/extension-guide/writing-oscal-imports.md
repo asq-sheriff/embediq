@@ -4,7 +4,7 @@
 
 OSCAL — NIST's [Open Security Controls Assessment Language](https://pages.nist.gov/OSCAL/) — is the machine-readable interchange format for security-control catalogs (NIST SP 800-53, SSDF / SP 800-218, SP 800-171, etc.) and profile-tailored baselines (FedRAMP Low / Moderate / High). EmbedIQ can import OSCAL catalogs directly so the control identity, version, and inventory carried by a `ComplianceFrameworkDef` come from the standards body — not from hand-coded copies in the codebase.
 
-This page covers the v4.0 / 8A surface: catalog import. Component-definition export (8B), SSP-fragment export (8C), and AIBOM (8D) are later phases.
+This page covers the v4.0 surface: catalog import. Component-definition export, SSP-fragment export, and AIBOM are later phases.
 
 ## What you get from an OSCAL import
 
@@ -146,7 +146,7 @@ This is exactly how operators know when they've pointed the resolver at the wron
 
 ### Supported profile features
 
-8A supports the realistic subset operators hit when importing FedRAMP / agency baselines:
+The current v4.0 implementation supports the realistic subset operators hit when importing FedRAMP / agency baselines:
 
 | Profile feature | Status |
 |---|---|
@@ -221,14 +221,14 @@ that silently breaks compatibility with real NIST data fails CI.
 Refreshing the slice when NIST publishes catalog updates is documented
 in [`tests/fixtures/oscal/README.md`](../../tests/fixtures/oscal/README.md).
 
-## What's not in 8A
+## What's not in this first v4.0 cut
 
 These ship in later v4.0 phases:
 
-- **Profile import** (catalogs tailored to a baseline — FedRAMP Low / Moderate / High). The `profile.ts` module is reserved for this; 8A only handles raw catalogs.
-- **Component-definition export** (8B) — the inverse direction, emitting OSCAL JSON that describes how EmbedIQ's generated harness implements the controls.
-- **SSP-fragment export** (8C) — per-engagement System Security Plan fragments suitable for FedRAMP-style audit pipelines.
-- **AIBOM** (8D) — separate from OSCAL; uses CycloneDX ML-BOM format.
+- **Profile import** (catalogs tailored to a baseline — FedRAMP Low / Moderate / High). The `profile.ts` module is reserved for this; the current cut only handles raw catalogs.
+- **Component-definition export** — the inverse direction, emitting OSCAL JSON that describes how EmbedIQ's generated harness implements the controls.
+- **SSP-fragment export** — per-engagement System Security Plan fragments suitable for FedRAMP-style audit pipelines.
+- **AIBOM** — separate from OSCAL; uses CycloneDX ML-BOM format.
 
 ## Inspecting the flat control list
 

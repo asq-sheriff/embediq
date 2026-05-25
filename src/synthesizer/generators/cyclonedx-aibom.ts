@@ -2,10 +2,10 @@ import { buildAibom, serializeAibom } from '../../governance/cyclonedx/index.js'
 import type { SetupConfig, GeneratedFile } from '../../types/index.js';
 
 /**
- * v4.0 / 8D — CycloneDX-ML AI Bill of Materials emitter.
+ * v4.0 — CycloneDX-ML AI Bill of Materials emitter.
  *
  * Post-pass step (not a parallel `ConfigGenerator`) — same pattern as
- * 8B/8C. Opt-in via `TargetFormat.CYCLONEDX_AIBOM`; existing goldens
+ * the v4.0 governance outputs. Opt-in via `TargetFormat.CYCLONEDX_AIBOM`; existing goldens
  * stay byte-identical.
  *
  * Output: `.embediq/cyclonedx/aibom.json`. Conforms to CycloneDX 1.6

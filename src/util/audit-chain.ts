@@ -6,7 +6,7 @@ import {
 } from 'node:fs';
 
 /**
- * v4.0 / 8F — Tamper-evident audit chain.
+ * v4.0 — Tamper-evident audit chain.
  *
  * Linked-log pattern (inspired by RFC 6962 Certificate Transparency).
  * Each appended entry carries `prevHash` — the SHA-256 of the previous
@@ -180,7 +180,7 @@ export function readLastEntryHash(filePath: string): string {
  * file's last entry (or genesis when empty). Single-writer assumption
  * — concurrent processes appending to the same file will produce a
  * broken chain. Operators who need multi-writer audit should run a
- * single audit-ingester process (out of scope for 8F).
+ * single audit-ingester process (out of scope for this iteration).
  */
 export function appendChainedEntry(
   filePath: string,

@@ -1,12 +1,12 @@
 /**
- * v4.0 / 8E — Provenance Trace types.
+ * v4.0 — Provenance Trace types.
  *
  * Provenance answers the auditor question "why is this file in the
  * generated harness?" with a structured per-file explanation that
  * combines:
  *
  *   - **Authoritative generator attribution** — which `ConfigGenerator`
- *     emitted the file (or which post-pass step, for 8B/8C/8D/8E).
+ *     emitted the file (or which post-pass step, for the v4.0 governance outputs).
  *     Recorded by the orchestrator as files flow through the parallel
  *     batch; not inferred.
  *
@@ -83,7 +83,7 @@ export interface ProvenanceDriver {
 export interface ProvenanceMethodology {
   /** Generator attribution is always authoritative — recorded by the orchestrator. */
   generatorAttribution: 'authoritative';
-  /** Driver attribution is heuristic in v4.0 / 8E; per-generator self-declaration is reserved for a follow-up. */
+  /** Driver attribution is heuristic in v4.0; per-generator self-declaration is reserved for a follow-up. */
   driverInference: 'heuristic';
   /** Explanatory text included in the document so auditors don't misread the trace. */
   note: string;

@@ -4,7 +4,7 @@ import type { Subscriber } from '../subscriber.js';
 /**
  * Point-in-time snapshot of aggregate counters. Returned by
  * `MetricsCollector.getSnapshot()` and intended for later consumption by
- * the evaluation framework (6D) and optional metrics export endpoints.
+ * the evaluation framework and optional metrics export endpoints.
  */
 export interface MetricsSnapshot {
   sessionsStarted: number;

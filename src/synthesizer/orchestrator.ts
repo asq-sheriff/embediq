@@ -60,17 +60,17 @@ export class SynthesizerOrchestrator {
       new CopilotInstructionsGenerator(),
       new GeminiMdGenerator(),
       new WindsurfRulesGenerator(),
-      // v3.3 / 6K — local-AI targets. Auto-included when profile.localAiEnabled
+      // v3.3 — local-AI targets. Auto-included when profile.localAiEnabled
       // is true; explicit selection via --targets / EMBEDIQ_OUTPUT_TARGETS also works.
       new ContinueDevGenerator(),
       new AiderGenerator(),
       new ZedAiGenerator(),
       new OllamaSetupGenerator(),
-      // v3.3 / 6L — RAG scaffold (industry-agnostic; FHIR-aware chunker
+      // v3.3 — RAG scaffold (industry-agnostic; FHIR-aware chunker
       // for healthcare, plain-text for others; per-framework compliance
       // rules from profile.complianceFrameworks).
       new RagScaffoldGenerator(),
-      // v3.3 / 6M — Local router with confidence escalation. Auto-included
+      // v3.3 — Local router with confidence escalation. Auto-included
       // when profile.routerEnabled is true. Healthcare profiles add a
       // PHI redactor; profiles that opt in to confidence escalation get
       // a self-evaluation module wired into the dispatch path.
@@ -92,7 +92,7 @@ export class SynthesizerOrchestrator {
         ? new Set<TargetFormat>(config.targets)
         : new Set<TargetFormat>(DEFAULT_TARGETS);
 
-      // v3.3 / 6K — auto-include local-AI targets when the profile says so.
+      // v3.3 — auto-include local-AI targets when the profile says so.
       // The user opted into local AI via the wizard (TECH_013); honor that
       // regardless of the rest of the target set. Per-IDE gating happens
       // through profile.ideIntegrations.
@@ -102,14 +102,14 @@ export class SynthesizerOrchestrator {
         if (ides.includes('continue-dev')) targets.add(TargetFormat.CONTINUE_DEV);
         if (ides.includes('aider')) targets.add(TargetFormat.AIDER);
         if (ides.includes('zed-ai')) targets.add(TargetFormat.ZED_AI);
-        // v3.3 / 6L — RAG scaffold auto-includes for every local-AI user.
+        // v3.3 — RAG scaffold auto-includes for every local-AI user.
         // Industry-aware content (FHIR chunker for healthcare; plain-text
         // otherwise) plus per-framework compliance rules are decided
         // inside the generator, not at the target-selection layer.
         targets.add(TargetFormat.RAG_SCAFFOLD);
       }
 
-      // v3.3 / 6M — Local router auto-includes when the user opted into the
+      // v3.3 — Local router auto-includes when the user opted into the
       // hybrid-dispatch service via TECH_019. Independent of localAiEnabled
       // because the router is the integration point — though in practice the
       // wizard only surfaces TECH_019 once TECH_013 is yes.
@@ -141,7 +141,7 @@ export class SynthesizerOrchestrator {
       // Run all generators in parallel — each is pure (reads config, returns files).
       // Emit file:generated per file as each generator completes so subscribers
       // see progress while others are still running.
-      // v4.0 / 8E — Track per-generator attribution so the provenance
+      // v4.0 — Track per-generator attribution so the provenance
       // trace can record authoritative generator/target for each file.
       // Safe to mutate from inside Promise callbacks because JavaScript's
       // microtask scheduler runs them sequentially.
@@ -184,16 +184,16 @@ export class SynthesizerOrchestrator {
         targetByPath.set(coworkerClaudeMd.relativePath, TargetFormat.CLAUDE);
       }
 
-      // v4.0 / 8B + 8C + 8D — governance-output post-pass. Opt-in only
+      // v4.0 + the v4.0 governance outputs — governance-output post-pass. Opt-in only
       // via the explicit OSCAL / CycloneDX targets; existing goldens
       // stay byte-identical. Run AFTER the parallel batch so each
       // document's artifact manifest names every file emitted in this
       // run. The version resolver is cached so multiple governance
       // outputs share one read.
       //
-      // Order matters: AIBOM (8D) describes the AI components, the
-      // OSCAL component-definition (8B) describes the product, and
-      // the OSCAL SSP fragment (8C) describes the deployment — each
+      // Order matters: AIBOM describes the AI components, the
+      // OSCAL component-definition describes the product, and
+      // the OSCAL SSP fragment describes the deployment — each
       // later step's manifest includes the earlier files.
       const needsEmbediqVersion = targets.has(TargetFormat.OSCAL_COMPONENT)
         || targets.has(TargetFormat.OSCAL_SSP_FRAGMENT)
@@ -234,9 +234,9 @@ export class SynthesizerOrchestrator {
         });
       }
 
-      // v4.0 / 8E — Provenance trace fires LAST so its manifest covers
+      // v4.0 — Provenance trace fires LAST so its manifest covers
       // every other output (regular generators + coworker overlay +
-      // 8B + 8C + 8D). The trace records itself too: a placeholder
+      // the v4.0 governance outputs). The trace records itself too: a placeholder
       // manifest entry is added to the file list passed to the builder
       // before the real content is computed, so the document includes
       // its own row alongside every other file.

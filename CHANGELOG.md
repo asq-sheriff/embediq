@@ -9,6 +9,154 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.0] — Enterprise AI Governance Foundation
+
+Shipped 2026-05-25 as seven discrete phases (all seven v4.0 governance phases) on top
+of v3.7. Together they form the complete federal-procurement
+governance suite: OSCAL catalog/profile import on the front end,
+OSCAL component-definition + SSP fragment + CycloneDX-ML AIBOM +
+per-file provenance trace on the back end, RFC-6962-pattern
+tamper-evident audit chain underneath. NIST AI RMF + AI 600-1
+GenAI Profile available as a composable domain pack.
+
+All new output targets are **opt-in only** — added to
+`ALL_TARGETS` but not `DEFAULT_TARGETS`, so existing goldens
+regenerate byte-identically.
+
+### Added — OSCAL catalog + profile import
+
+- **`src/governance/oscal/loader.ts`** —
+  `readOscalCatalog()`, `oscalCatalogToFramework()`,
+  `flattenControls()`, `slugifyTitle()`, `OscalLoadError`.
+  Hand-rolled minimal OSCAL types so EmbedIQ stays JVM-free for
+  governance imports.
+- **`src/governance/oscal/profile.ts`** —
+  `readOscalProfile()`, `resolveOscalProfile()`,
+  `oscalProfileToFramework()`. Operator-supplied `catalogPaths`
+  map (UUID- or href-keyed). No network fetch, no `rlinks`
+  chasing — offline-only by design.
+- **`DomainPackRegistry.loadFromOscalCatalog()`** /
+  **`.loadFromOscalProfile()`** / **`.composeFromPacks()`** — the
+  entry points operators use to feed NIST OSCAL content + their
+  industry pack into the wizard.
+- **`src/domain-packs/composer.ts`** — `composePacks()` with the
+  same first-wins-with-warnings semantics as `composeSkills()`.
+- Vendored real-world fixtures:
+  `tests/fixtures/oscal/nist-800-53-rev5-ir-slice.json` (verbatim
+  NIST 800-53 Rev 5 IR family slice) +
+  `nist-800-53-rev5-low-baseline-profile.json` (verbatim
+  FedRAMP-pattern LOW baseline). CI-gated via round-trip tests.
+
+### Added — OSCAL Component Definition export
+
+- **`TargetFormat.OSCAL_COMPONENT`** + post-pass emitter at
+  `src/synthesizer/generators/oscal-component.ts`. Output:
+  `.embediq/oscal/component-definition.json` — valid OSCAL 1.1.2.
+  Component-level props carry the full artifact manifest;
+  control-implementations[] enumerates active compliance
+  frameworks. Suitable for Drata / Vanta / FedRAMP 20x ingestion.
+
+### Added — OSCAL SSP Fragment export
+
+- **`TargetFormat.OSCAL_SSP_FRAGMENT`** + post-pass emitter.
+  Output: `.embediq/oscal/ssp-fragment.json` — explicitly marked
+  `document-completion-status=fragment` so audit pipelines know
+  the document is not standalone.
+- Operator overrides via env vars (avoid hand-editing the JSON):
+  `EMBEDIQ_OSCAL_SSP_PROFILE_HREF`, `EMBEDIQ_OSCAL_SSP_SYSTEM_NAME`,
+  `EMBEDIQ_OSCAL_SSP_SENSITIVITY` (fips-199-low|moderate|high).
+
+### Added — CycloneDX-ML AIBOM export
+
+- **`TargetFormat.CYCLONEDX_AIBOM`** + post-pass emitter at
+  `src/governance/cyclonedx/`. Output:
+  `.embediq/cyclonedx/aibom.json` — valid CycloneDX 1.6 with
+  ML-BOM extensions enumerating every AI model, agent, and
+  service the harness invokes (Ollama, hosted APIs, IDE agents,
+  local-router). `dependencies[]` records the harness depends
+  on every emitted component — Dependency-Track / OSV-Scanner
+  walk this directly. EO 14110 / FedRAMP supply-chain disclosure
+  aligned.
+
+### Added — Per-file provenance trace
+
+- **`TargetFormat.PROVENANCE`** + post-pass emitter at
+  `src/governance/provenance/`. Output:
+  `.embediq/provenance/manifest.json` — one entry per generated
+  file combining authoritative generator + target attribution
+  (recorded by the orchestrator) with heuristic driver inference
+  from a rule catalog (`driver-heuristics.ts`).
+- The trace records itself; runs LAST in the post-pass chain so
+  the manifest covers every other governance output.
+- `methodology.note` block surfaces the authoritative-vs-heuristic
+  distinction so auditors don't over-read the trace.
+
+### Added — Tamper-evident audit chain
+
+- **`EMBEDIQ_AUDIT_CHAIN_ENABLED=true`** opt-in env var. When set,
+  every entry in `EMBEDIQ_AUDIT_LOG` carries a SHA-256 `prevHash`
+  linking it to its predecessor (or to a deterministic genesis
+  hash for the first entry). Linked-log pattern inspired by RFC
+  6962 Certificate Transparency.
+- **`src/util/audit-chain.ts`** — pure primitives (`hashEntry`,
+  `canonicalize`, `verifyAuditChain`, `appendChainedEntry`,
+  `readLastEntryHash`, `GENESIS_HASH`).
+- **`scripts/verify-audit-log.ts`** + npm script
+  `verify-audit-log` + Makefile target — offline integrity
+  verification. Exit 0 clean / 1 broken / 2 config error.
+- Threat-model boundary documented in
+  `docs/operator-guide/audit-chain.md` — defends single-entry
+  tampering + middle deletions + middle insertions; explicitly
+  does NOT defend end truncation, full re-chaining, or
+  multi-writer races (single-writer assumption).
+
+### Added — NIST AI RMF + AI 600-1 domain pack
+
+- **`src/domain-packs/built-in/nist-ai-rmf.ts`** — 6 wizard
+  questions (Govern / Map / Measure / Manage + AI 600-1 GenAI
+  Profile + external assessment); 2 compliance frameworks
+  (`nist-ai-rmf`, `nist-ai-600-1`); 4 priority categories; 4
+  path-scoped rule templates (one per RMF function); 4
+  validation checks. Zero DLP / ignore patterns — cross-industry
+  pack composes with industry packs for data-class DLP.
+- **`src/skills/built-in/nist-ai-rmf.ts`** — companion skill
+  (`nist-ai-rmf.full`).
+- **`REG_002`** now lists `nist-ai-rmf` as a recognized framework
+  option.
+
+### Changed
+
+- **`SynthesizerOrchestrator.generate()`** tracks
+  `generatorByPath` + `targetByPath` maps during the parallel
+  batch so the provenance trace can record authoritative attribution.
+  Records the maps for every post-pass output too (coworker
+  overlay, cyclonedx-aibom, oscal-component, oscal-ssp-fragment,
+  provenance-trace).
+- **`src/util/wizard-audit.ts`** routes through
+  `appendChainedEntry()` when chain mode is enabled; falls back
+  to plain JSONL otherwise.
+- **Makefile + package.json**: new `verify-audit-log` target /
+  script.
+
+### Compatibility
+
+- **No breaking changes.** Every new target is opt-in via
+  `--targets` / `EMBEDIQ_OUTPUT_TARGETS`; every new env var is
+  opt-in via `=true`. Existing goldens regenerate byte-identically
+  when no v4.0 targets are selected.
+- Mixing plain JSONL with chain-mode entries against the same
+  audit file produces a broken chain — operators rotate the file
+  when switching modes.
+
+### Test suite
+
+**+192 tests, +16 test files.** Full suite **1285 passing across
+89 files** (was 1093/73 at v3.7 commit point).
+
+Type-check clean except for the pre-existing `eng_manager`
+literal-vs-`UserRole` error from commit `3a0b719` (unrelated).
+docs-lint clean across the markdown surface.
+
 ## [3.7.0] — Drop-in enterprise wins
 
 Three additive wins surfaced during the v4.0 restructure conversation,

@@ -121,7 +121,7 @@ export class ProfileBuilder {
   }
 
   /**
-   * v3.3 / 6K — map the local-AI answer set onto the optional UserProfile
+   * v3.3 — map the local-AI answer set onto the optional UserProfile
    * fields. Leaves all four fields undefined when the user did not opt in
    * (TECH_013 false), preserving golden-config byte-identity for the
    * existing fixtures.

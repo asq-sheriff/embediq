@@ -3,7 +3,7 @@ import type { ComplianceFrameworkDef } from '../../domain-packs/index.js';
 import type { GeneratedFile, UserProfile } from '../../types/index.js';
 
 /**
- * OSCAL Component Definition document — the output side of 8B. Describes
+ * OSCAL Component Definition document — the output side of the OSCAL track. Describes
  * which controls the generated EmbedIQ harness implements, in the format
  * Drata / Vanta / FedRAMP-aware audit pipelines can ingest.
  *
@@ -102,7 +102,7 @@ export interface BuildComponentDefinitionInput {
  * valid OSCAL component-definition document. No I/O — the wrapper
  * generator handles persistence.
  *
- * Scope (8B MVP):
+ * Scope (MVP):
  *   - One `components[]` entry representing the generated harness.
  *   - One `control-implementations[]` entry per `complianceFrameworks`
  *     entry on the resolved pack.

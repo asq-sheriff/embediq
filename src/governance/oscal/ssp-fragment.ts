@@ -193,7 +193,7 @@ export function buildSspFragment(input: BuildSspFragmentInput): OscalSspDocument
   };
 
   // One implemented-requirement per framework. Per-control breakdown
-  // is reserved for a follow-up iteration (same scope decision as 8B —
+  // is reserved for a follow-up iteration (same scope decision as the component-definition —
   // the framework-level claim is enough for first-cut audit ingestion).
   const implementedRequirements: OscalSspImplementedRequirement[] = input.frameworks.map((f) => ({
     uuid: uuid(),

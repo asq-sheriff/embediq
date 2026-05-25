@@ -5,10 +5,10 @@ import {
 import type { SetupConfig, GeneratedFile } from '../../types/index.js';
 
 /**
- * v4.0 / 8C — OSCAL System Security Plan (SSP) FRAGMENT emitter.
+ * v4.0 — OSCAL System Security Plan (SSP) FRAGMENT emitter.
  *
  * Post-pass step (not a parallel `ConfigGenerator`) — same pattern as
- * 8B's component-definition generator. Opt-in via
+ * the component-definition generator. Opt-in via
  * `TargetFormat.OSCAL_SSP_FRAGMENT`; existing goldens stay
  * byte-identical.
  *

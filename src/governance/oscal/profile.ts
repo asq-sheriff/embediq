@@ -70,7 +70,7 @@ export interface ResolveProfileOptions {
    *
    * Operators control catalog locations explicitly; the resolver
    * never fetches over the network or follows `rlinks`. This keeps
-   * v4.0 / 8A profile import offline-safe and audit-friendly.
+   * v4.0 profile import offline-safe and audit-friendly.
    */
   catalogPaths: Record<string, string>;
 }

@@ -1,7 +1,7 @@
 import type { Skill } from '../skill.js';
 
 /**
- * v3.3 / 6L — Healthcare RAG pipeline skill (family member).
+ * v3.3 — Healthcare RAG pipeline skill (family member).
  *
  * The Option-B design (industry-agnostic RAG scaffold with industry-
  * aware content) means the path-scoped rule file and the runbook are

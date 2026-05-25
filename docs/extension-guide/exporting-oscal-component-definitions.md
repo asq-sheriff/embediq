@@ -1,10 +1,10 @@
 <!-- audience: public -->
 
-# Exporting OSCAL Component Definitions (v4.0 / 8B)
+# Exporting OSCAL Component Definitions (v4.0)
 
 OSCAL [Component Definition](https://pages.nist.gov/OSCAL-Reference/models/v1.1.2/component-definition/json-outline/) documents are how a product describes — in NIST's machine-readable format — which security controls it implements. EmbedIQ emits one per generation when the operator opts into the `oscal-component` output target, so compliance platforms (Drata, Vanta, OSCAL-aware FedRAMP audit pipelines) can ingest the harness as evidence directly.
 
-8A handled the input side: importing NIST catalogs and FedRAMP-style profiles into the domain-pack pipeline. 8B is the output direction.
+v4.0's OSCAL catalog and profile import handles the input side. This page covers the output direction — emitting a component-definition that describes which controls the generated harness implements.
 
 ## Opting in
 
@@ -99,9 +99,9 @@ The document conforms to the OSCAL Component Definition v1.1.2 JSON schema, so a
 - **FedRAMP 20x pipelines** — when paired with an OSCAL profile import on the input side (see [`writing-oscal-imports.md`](writing-oscal-imports.md)), the round-trip produces a complete artifact set: profile → tailored framework → generated harness → component-definition citing the same framework. Feed both into the FedRAMP package and the audit trail is OSCAL-native end-to-end.
 - **OSCAL-aware oscal-cli / Compliance Trestle** — both tools can validate the JSON against the published schema.
 
-## What's NOT in 8B
+## What's NOT in the initial component-definition
 
-For the 8B first cut, `implemented-requirements[]` is left as an empty array on each control-implementation entry. The document surfaces *which frameworks* the harness intends to address, not *which specific control IDs* are implemented by which generated artifacts. That per-control mapping requires either:
+For this first cut, `implemented-requirements[]` is left as an empty array on each control-implementation entry. The document surfaces *which frameworks* the harness intends to address, not *which specific control IDs* are implemented by which generated artifacts. That per-control mapping requires either:
 
 - A static control-to-artifact mapping table EmbedIQ maintains per framework, or
 - Per-artifact OSCAL annotations that generators emit alongside their content.
