@@ -2,8 +2,10 @@
 
 # Architecture — question bank (Layer 1)
 
-The question bank is the static knowledge EmbedIQ ships. 77 questions
-across 7 dimensions, 40 of them gated by conditional branching.
+The question bank is the static knowledge EmbedIQ ships. **91 questions
+across 7 dimensions**, with conditional branching driving question
+visibility and an admin-vs-user operator distinction (`STRAT_000b`)
+that gates ~28 admin-only questions for non-admin operators.
 
 **Source**: [`src/bank/`](../../src/bank/) —
 `question-registry.ts` (static data), `question-bank.ts` (query
@@ -33,13 +35,23 @@ interface Question {
   id: string;                    // dimension-prefixed, e.g. STRAT_002
   dimension: Dimension;
   text: string;
-  helpText?: string;
+  helpText?: string;             // context shown to every user
+  purposeText?: string;          // admin-only "WHY WE ASK" panel — shown only when STRAT_000b === 'admin'
   type: QuestionType;            // single_choice | multi_choice | free_text | yes_no | scale
   options?: AnswerOption[];
   required: boolean;
   order: number;                 // intra-dimension ordering
   showConditions: Condition[];   // AND-joined
   tags: string[];                // drive priority analysis
+}
+
+interface AnswerOption {
+  key: string;
+  label: string;
+  description?: string;
+  relevantFor?: string[];        // option-level filtering by upstream answers,
+                                 //   e.g. `['TECH_001:python']` — option only
+                                 //   shows when TECH_001 contains 'python'
 }
 ```
 
@@ -104,7 +116,7 @@ question bank but feed the same `Map<string, Answer>` shape. See
 
 ## Performance
 
-The bank is small (74 + extension entries) and fully in-memory. All
+The bank is small (91 + extension entries) and fully in-memory. All
 queries are O(N) linear scans. No indexing is needed at this scale;
 if it ever does, it'll live in `QuestionBank` without changing the
 interface.

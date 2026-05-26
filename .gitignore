@@ -23,5 +23,9 @@ coverage/
 # Session backend runtime data (json-file backend default dir)
 .embediq/
 
+# Claude Code session lock files — runtime artifacts of the CLI tool,
+# not part of the project's own .claude/ tracked configuration.
+.claude/scheduled_tasks.lock
+
 # Evaluation run outputs (transient — N/M/K/T snapshots live in STATUS.md instead)
 reports/

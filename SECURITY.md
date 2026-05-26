@@ -24,9 +24,10 @@ minors are supported for 90 days after a new minor ships.
 
 | Version | Supported |
 |---|---|
-| 3.2.x   | ✅ |
-| 3.1.x   | ✅ (until 2026-07-21) |
-| ≤ 3.0.x | ❌ |
+| 4.0.x   | ✅ |
+| 3.7.x   | ✅ (until 2026-08-25) |
+| 3.6.x   | ✅ (until 2026-07-21) |
+| ≤ 3.5.x | ❌ |
 
 ## Security model at a glance
 
@@ -50,7 +51,7 @@ posture leans on three load-bearing design properties:
 | Threat | Mitigation |
 |---|---|
 | **Sensitive data leaked into generated config** (PHI, PCI, secrets) | `HooksGenerator` emits Python DLP scanners that run before every Claude Code tool call. Patterns come from the domain pack (e.g. MRN / ICD-10 / FHIR for healthcare, PAN / CVV / ABA for finance). Validator rejects generated output missing the expected DLP patterns for the active compliance framework. |
-| **Unauthorized access to the web wizard** | Pluggable auth via `EMBEDIQ_AUTH_STRATEGY` (Basic, OIDC, reverse-proxy header). Three-tier RBAC: `wizard-viewer` < `wizard-user` ≡ `wizard-contributor` < `wizard-admin` (legacy `wizard-user` preserved as a contributor-tier alias). Generation, session list, and session dump endpoints require `wizard-admin`. |
+| **Unauthorized access to the web wizard** | Pluggable auth via `EMBEDIQ_AUTH_STRATEGY` (Basic, OIDC, reverse-proxy header, demo). Three-tier RBAC: `wizard-viewer` < `wizard-user` ≡ `wizard-contributor` < `wizard-admin` (legacy `wizard-user` preserved as a contributor-tier alias). Generation, session list, and session dump endpoints require `wizard-admin`. The `demo` strategy is admin/user persona-switching for demo recordings — permissive at the middleware level, never for production. |
 | **Session hijack** | Server-side sessions are optional. When enabled, each session is bound to the authenticated user (when auth is on) or to a signed HTTP-only cookie token (`embediq_session_owner`, HMAC-signed with `EMBEDIQ_SESSION_COOKIE_SECRET`). Mismatched owners return 403. Optional AES-256-GCM payload encryption via `EMBEDIQ_SESSION_DATA_KEY`. |
 | **Forged answer attribution** | `SerializedAnswer.contributedBy` is stamped server-side from the request context on every `PATCH /api/sessions/:id`. Any `contributedBy` value in the request body is stripped. Compliance reviewers can prove who provided each answer. |
 | **Forged autopilot webhook** | Autopilot and compliance webhooks optionally require a shared secret via `EMBEDIQ_AUTOPILOT_WEBHOOK_SECRET`, validated against the `X-EmbedIQ-Autopilot-Secret` header. |
@@ -93,6 +94,8 @@ coverage report.
 - **Healthcare**: HIPAA, HITECH, 42 CFR Part 2
 - **Finance**: PCI-DSS, SOX, GLBA, AML/BSA, FINRA
 - **Education**: FERPA, COPPA, state student-privacy laws
+- **AI governance** (cross-industry): NIST AI RMF 1.0, NIST AI 600-1 GenAI Profile
+- **Federal** (via OSCAL ingestion): NIST 800-53 Rev 5, FedRAMP Low / Moderate / High baselines
 
 ## Dependency security
 
@@ -107,8 +110,14 @@ coverage report.
 
 - **Session payload encryption**: AES-256-GCM (Node `crypto` standard
   library). Key: 32 bytes, hex-encoded (64 hex chars), supplied via
-  `EMBEDIQ_SESSION_DATA_KEY`. Rotation requires a session-record
-  re-encrypt — no side-by-side key acceptance in v3.2.
+  `EMBEDIQ_SESSION_DATA_KEY`. Side-by-side key acceptance for zero-downtime
+  rotation: set `EMBEDIQ_SESSION_DATA_KEY_PREV` to the prior key; reads
+  accept both, writes use the current key (shipped v3.6.1).
+- **Audit log integrity (optional)**: RFC-6962-pattern hash chain via
+  `EMBEDIQ_AUDIT_CHAIN_ENABLED=true`. Each appended JSONL entry carries
+  `prevHash` (SHA-256 of the prior entry's canonicalized content);
+  tampering breaks the chain at the modified line. Offline verifier:
+  `make verify-audit-log INPUT=path/to/audit.jsonl` (exit codes 0 / 1 / 2).
 - **Owner-token cookies**: HMAC-SHA-256 over a URL-safe base64 random
   token. Key: 32 bytes, supplied via `EMBEDIQ_SESSION_COOKIE_SECRET`.
   Both current and previous keys may be supplied (`_PREV` suffix) for

@@ -55,12 +55,17 @@ const PRIVATE_PATH_PREFIXES: readonly string[] = [
   'docs/internal/',
   '.claude/',
   // Customer-named demo material and golden archetypes — kept private
-  // so the public repo doesn't carry the customer's name. The role
-  // archetypes that exercise the same surface generically (architect,
-  // developer, devops, etc.) are covered by the non-namespaced
-  // archetypes (consulting-engagement-default, healthcare-bpo-strict,
-  // etc.) that DO ship publicly.
-  'tests/fixtures/golden-configs/sagility-',
+  // so the public repo doesn't carry the customer's name. The role +
+  // stack archetypes that exercise the same surface generically are
+  // covered by the customer-neutral canonical archetypes
+  // (healthcare-bpo-web-developer, healthcare-bpo-web-pm,
+  // healthcare-bpo-microsoft-developer, healthcare-bpo-microsoft-pm,
+  // consulting-engagement-default, etc.) that DO ship publicly.
+  // Customer-specific demo *materials* (runbooks, day-in-life
+  // narratives, framing slides) under docs/showcase/sagility-demo/
+  // are private. Customer-specific golden-config *fixtures* are not
+  // allowed in the repo at all — anyone needing them regenerates from
+  // the canonical archetypes with a customer overlay.
   'docs/showcase/sagility-demo/',
 ];
 

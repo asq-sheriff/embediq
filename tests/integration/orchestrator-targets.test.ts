@@ -46,14 +46,17 @@ describe('SynthesizerOrchestrator — target filtering', () => {
     );
   });
 
-  it('emits only AGENTS.md when targets=[agents-md]', async () => {
+  it('emits AGENTS.md + SETUP.md when targets=[agents-md]', async () => {
+    // SETUP.md is unconditionally emitted alongside any agent-target output
+    // so users always receive install/activation instructions for the agents
+    // they actually selected.
     const files = await runOrchestrator({
       profile: buildProfile({ role: 'developer', languages: ['typescript'] }),
       targetDir: '/tmp/out',
       targets: [TargetFormat.AGENTS_MD],
     });
-    expect(files).toHaveLength(1);
-    expect(files[0].relativePath).toBe('AGENTS.md');
+    const paths = files.map((f) => f.relativePath).sort();
+    expect(paths).toEqual(['AGENTS.md', 'SETUP.md']);
   });
 
   it('emits all six target families when targets=ALL', async () => {
@@ -136,7 +139,7 @@ describe('SynthesizerOrchestrator — target filtering', () => {
       targets: [TargetFormat.AGENTS_MD],
     });
     expect(files.some((f) => f.relativePath === 'CLAUDE.md')).toBe(false);
-    expect(files).toHaveLength(1);
-    expect(files[0].relativePath).toBe('AGENTS.md');
+    const paths = files.map((f) => f.relativePath).sort();
+    expect(paths).toEqual(['AGENTS.md', 'SETUP.md']);
   });
 });

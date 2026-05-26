@@ -10,6 +10,8 @@ export interface RequestContext {
   userId?: string;
   /** Authenticated user display name */
   displayName?: string;
+  /** Authenticated user email — populated when the auth strategy surfaces it. */
+  userEmail?: string;
   /** Authenticated user roles */
   roles?: string[];
   /** Wizard session identifier spanning multiple requests */
@@ -18,6 +20,16 @@ export interface RequestContext {
   sessionStore?: SessionStore;
   /** Engagement identifier from EMBEDIQ_ENGAGEMENT_ID — undefined when unset */
   engagementId?: string;
+  /**
+   * Workstation identifier — populated from `X-Workstation-Id` or
+   * `X-Device-Id` headers (MDM-managed devices), or derived from the
+   * User-Agent when no managed identifier is present.
+   */
+  workstationId?: string;
+  /** Client User-Agent header (browser + OS). */
+  userAgent?: string;
+  /** Client IP address as seen by the server. */
+  ipAddress?: string;
   /** Request start time (high-resolution) */
   startedAt: number;
 }

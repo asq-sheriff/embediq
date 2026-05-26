@@ -49,6 +49,14 @@ export function createAuthMiddleware(strategy: AuthStrategy) {
       const result = await strategy.authenticate(req);
 
       if (!result.authenticated) {
+        // Demo strategy is permissive — let the request through unauthenticated
+        // so the UI can render the persona-picker. Role-gated routes still
+        // enforce via requireRole(); unauthenticated users hitting those will
+        // be rejected there.
+        if (strategy.name === 'demo') {
+          next();
+          return;
+        }
         if (strategy.name === 'basic') {
           res.setHeader('WWW-Authenticate', 'Basic realm="EmbedIQ"');
         }

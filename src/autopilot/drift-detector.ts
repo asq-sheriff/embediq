@@ -29,6 +29,7 @@ const MANAGED_TREES: readonly string[] = [
   'GEMINI.md',
   '.windsurfrules',
   '.mcp.json.template',
+  'SETUP.md',
 ];
 
 export type DriftStatus =

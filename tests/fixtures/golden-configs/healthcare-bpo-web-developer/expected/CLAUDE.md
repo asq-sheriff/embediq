@@ -42,11 +42,11 @@
 
 ## Your Role Focus
 
-- Architectural decisions live in ADRs — reference `.claude/rules/security.md` and any domain-specific rule files when proposing them
-- Cross-cutting concerns (auth, audit, observability) are the lead's ownership zone — review every PR that touches them
-- Coordinate code review across the team; agent teams (`.claude/agents/`) accelerate this when 3-5 parallel workstreams are active
-- Bridge product requirements and technical implementation: validate that each story has clear acceptance criteria, edge cases, and rollback plan
-- Technical-debt register: surface it in standups and roadmap discussions, not in a forgotten file
+- Build features following the conventions in `.claude/rules/<language>.md` for every language you touch
+- Tests-first: write the failing test before the implementation (per TDD enforcement when enabled)
+- Run the per-language build + test commands above before every commit
+- Keep PRs small and topical — one feature or refactor per branch
+- Reference path-scoped rules via `.claude/rules/*.md`; Claude auto-loads them by file pattern
 
 ## Additional Context
 

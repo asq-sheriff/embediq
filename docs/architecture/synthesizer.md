@@ -6,9 +6,14 @@ The synthesizer turns a `UserProfile` into the final configuration.
 It's the only layer that writes to disk or opens PRs. Everything
 upstream is data; everything downstream is output.
 
-**Source**: [`src/synthesizer/`](../../src/synthesizer/) — 17 generator
+**Source**: [`src/synthesizer/`](../../src/synthesizer/) — 28 generator
 files under `generators/`, plus the orchestrator, validator,
-stamper, target-format enum, and diff analyzer.
+stamper, target-format enum, and diff analyzer. The orchestrator
+runs the regular generators in a parallel batch, then performs a
+post-pass for the v4.0 governance outputs (which need cross-file
+knowledge — every governance output's manifest names every other
+file emitted in the run) and the per-agent `SETUP.md` install
+guide.
 
 ## `ConfigGenerator` — the interface
 
@@ -30,7 +35,9 @@ Every generator is **pure** — takes a `SetupConfig`, returns
 `GeneratedFile[]`. No I/O, no mutation, no event-bus emits. The
 orchestrator is the only piece with side effects.
 
-## The 17 generators
+## The 28 generators
+
+### Parallel batch (filtered by `config.targets` + role)
 
 | Generator | Target | Emits |
 |---|---|---|
@@ -51,6 +58,22 @@ orchestrator is the only piece with side effects.
 | CopilotInstructionsGenerator | `copilot` | `.github/copilot-instructions.md` + `.github/instructions/*.instructions.md` |
 | GeminiMdGenerator | `gemini` | `GEMINI.md` |
 | WindsurfRulesGenerator | `windsurf` | `.windsurfrules` |
+| ContinueDevGenerator | `continue-dev` | `.continue/config.json` |
+| AiderGenerator | `aider` | `.aider.conf.yml` + `.aiderignore` |
+| ZedAiGenerator | `zed-ai` | `.zed/settings.json` |
+| OllamaSetupGenerator | `ollama` | `OLLAMA_SETUP.md` |
+| RagScaffoldGenerator | `rag-scaffold` | `rag/` (runnable RAG starter) + RAG-specific `.claude/rules/rag-*.md` |
+| LocalRouterGenerator | `local-router` | `router/` (runnable Express dispatch) + optional PHI redactor + optional confidence-escalation module |
+
+### Post-pass (always or conditionally, after the batch)
+
+| Generator | Target | Emits | When |
+|---|---|---|---|
+| SetupInstructionsGenerator | `claude` | `SETUP.md` | Emits whenever ANY agent target is selected (claude / agents-md / cursor / copilot / gemini / windsurf). Content adapts to the selected agent set. |
+| `generateCycloneDxAibom` | `cyclonedx-aibom` | `.embediq/cyclonedx/aibom.json` | Opt-in via `--targets cyclonedx-aibom` |
+| `generateOscalComponentDefinition` | `oscal-component` | `.embediq/oscal/component-definition.json` | Opt-in via `--targets oscal-component` |
+| `generateOscalSspFragment` | `oscal-ssp-fragment` | `.embediq/oscal/ssp-fragment.json` | Opt-in via `--targets oscal-ssp-fragment` |
+| `generateProvenanceTrace` | `provenance` | `.embediq/provenance/manifest.json` | Opt-in via `--targets provenance` — fires LAST so the manifest covers every other output, including itself |
 
 Canonical path list per target: see
 [reference/generated-files.md](../reference/generated-files.md).
@@ -107,18 +130,36 @@ Evaluation mode skips the validator when Claude isn't a target
 
 ```ts
 enum TargetFormat {
+  // Hosted agents
   CLAUDE = 'claude',
   AGENTS_MD = 'agents-md',
   CURSOR = 'cursor',
   COPILOT = 'copilot',
   GEMINI = 'gemini',
   WINDSURF = 'windsurf',
+  // v3.3 local AI
+  CONTINUE_DEV = 'continue-dev',
+  AIDER = 'aider',
+  ZED_AI = 'zed-ai',
+  OLLAMA = 'ollama',
+  RAG_SCAFFOLD = 'rag-scaffold',
+  LOCAL_ROUTER = 'local-router',
+  // v4.0 governance (opt-in)
+  OSCAL_COMPONENT = 'oscal-component',
+  OSCAL_SSP_FRAGMENT = 'oscal-ssp-fragment',
+  CYCLONEDX_AIBOM = 'cyclonedx-aibom',
+  PROVENANCE = 'provenance',
 }
 ```
 
 `parseTargets(input)` normalizes comma/space-separated strings, the
 `all` alias, and case variations. `parseTargetsFromEnv()` reads
-`EMBEDIQ_OUTPUT_TARGETS`. Default = `[CLAUDE]`.
+`EMBEDIQ_OUTPUT_TARGETS`. The server also derives targets from the
+wizard's `STRAT_TARGETS` answer when neither the request body nor
+the env var specifies. Default = `DEFAULT_TARGETS` (Claude + the
+multi-agent set — explicitly excludes the v3.3 local-AI and v4.0
+governance targets so existing goldens regenerate byte-identically
+when those targets aren't requested).
 
 Each generator's `target` field is the single source of truth for
 filtering. Adding a new target is:

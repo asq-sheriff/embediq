@@ -16,6 +16,8 @@ synthesis pipeline.
 
 ## Target families
 
+### Hosted-agent targets
+
 | Target        | Files produced                                                                                 |
 | ------------- | ---------------------------------------------------------------------------------------------- |
 | `claude` (default) | `CLAUDE.md`, `.claude/settings.json`, `.claude/settings.local.json`, `.claude/rules/*`, `.claude/commands/*`, `.claude/agents/*`, `.claude/skills/*`, `.claude/hooks/*` (Python), `.claudeignore`, `.mcp.json.template`, `.claude/association_map.yaml`, `.claude/document_state.yaml` |
@@ -24,6 +26,32 @@ synthesis pipeline.
 | `copilot`     | `.github/copilot-instructions.md` + `.github/instructions/*.instructions.md` (glob-scoped via `applyTo`) |
 | `gemini`      | `GEMINI.md` — Gemini CLI / Antigravity project-context file                                    |
 | `windsurf`    | `.windsurfrules` — single plain-markdown rules file at the project root                        |
+
+`SETUP.md` auto-emits at the repo root whenever any hosted-agent target above is selected. Content adapts to the selected agent set: install + activation + verification steps per agent.
+
+### Local-AI targets (v3.3)
+
+| Target          | Files produced                                                                                 |
+| --------------- | ---------------------------------------------------------------------------------------------- |
+| `continue-dev`  | `.continue/config.json` — Continue.dev (VS Code / JetBrains extension)                         |
+| `aider`         | `.aider.conf.yml` + `.aiderignore` — Aider terminal pair-programmer                            |
+| `zed-ai`        | `.zed/settings.json` — Zed AI                                                                  |
+| `ollama`        | `OLLAMA_SETUP.md` — Ollama install + model-pull runbook                                        |
+| `rag-scaffold`  | Runnable `rag/` starter (chunker, embedder, SQLite-VSS store, audit, CLI) + RAG-specific compliance rules under `.claude/rules/rag-*.md`. FHIR-aware chunker for healthcare. |
+| `local-router`  | Runnable `router/` Express dispatch service. Healthcare profiles add `router/src/redactor.ts`; opt-in confidence escalation adds `router/src/confidence.ts`. |
+
+These are opt-in via `EMBEDIQ_OUTPUT_TARGETS` / `--targets`. Auto-included when the wizard's local-AI branch (`TECH_013`) is opted in.
+
+### v4.0 governance targets (opt-in)
+
+| Target               | File produced                                          |
+| -------------------- | ------------------------------------------------------ |
+| `cyclonedx-aibom`    | `.embediq/cyclonedx/aibom.json` — CycloneDX-ML AIBOM   |
+| `oscal-component`    | `.embediq/oscal/component-definition.json`             |
+| `oscal-ssp-fragment` | `.embediq/oscal/ssp-fragment.json`                     |
+| `provenance`         | `.embediq/provenance/manifest.json` — per-file authoritative generator attribution + heuristic driver inference. Fires last so its manifest covers every other output. |
+
+Each is opt-in via `--targets`. Existing goldens regenerate byte-identically when these targets aren't requested.
 
 ## Enable additional targets
 
@@ -54,8 +82,15 @@ curl -X POST http://localhost:3000/api/generate \
 ```
 
 Valid tokens: `claude`, `agents-md`, `cursor`, `copilot`, `gemini`,
-`windsurf`, or `all` (expands to every known target). Tokens are
+`windsurf`, `continue-dev`, `aider`, `zed-ai`, `ollama`, `rag-scaffold`,
+`local-router`, `cyclonedx-aibom`, `oscal-component`, `oscal-ssp-fragment`,
+`provenance`, or `all` (expands to every known target). Tokens are
 case-insensitive and may be separated by commas or whitespace.
+
+The web wizard also asks the user explicitly via `STRAT_TARGETS` (agent
+selection question), and the server derives `config.targets` from the
+answer when neither the request body nor `EMBEDIQ_OUTPUT_TARGETS` provides
+an explicit value.
 
 ## `AGENTS.md` — universal format
 

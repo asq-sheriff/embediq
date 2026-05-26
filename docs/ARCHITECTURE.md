@@ -45,7 +45,7 @@ The system serves two interfaces (CLI and web) from a single shared core, adapts
 │  ┌─────────────────────────────────────────────────────────────┐   │
 │  │              Layer 1: Universal Question Bank               │   │
 │  │                                                             │   │
-│  │  74 questions · 7 dimensions · 40 with branching conditions │   │
+│  │  91 questions · 7 dimensions · admin-vs-user gating         │   │
 │  │  question-registry.ts → QuestionBank                        │   │
 │  └─────────────────────────┬───────────────────────────────────┘   │
 │                             ▼                                       │
@@ -59,8 +59,8 @@ The system serves two interfaces (CLI and web) from a single shared core, adapts
 │  ┌─────────────────────────────────────────────────────────────┐   │
 │  │         Layer 3: Unified Specification Synthesizer           │   │
 │  │                                                             │   │
-│  │  SynthesizerOrchestrator → 12 ConfigGenerators              │   │
-│  │  → FileOutputManager → 15-40 config files                   │   │
+│  │  SynthesizerOrchestrator → 28 generators across 16 targets  │   │
+│  │  → FileOutputManager → 15-40 config files + SETUP.md        │   │
 │  └─────────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────────┘
 ```
@@ -90,7 +90,7 @@ embediq/
     ├── types/
     │   └── index.ts              # All interfaces, enums, type aliases
     ├── bank/
-    │   ├── question-registry.ts  # 74 question definitions (1,177 lines)
+    │   ├── question-registry.ts  # 91 question definitions
     │   ├── question-bank.ts      # Query/filter interface
     │   └── profile-templates.ts  # Organizational template loader
     ├── engine/
@@ -100,7 +100,7 @@ embediq/
     │   ├── priority-analyzer.ts  # Tag-weight priority derivation
     │   └── dimension-tracker.ts  # Progress tracking per dimension
     ├── synthesizer/
-    │   ├── orchestrator.ts       # Coordinates 23 generators (12 Claude + 5 multi-agent + 4 local-AI + 1 RAG scaffold + 1 local-router) + validation
+    │   ├── orchestrator.ts       # Coordinates 28 generators across 16 targets (12 Claude + 5 multi-agent + 4 local-AI + 1 RAG scaffold + 1 local-router + 4 v4.0 governance post-pass + 1 SETUP.md) + validation
     │   ├── generator.ts          # ConfigGenerator interface
     │   ├── output-validator.ts   # Post-generation compliance verification
     │   ├── generation-header.ts  # Version stamps for generated files
@@ -164,13 +164,23 @@ interface Question {
   id: string;               // Unique ID with dimension prefix (e.g., "STRAT_001")
   dimension: Dimension;      // Which of 7 dimensions this belongs to
   text: string;             // The question shown to the user
-  helpText?: string;        // Optional clarification text
+  helpText?: string;        // Context shown to every user
+  purposeText?: string;     // Admin-only "WHY WE ASK" panel — rendered only when STRAT_000b === 'admin'
   type: QuestionType;       // FREE_TEXT | SINGLE_CHOICE | MULTI_CHOICE | SCALE | YES_NO
   options?: AnswerOption[];  // Predefined choices (for choice/scale types)
   required: boolean;        // Must be answered to proceed
   order: number;            // Sort order within dimension
   showConditions: Condition[]; // AND-joined predicates — all must be true to show
   tags: string[];           // Semantic tags for priority analysis
+}
+
+interface AnswerOption {
+  key: string;
+  label: string;
+  description?: string;
+  relevantFor?: string[];   // Option-level filtering by upstream answers
+                            //   (e.g., ['TECH_001:python'] — option only
+                            //    shows when TECH_001 contains 'python')
 }
 ```
 
@@ -188,7 +198,7 @@ The taxonomy is derived from Praglogic's Adaptive Architecture Specifications' c
 | 6 | Financial Constraints | 5 | Budget, model routing, cost optimization |
 | 7 | Innovation & Future | 7 | Plugins, doc tracking, memory, agents, commands |
 
-**Total**: 74 questions. **With branching**: 40 (56%) have conditional show logic.
+**Total**: 91 questions. Most have conditional show logic, including the admin-vs-user operator gate (`STRAT_000b`) that hides ~28 admin-only questions for non-admin operators.
 
 ### Conditional Branching Model
 
@@ -253,10 +263,10 @@ FIN_002 (model routing?)
 
 `QuestionBank` wraps the static registry and provides query methods:
 
-- `getAll()` — All 74 questions
+- `getAll()` — All 91 questions
 - `getById(id)` — Lookup by question ID
 - `getByDimension(dim)` — All questions in a dimension, sorted by order
-- `getVisibleQuestions(dim, answers)` — Questions whose conditions are satisfied
+- `getVisibleQuestions(dim, answers)` — Questions whose conditions are satisfied; also applies option-level `relevantFor` filtering (e.g., Python-only project sees Python-relevant test frameworks only)
 - `getDimensions()` — Ordered dimension list
 
 It delegates condition evaluation to `BranchEvaluator`.
@@ -739,7 +749,7 @@ User Input
     ▼
 ┌───────────────┐    ┌──────────────────┐
 │ QuestionBank  │───▶│ BranchEvaluator  │
-│ (74 questions)│    │ (10 operators)   │
+│ (91 questions)│    │ (10 operators)   │
 └───────┬───────┘    └────────┬─────────┘
         │                     │
         ▼                     ▼
@@ -976,7 +986,7 @@ npm run dev:web    # Web
 | Variable | Default | Purpose |
 |---|---|---|
 | `PORT` | `3000` | Web server port |
-| `EMBEDIQ_AUTH_STRATEGY` | `none` | Auth strategy: `none`, `basic`, `oidc`, `proxy` |
+| `EMBEDIQ_AUTH_STRATEGY` | `none` | Auth strategy: `none`, `basic`, `oidc`, `proxy`, `demo` |
 | `EMBEDIQ_AUTH_USER` | *(not set)* | Basic auth username (auto-detects `basic` strategy when set) |
 | `EMBEDIQ_AUTH_PASS` | *(not set)* | Basic auth password |
 | `EMBEDIQ_OIDC_ISSUER` | *(not set)* | OIDC issuer URL (e.g., `https://your-org.okta.com`) |
@@ -1002,10 +1012,11 @@ The `SynthesizerOrchestrator.generateWithValidation()` method runs compliance ch
 Generated files are stamped with EmbedIQ version headers (HTML comments for `.md`, `_embediq` metadata key for `.json`, `#` comments for `.py`/`.yaml`). The `diff-analyzer.ts` module compares generated files against existing files to detect new, modified, unchanged, or conflict status before writing.
 
 ### Authentication and RBAC
-Three pluggable auth strategies via `EMBEDIQ_AUTH_STRATEGY`:
+Four pluggable auth strategies via `EMBEDIQ_AUTH_STRATEGY`:
 - **basic**: Username/password (backward compatible with existing env vars)
 - **oidc**: JWT validation from OIDC providers (Okta, Azure AD, Auth0)
 - **proxy**: Trusts reverse proxy headers (X-Forwarded-User, X-EmbedIQ-Roles)
+- **demo**: Admin/user persona switcher for demo recordings. Reads `embediq_demo_user` cookie or `?demo-user=` query param. Returns `demo-admin@example.com` (wizard-admin) or `demo-user@example.com` (wizard-user). Permissive at the middleware level so the UI can render the persona picker. **Never for production** — anyone can claim any role.
 
 Three-tier RBAC: `wizard-viewer` (read-only on generations, audit, skills, autopilot status), `wizard-user` / `wizard-contributor` (answer questions, preview, generate; the two names are aliases — `wizard-user` is the legacy form preserved for backwards compatibility with existing auth strategies), and `wizard-admin` (generate-to-disk, list all sessions, rotate keys, full audit visibility). Higher tiers strictly include lower-tier permissions. Unknown roles emitted by external OIDC/header strategies fall back to literal-match semantics.
 

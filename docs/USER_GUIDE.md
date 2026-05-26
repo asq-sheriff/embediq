@@ -134,7 +134,7 @@ You should see:
   ┌─────────────────────────────────────────┐
   │                                         │
   │   EmbedIQ by Praglogic                  │
-  │   Claude Code Setup Wizard              │
+  │   AI Coding Agent Setup Wizard          │
   │                                         │
   │   http://localhost:3000                  │
   │                                         │
@@ -206,7 +206,7 @@ EmbedIQ guides you through four phases. Each builds on the previous one.
 
 ### Phase 1 — Discovery
 
-The wizard asks 25–40 questions (from a bank of 74) organized across seven dimensions:
+The wizard asks 25–50 questions (from a bank of 91) organized across seven dimensions. The exact number depends on your agent selection (`STRAT_TARGETS`), your operator type (admin vs user — admins see ~28 additional security / audit / cost questions), and your industry / compliance choices, which gate downstream branches:
 
 | Dimension | What It Covers |
 |---|---|
@@ -508,18 +508,33 @@ Tools and skills use this registry to determine which docs need updates when cod
 
 ## Model Routing & Cost Optimization
 
-When model routing is enabled, the wizard generates slash commands that route tasks to the appropriate model tier:
+Five routing strategies are available via `FIN_003` (agent-agnostic — picks the right pattern for whichever agents you selected at `STRAT_TARGETS`):
 
-| Command | Model | Cost | Use For |
-|---|---|---|---|
-| `/quick` | Haiku | ~10x cheaper than Opus | Lookups, explanations, status checks |
-| `/code` | Sonnet | ~3x cheaper than Opus | Writing code, refactoring, debugging |
-| `/think` | Opus | Full price | Architecture, security audits, complex analysis |
+| Strategy | What it does | When to pick |
+|---|---|---|
+| **Deterministic rules** | Rule-based dispatcher (request size / path heuristics). No extra inference cost. | Predictable workloads; tight latency budget. |
+| **Local-LLM classifier** | Small local model (Ollama qwen2.5:7b) classifies each request and picks the destination model. ~50ms overhead, more nuanced routing. | Requires local AI (TECH_013) and you want nuance over predictability. |
+| **Tiered planning (per-agent)** | Planning model decides the approach, execution model does the work. Examples below. Auto-configured per selected agent. | Want a standard pattern per agent. |
+| **Manual per-request** | Developer picks the model each time via shortcuts (Claude: `/quick`, `/code`, `/think`; equivalents elsewhere). | Maximum control, expert users. |
+| **No routing** | Use each agent's default model for everything. | Simplest, no cost savings. |
 
-Additional cost controls:
+For Claude under "Tiered planning":
 
-- **OpusPlan**: Opus for planning, Sonnet for execution (~68% savings)
-- **SonnetPlan**: Sonnet for planning, Haiku for execution (maximum savings)
+| Pattern | Cost vs. all-Opus |
+|---|---|
+| **OpusPlan**: Opus for planning, Sonnet for execution | ~68% savings |
+| **SonnetPlan**: Sonnet for planning, Haiku for execution | Maximum savings, lower quality |
+
+For Manual / Claude, the wizard emits:
+
+| Command | Model | Use For |
+|---|---|---|
+| `/quick` | Haiku | Lookups, explanations, status checks |
+| `/code` | Sonnet | Writing code, refactoring, debugging |
+| `/think` | Opus | Architecture, security audits, complex analysis |
+
+Additional cost controls (regardless of routing strategy):
+
 - **Subagent model override**: `CLAUDE_CODE_SUBAGENT_MODEL=haiku` (~80% cheaper subagents)
 - **Thinking token limits**: `MAX_THINKING_TOKENS=10000` (~70% reduction in hidden costs)
 - **Local model delegation**: Ollama MCP server for linting, formatting, simple queries

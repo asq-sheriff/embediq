@@ -22,10 +22,10 @@ Responses:
 
 ```json
 // GET /health
-{ "status": "ok", "version": "3.2.0", "uptime": 1234.5, "timestamp": "2026-04-21T…" }
+{ "status": "ok", "version": "4.0.0", "uptime": 1234.5, "timestamp": "2026-05-26T…" }
 
 // GET /ready
-{ "ready": true, "questionCount": 71 }
+{ "ready": true, "questionCount": 91 }
 ```
 
 ## Discovery
@@ -37,6 +37,7 @@ Responses:
 | GET | `/api/dimensions` | any | Dimensions in order, 0-indexed. |
 | GET | `/api/skills` | any | Every registered skill summary (built-in + external from `EMBEDIQ_SKILLS_DIR`). |
 | GET | `/api/skills/:id` | any | Single skill summary by id. 404 on unknown. |
+| GET | `/api/identity` | any | Authenticated user (from the active auth strategy) + device info (OS hostname or MDM `X-Workstation-Id` header) + IP + chosen auth-strategy name. Powers the welcome-screen identity banner and the header user-profile menu. |
 
 ### Example — list domain packs
 
@@ -165,7 +166,11 @@ curl -b /tmp/cookies http://localhost:3000/api/sessions/<id>/resume
 
 Mounted only when `EMBEDIQ_AUTOPILOT_ENABLED=true`. Shared secret
 auth: if `EMBEDIQ_AUTOPILOT_WEBHOOK_SECRET` is set, webhook routes
-require `X-EmbedIQ-Autopilot-Secret: <value>`.
+require `X-EmbedIQ-Autopilot-Secret: <value>`. Compliance-platform
+adapters (Drata, Vanta) additionally support HMAC-SHA256 signature
+verification — opt in per adapter via `EMBEDIQ_DRATA_HMAC_SECRET`
+or `EMBEDIQ_VANTA_HMAC_SECRET`. When set, the adapter rejects
+payloads whose `X-Signature-256` header does not match.
 
 | Method | Path | Auth | Purpose |
 |---|---|---|---|

@@ -8,7 +8,7 @@ export class ConsoleUI {
     console.log(chalk.white('  ┌─────────────────────────────────────────┐'));
     console.log(chalk.white('  │                                         │'));
     console.log(chalk.white('  │   ') + chalk.bold.white('EmbedIQ') + chalk.dim(' by Praglogic') + chalk.white('                │'));
-    console.log(chalk.white('  │   ') + chalk.dim('Claude Code Setup Wizard') + chalk.white('          │'));
+    console.log(chalk.white('  │   ') + chalk.dim('AI Coding Agent Setup Wizard') + chalk.white('      │'));
     console.log(chalk.white('  │                                         │'));
     console.log(chalk.white('  └─────────────────────────────────────────┘'));
     console.log('');

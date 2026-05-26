@@ -1,0 +1,23 @@
+STRAT_000: pm
+STRAT_000a: non_technical
+STRAT_001: Claims adjudication services — product management; release coordination across payer-facing services
+STRAT_002: healthcare
+OPS_001: large
+TECH_001:
+  - typescript
+  - python
+TECH_004:
+  - vscode
+TECH_005:
+  - npm
+TECH_007: github_actions
+FIN_001: enterprise
+REG_001: true
+REG_002:
+  - hipaa
+REG_003: true
+REG_004: true
+REG_005: true
+REG_008: strict
+REG_012: true
+REG_014: true

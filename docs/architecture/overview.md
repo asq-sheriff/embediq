@@ -9,7 +9,7 @@ without breaking everything downstream.
 ```
 ┌────────────────────────────────────────────────────────────────┐
 │  Layer 1 — Universal Question Bank   src/bank/                 │
-│  77 questions · 7 dimensions · 40 with conditional branching   │
+│  91 questions · 7 dimensions · admin-vs-user gating            │
 ├────────────────────────────────────────────────────────────────┤
 │  Layer 2 — Adaptive Logic Engine     src/engine/               │
 │  Branch evaluation · profile building · priority analysis      │
@@ -29,6 +29,13 @@ without breaking everything downstream.
                                                 rag-scaffold)
                                               (Local router v3.3:
                                                 local-router)
+                                              (v4.0 governance:
+                                                oscal-component,
+                                                oscal-ssp-fragment,
+                                                cyclonedx-aibom,
+                                                provenance)
+                                              (Per-agent install guide:
+                                                SETUP.md)
 ```
 
 Orthogonal concerns plug into the pipeline via a **typed event bus**
@@ -101,12 +108,14 @@ POST /api/generate                           (orchestrator → generators)
     ClaudeMdGenerator   ──▶  CLAUDE.md
     SettingsJsonGen     ──▶  .claude/settings.json
     RulesGenerator      ──▶  .claude/rules/*.md
-    …                        (23 generators total:
+    …                        (28 generators across 16 targets:
                               12 Claude Code
                               +  5 multi-agent
                               +  4 local-AI (v3.3)
                               +  1 RAG scaffold (v3.3)
-                              +  1 local router (v3.3))
+                              +  1 local router (v3.3)
+                              +  4 v4.0 governance post-pass
+                              +  1 SETUP.md per-agent install guide)
     ↓
 OutputValidator                              (pass/fail per compliance check)
     ↓

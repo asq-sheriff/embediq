@@ -1,0 +1,33 @@
+STRAT_000: developer
+STRAT_000a: advanced
+STRAT_000b: admin
+STRAT_001: Healthcare claims platform — developer view; ASP.NET Core services, FastAPI ML pipelines, Java payer-integration
+STRAT_002: healthcare
+OPS_001: large
+TECH_001:
+  - csharp
+  - python
+  - java
+TECH_003: .NET 8 / ASP.NET Core / Entity Framework Core / FastAPI / Spring Boot
+TECH_004:
+  - vscode
+  - jetbrains
+TECH_005:
+  - dotnet
+  - pip
+  - maven
+TECH_006:
+  - xunit
+  - pytest
+  - junit
+TECH_007: azure_devops
+FIN_001: enterprise
+REG_001: true
+REG_002:
+  - hipaa
+REG_003: true
+REG_004: true
+REG_005: true
+REG_008: strict
+REG_012: true
+REG_014: true

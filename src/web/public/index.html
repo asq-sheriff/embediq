@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EmbedIQ — Claude Code Setup Wizard</title>
+  <title>EmbedIQ — AI Coding Agent Setup Wizard</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -11,20 +11,47 @@
     <!-- Phase indicator -->
     <header id="header">
       <div class="brand">EmbedIQ</div>
-      <div class="phase-dots">
-        <span class="dot active" data-phase="0"></span>
-        <span class="dot" data-phase="1"></span>
-        <span class="dot" data-phase="2"></span>
-        <span class="dot" data-phase="3"></span>
+      <div class="phase-steps">
+        <div class="phase-step active" data-phase="0"><span class="phase-num">1</span><span class="phase-label">Welcome</span></div>
+        <div class="phase-step" data-phase="1"><span class="phase-num">2</span><span class="phase-label">Interview</span></div>
+        <div class="phase-step" data-phase="2"><span class="phase-num">3</span><span class="phase-label">Review</span></div>
+        <div class="phase-step" data-phase="3"><span class="phase-num">4</span><span class="phase-label">Generate</span></div>
+      </div>
+      <div id="user-profile" class="user-profile" style="display: none;">
+        <button class="user-profile-avatar" id="user-profile-avatar" onclick="toggleProfileMenu()" aria-label="User menu">
+          <span id="user-profile-initial">?</span>
+        </button>
+        <div id="user-profile-menu" class="user-profile-menu" style="display: none;">
+          <div class="user-profile-header">
+            <div class="user-profile-name" id="user-profile-name"></div>
+            <div class="user-profile-role" id="user-profile-role"></div>
+            <div class="user-profile-email" id="user-profile-email"></div>
+          </div>
+          <div class="user-profile-divider"></div>
+          <button class="user-profile-item" onclick="switchAccount()">
+            <span class="user-profile-item-icon" id="user-profile-switch-icon"></span>
+            Switch account
+          </button>
+          <button class="user-profile-item user-profile-item-danger" onclick="signOut()">
+            <span class="user-profile-item-icon" id="user-profile-signout-icon"></span>
+            Sign out
+          </button>
+        </div>
       </div>
     </header>
 
     <!-- Phase 0: Welcome -->
     <section id="phase-welcome" class="phase active">
       <div class="hero">
-        <h1>Claude Code Setup Wizard</h1>
-        <p class="subtitle">Answer a few questions. We'll generate your ideal configuration.</p>
+        <h1>Configure your AI coding agents</h1>
+        <p class="subtitle">Claude Code, Cursor, Copilot, Gemini, Windsurf — generated from one interview, with compliance rules, OSCAL evidence, and a tamper-evident audit trail built in.</p>
         <p class="byline">by Praglogic</p>
+        <div class="hero-meta">
+          <span class="meta-pill" title="EmbedIQ writes configuration for 16 distinct target formats — including 6 hosted AI coding agents (Claude, Cursor, Copilot, Gemini, Windsurf, AGENTS.md), 6 v3.3 local-AI integrations (Continue.dev, Aider, Zed AI, Ollama, RAG scaffold, PHI-safe local router), and 4 v4.0 governance output formats (OSCAL component, OSCAL SSP fragment, CycloneDX-ML AIBOM, provenance trace).">16 target formats <span class="meta-pill-info">?</span></span>
+          <span class="meta-pill" title="28 parallel generators run on every wizard completion: 12 for Claude Code (CLAUDE.md, settings, rules, commands, agents, skills, hooks, ignore, MCP, association map, doc state), 5 for the multi-agent targets, 4 for local AI, plus the RAG scaffold, the PHI-safe local router, the per-agent SETUP.md install guide, and 4 v4.0 governance post-pass outputs. Selected via your agent choice — only the relevant generators emit files.">28 generators <span class="meta-pill-info">?</span></span>
+          <span class="meta-pill" title="Built-in compliance scaffolding for HIPAA (healthcare PHI), PCI-DSS (payment card data), FedRAMP (US federal), and NIST AI RMF (AI risk management). Each framework, when selected, activates path-scoped rules, pre-tool DLP hooks, validation checks, and OSCAL evidence emission so the harness defends an audit out of the box.">HIPAA · PCI · FedRAMP · NIST AI RMF <span class="meta-pill-info">?</span></span>
+        </div>
+        <div id="identity-banner" class="identity-banner" style="display: none;"></div>
         <div id="resume-banner" class="resume-banner" style="display: none"></div>
         <button class="btn-primary" onclick="startWizard()">Get Started</button>
       </div>
@@ -37,15 +64,29 @@
           <div id="dimension-list"></div>
         </div>
         <div class="question-area">
-          <div class="dimension-title" id="current-dimension"></div>
           <div class="question-card" id="question-card">
             <div class="question-counter" id="question-counter"></div>
             <h2 id="question-text"></h2>
             <p class="help-text" id="help-text"></p>
             <div id="answer-input"></div>
             <div class="question-nav">
+              <button class="btn-secondary" id="btn-back" onclick="previousQuestion()">Back</button>
+              <div class="question-nav-spacer"></div>
               <button class="btn-secondary" id="btn-skip" onclick="skipQuestion()">Skip</button>
               <button class="btn-primary" id="btn-next" onclick="nextQuestion()">Continue</button>
+            </div>
+          </div>
+          <div class="dimension-review" id="dimension-review" style="display: none;">
+            <div class="dim-review-header">
+              <div class="dimension-title">Review</div>
+              <h2 id="dim-review-title">Your answers in this section</h2>
+              <p class="subtitle">Click any answer to change it before moving on.</p>
+            </div>
+            <div id="dim-review-list" class="dim-review-list"></div>
+            <div class="question-nav">
+              <button class="btn-secondary" id="btn-review-back" onclick="reviewPreviousQuestion()">Back to last question</button>
+              <div class="question-nav-spacer"></div>
+              <button class="btn-primary" id="btn-review-continue" onclick="confirmDimensionAndAdvance()">Continue</button>
             </div>
           </div>
         </div>
@@ -69,7 +110,8 @@
     <!-- Phase 3: Generate -->
     <section id="phase-generate" class="phase">
       <div class="generate-container">
-        <h1>Setup Complete</h1>
+        <h1 id="generate-heading">Ready to Generate</h1>
+        <p id="generate-subtitle" class="subtitle">Tell us where to write the files, then click Generate.</p>
         <div id="target-dir-input" class="target-input">
           <label for="targetDir">Target project directory</label>
           <div class="input-row">

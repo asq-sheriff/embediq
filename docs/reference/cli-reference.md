@@ -11,7 +11,7 @@ see [deployment](../operator-guide/deployment.md) and
 
 ```bash
 make help                # Show every target with one-line descriptions
-make check               # Type-check + 919 tests (CI equivalent)
+make check               # Type-check + 1,285 tests (CI equivalent)
 make build               # Type-check + test + compile to dist/
 make start               # Run CLI wizard
 make start-web           # Run web server (port 3000)
@@ -42,8 +42,8 @@ npm start [-- --targets <list>] [-- --git-pr]
 
 | Flag | Purpose |
 |---|---|
-| `--targets <list>` | Comma/space-separated output targets (overrides `EMBEDIQ_OUTPUT_TARGETS`). Valid: `claude`, `agents-md`, `cursor`, `copilot`, `gemini`, `windsurf`, `all`. |
-| `--git-pr` | After writing files, open a GitHub pull request. Requires `EMBEDIQ_GIT_REPO` + `EMBEDIQ_GIT_TOKEN`. |
+| `--targets <list>` | Comma/space-separated output targets (overrides `EMBEDIQ_OUTPUT_TARGETS`). Hosted agents: `claude`, `agents-md`, `cursor`, `copilot`, `gemini`, `windsurf`. v3.3 local AI: `continue-dev`, `aider`, `zed-ai`, `ollama`, `rag-scaffold`, `local-router`. v4.0 governance (opt-in): `oscal-component`, `oscal-ssp-fragment`, `cyclonedx-aibom`, `provenance`. Aliases: `all`. |
+| `--git-pr` | After writing files, open a pull request. Requires `EMBEDIQ_GIT_PROVIDER` + `EMBEDIQ_GIT_REPO` + `EMBEDIQ_GIT_TOKEN`. Supported providers: `github`, `gitlab`, `bitbucket`. |
 
 Env vars read:
 
@@ -52,6 +52,8 @@ Env vars read:
 | `EMBEDIQ_OUTPUT_TARGETS` | Default target list when `--targets` is absent. |
 | `EMBEDIQ_GIT_PROVIDER`, `EMBEDIQ_GIT_REPO`, `EMBEDIQ_GIT_TOKEN`, `EMBEDIQ_GIT_BASE_BRANCH`, `EMBEDIQ_GIT_API_BASE_URL` | Consumed when `--git-pr` is active. |
 | `EMBEDIQ_AUDIT_LOG` | JSONL audit log path. Writer is a no-op when unset. |
+| `EMBEDIQ_AUDIT_CHAIN_ENABLED` | Set to `true` to route audit entries through the RFC-6962-pattern hash chain (each entry carries `prevHash`). Verify with `make verify-audit-log INPUT=path/to/audit.jsonl`. |
+| `EMBEDIQ_OSCAL_SSP_PROFILE_HREF` / `EMBEDIQ_OSCAL_SSP_SYSTEM_NAME` / `EMBEDIQ_OSCAL_SSP_SENSITIVITY` | Operator-supplied fields stamped into the OSCAL SSP fragment output. |
 | `EMBEDIQ_PLUGINS_DIR` / `EMBEDIQ_SKILLS_DIR` / `EMBEDIQ_TEMPLATES_DIR` | External domain-pack / skill / template discovery. |
 
 Exit codes:
@@ -275,6 +277,26 @@ The full release-overlay flow lives in
 
 ---
 
+## `make verify-audit-log` — audit-chain integrity verifier
+
+Verify a tamper-evident audit-chain JSONL log. Walks the file entry-by-entry, recomputing each entry's hash and confirming the `prevHash` link.
+
+```bash
+make verify-audit-log INPUT=/var/log/embediq/audit.jsonl
+# or directly:
+npm run verify-audit-log -- --input /var/log/embediq/audit.jsonl
+```
+
+Exit codes:
+
+| Code | Meaning |
+|---|---|
+| 0 | Chain intact — every `prevHash` matches the recomputed hash of the previous entry. |
+| 1 | Chain broken at line N (output names the line, the expected `prevHash`, and the actual `prevHash`). |
+| 2 | Configuration error (missing input, unreadable file). |
+
+Intended for CI / cron — pipe through your alerting stack and treat any non-zero exit as a security event.
+
 ## Developer commands
 
 | Command | Purpose |
@@ -286,6 +308,8 @@ The full release-overlay flow lives in
 | `npm test` | Run the Vitest suite. |
 | `npm run test:watch` | Watch mode. |
 | `npm run test:coverage` | v8 coverage report. |
+| `npm run verify-audit-log -- --input <path>` | See above. |
+| `npx tsx scripts/regenerate-golden-configs.ts` | Regenerate every golden archetype's `expected/` tree. Required after generator changes. |
 | `npx tsc --noEmit` | Type-check without emitting — fast feedback during development. |
 
 ## See also

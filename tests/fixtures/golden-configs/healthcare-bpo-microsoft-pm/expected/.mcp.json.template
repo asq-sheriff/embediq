@@ -1,0 +1,17 @@
+// MCP Server Configuration Template
+// Copy to .mcp.json and fill in API keys
+// .mcp.json is gitignored — credentials stay local
+{
+  "mcpServers": {
+    "gemini-grounding": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@anthropic/gemini-grounding-mcp"
+      ],
+      "env": {
+        "GOOGLE_API_KEY": "${GOOGLE_API_KEY}"
+      }
+    }
+  }
+}

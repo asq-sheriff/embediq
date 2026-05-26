@@ -17,8 +17,10 @@ this chapter is the longer reference for each phase.
 
 ## Quick reference to the four phases
 
-1. **Discovery** — adaptive Q&A, up to ~40 of the 77 questions based
-   on your answers and chosen industry / compliance frameworks.
+1. **Discovery** — adaptive Q&A, up to ~50 of the 91 questions based
+   on your answers, agent-target selection (`STRAT_TARGETS`),
+   admin-vs-user operator type (`STRAT_000b`), chosen industry,
+   and compliance frameworks.
 2. **Playback** — summary of the derived profile, tech stack,
    compliance posture, and priorities (with confidence scores).
 3. **Edit & approve** — correct any field or priority ordering, add

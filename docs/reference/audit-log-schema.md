@@ -39,8 +39,31 @@ interface WizardAuditEntry {
   validationPassed?: boolean;  // only on validation_result
   validationErrorCount?: number; // only on validation_result
   errorMessage?: string;       // only on session_error
+  // v4.0 / 8F — present only when EMBEDIQ_AUDIT_CHAIN_ENABLED=true.
+  // SHA-256 of the previous entry's canonicalized content (excluding
+  // its own prevHash). First entry chains to the genesis hash.
+  prevHash?: string;
 }
 ```
+
+## Tamper-evident chain mode (v4.0 / 8F, opt-in)
+
+Set `EMBEDIQ_AUDIT_CHAIN_ENABLED=true` to route every appended entry through the `appendChainedEntry()` helper in `src/util/audit-chain.ts`. The helper:
+
+1. Reads the prior entry from the file (or uses `GENESIS_HASH` for the first entry).
+2. Computes the prior entry's hash via SHA-256 of its sorted-key JSON serialization.
+3. Stamps that hash into the new entry as `prevHash`.
+4. Appends the new entry as a single JSONL line.
+
+The chain is **linked-log only** — inspired by RFC 6962 Certificate Transparency — not a full Merkle tree. Tampering with any entry breaks every subsequent entry's `prevHash` link. HSM-signed chain heads + external anchoring are reserved for a follow-up.
+
+Verification: `make verify-audit-log INPUT=path/to/audit.jsonl` (also `npm run verify-audit-log`). The verifier walks the file and reports the first integrity break with line number + reason. Exit codes 0 / 1 / 2.
+
+**Constraints:**
+
+- **Single-writer assumption.** Concurrent processes appending to the same chained file produce a broken chain. Operators who need multi-writer audit should funnel through a single audit-ingester process.
+- **Append-only.** Editing any entry — even a typo in a JSON value — breaks the chain at that point.
+- **Hash stability across implementations.** The canonicalization routine sorts object keys recursively so two implementations writing the same logical entry produce the same hash regardless of key insertion order.
 
 ## Event types
 
@@ -127,9 +150,14 @@ compliance team):
 EmbedIQ v3.2 writes `WizardAuditEntry` v1. v3.2.x added the
 `engagementId` field (auto-enriched from `EMBEDIQ_ENGAGEMENT_ID` /
 request context; absent when neither is set, preserving backward
-compatibility with pre-engagement entries). Future major versions may
-add fields — consumers should tolerate unknown keys. Removed or
-renamed fields are called out in [CHANGELOG.md](../../CHANGELOG.md).
+compatibility with pre-engagement entries). v4.0 / 8F added the
+optional `prevHash` field present only when
+`EMBEDIQ_AUDIT_CHAIN_ENABLED=true` — chains adopting the field
+mid-stream is supported (the first chained entry chains to the
+genesis hash; pre-chain entries are simply not verifiable). Future
+major versions may add fields — consumers should tolerate unknown
+keys. Removed or renamed fields are called out in
+[CHANGELOG.md](../../CHANGELOG.md).
 
 ## See also
 

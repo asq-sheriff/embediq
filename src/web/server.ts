@@ -7,6 +7,7 @@ import { readFileSync } from 'node:fs';
 import * as http from 'node:http';
 import * as https from 'node:https';
 import { randomUUID } from 'node:crypto';
+import * as os from 'node:os';
 import { WebSocketServer } from 'ws';
 import type { IncomingMessage } from 'node:http';
 import type { Duplex } from 'node:stream';
@@ -22,6 +23,7 @@ import { requireRole, effectiveRoleLevel, ROLE_HIERARCHY } from './middleware/rb
 import { BasicAuthStrategy } from './middleware/strategies/basic.js';
 import { OidcAuthStrategy } from './middleware/strategies/oidc.js';
 import { ProxyHeaderStrategy } from './middleware/strategies/header.js';
+import { DemoAuthStrategy } from './middleware/strategies/demo.js';
 import { loadTemplates } from '../bank/profile-templates.js';
 import { domainPackRegistry } from '../domain-packs/registry.js';
 import { skillRegistry } from '../skills/skill-registry.js';
@@ -98,6 +100,8 @@ function selectAuthStrategy(): AuthStrategy | null {
         userHeader: process.env.EMBEDIQ_PROXY_USER_HEADER || 'X-Forwarded-User',
         rolesHeader: process.env.EMBEDIQ_PROXY_ROLES_HEADER || 'X-EmbedIQ-Roles',
       });
+    case 'demo':
+      return new DemoAuthStrategy();
     case 'none':
       return null;
     default:
@@ -156,11 +160,24 @@ export async function createApp(opts: CreateAppOptions = {}) {
   // authenticated user info, and timing data. Downstream code can call
   // getRequestContext() without explicit parameter threading.
   app.use((req: Request, res: Response, next: NextFunction) => {
+    // Capture identity (user via auth strategy, device via headers).
+    // `X-Workstation-Id` / `X-Device-Id` are honored when the operator has a
+    // reverse proxy or MDM agent that injects them; otherwise we fall back to
+    // the User-Agent string as the workstation marker.
+    const headerWorkstation =
+      (req.header('x-workstation-id') || req.header('x-device-id') || '').trim();
+    const userAgent = req.header('user-agent') || '';
+    const ipAddress = (req.ip || req.socket.remoteAddress || '').replace(/^::ffff:/, '');
+
     const ctx = createRequestContext({
       userId: req.embediqUser?.userId,
       displayName: req.embediqUser?.displayName,
       roles: req.embediqUser?.roles,
     });
+    ctx.userEmail = (req.embediqUser as { email?: string } | undefined)?.email;
+    ctx.workstationId = headerWorkstation || userAgent.slice(0, 120);
+    ctx.userAgent = userAgent;
+    ctx.ipAddress = ipAddress;
     runWithContext(ctx, () => {
       // Start a trace span for this request (noop when OTel not enabled)
       const tracer = getTracer();
@@ -271,6 +288,62 @@ export async function createApp(opts: CreateAppOptions = {}) {
     res.json(DIMENSION_ORDER.map((d, i) => ({ id: i, name: d })));
   });
 
+  // Identity surface: returns the authenticated user (from the active auth
+  // strategy — typically enterprise OIDC/SSO when configured) plus device
+  // info from the server's host (when running locally the server IS the
+  // user's machine; in deployed mode operators inject MDM-verified identity
+  // via the `X-Workstation-Id` / `X-Device-Id` headers).
+  app.get('/api/identity', (req: Request, res: Response) => {
+    const ctx = getRequestContext();
+    const headerWorkstation =
+      (req.header('x-workstation-id') || req.header('x-device-id') || '').trim();
+
+    // Host-level info — meaningful only when the server runs on the same
+    // machine as the user (local mode). In a deployed mode this is the
+    // server host, not the client; the MDM-injected header takes priority
+    // when present.
+    let osUser: string | null = null;
+    try {
+      osUser = os.userInfo().username || null;
+    } catch {
+      osUser = null;
+    }
+    const host = {
+      hostname: os.hostname() || null,
+      platform: os.platform(),
+      release: os.release(),
+      arch: os.arch(),
+      username: osUser,
+    };
+
+    // Detect local-mode by comparing request IP to loopback.
+    const rawIp = (req.ip || req.socket.remoteAddress || '').replace(/^::ffff:/, '');
+    const isLoopback = rawIp === '127.0.0.1' || rawIp === '::1' || rawIp === '';
+
+    const authStrategy = process.env.EMBEDIQ_AUTH_STRATEGY || 'none';
+
+    res.json({
+      authenticated: !!req.embediqUser,
+      authStrategy,
+      userId: req.embediqUser?.userId ?? null,
+      displayName: req.embediqUser?.displayName ?? null,
+      email: (req.embediqUser as { email?: string } | undefined)?.email ?? null,
+      roles: req.embediqUser?.roles ?? [],
+      // Device identity, in priority order:
+      //   1. MDM-injected header (most trustworthy in enterprise deployments)
+      //   2. OS hostname (meaningful in local mode)
+      //   3. User-Agent (fallback, least useful)
+      workstationId: headerWorkstation || host.hostname || ctx?.userAgent || null,
+      deviceVerification: headerWorkstation
+        ? 'mdm-header'
+        : (isLoopback && host.hostname ? 'os-hostname' : 'user-agent-fallback'),
+      isLocalMode: isLoopback,
+      host: isLoopback ? host : null,
+      userAgent: ctx?.userAgent ?? null,
+      ipAddress: rawIp,
+    });
+  });
+
   // List all available skills (built-in + external)
   app.get('/api/skills', (_req, res) => {
     res.json(skillRegistry.list().map(summarizeSkill));
@@ -339,7 +412,9 @@ export async function createApp(opts: CreateAppOptions = {}) {
 
     let targets: TargetFormat[];
     try {
-      targets = rawTargets !== undefined ? parseTargets(rawTargets) : parseTargetsFromEnv();
+      targets = rawTargets !== undefined
+        ? parseTargets(rawTargets)
+        : (deriveTargetsFromAnswers(rawAnswers) ?? parseTargetsFromEnv());
     } catch (err) {
       if (err instanceof InvalidTargetError) {
         res.status(400).json({ error: err.message });
@@ -427,7 +502,9 @@ export async function createApp(opts: CreateAppOptions = {}) {
 
     let targets: TargetFormat[];
     try {
-      targets = rawTargets !== undefined ? parseTargets(rawTargets) : parseTargetsFromEnv();
+      targets = rawTargets !== undefined
+        ? parseTargets(rawTargets)
+        : (deriveTargetsFromAnswers(rawAnswers) ?? parseTargetsFromEnv());
     } catch (err) {
       if (err instanceof InvalidTargetError) {
         res.status(400).json({ error: err.message });
@@ -470,7 +547,9 @@ export async function createApp(opts: CreateAppOptions = {}) {
 
     let targets: TargetFormat[];
     try {
-      targets = rawTargets !== undefined ? parseTargets(rawTargets) : parseTargetsFromEnv();
+      targets = rawTargets !== undefined
+        ? parseTargets(rawTargets)
+        : (deriveTargetsFromAnswers(rawAnswers) ?? parseTargetsFromEnv());
     } catch (err) {
       if (err instanceof InvalidTargetError) {
         res.status(400).json({ error: err.message });
@@ -772,6 +851,24 @@ function hydrateAnswers(raw: Record<string, { value: unknown; timestamp: string 
   return map;
 }
 
+/**
+ * Read the wizard's agent-selection answer (`STRAT_TARGETS`) and convert it
+ * to a TargetFormat list. Returns null when the user did not answer the
+ * question — caller falls back to env defaults.
+ */
+function deriveTargetsFromAnswers(
+  raw: Record<string, { value: unknown; timestamp: string }> | undefined,
+): TargetFormat[] | null {
+  if (!raw) return null;
+  const entry = raw['STRAT_TARGETS'];
+  if (!entry || !Array.isArray(entry.value) || entry.value.length === 0) return null;
+  try {
+    return parseTargets(entry.value as string[]);
+  } catch {
+    return null;
+  }
+}
+
 // ─── Start (only when run directly, not when imported for tests) ───
 
 const isDirectRun = process.argv[1] && (
@@ -833,7 +930,7 @@ if (isDirectRun) {
     console.log('  ┌─────────────────────────────────────────┐');
     console.log('  │                                         │');
     console.log('  │   EmbedIQ by Praglogic                  │');
-    console.log('  │   Claude Code Setup Wizard              │');
+    console.log('  │   AI Coding Agent Setup Wizard          │');
     console.log('  │                                         │');
     console.log(`  │   ${protocol}://localhost:${PORT}${' '.repeat(Math.max(0, 19 - protocol.length - String(PORT).length))}│`);
     console.log(`  │   ${authStatus.padEnd(37)}│`);

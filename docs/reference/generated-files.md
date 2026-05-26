@@ -46,6 +46,7 @@ root.
 | `.mcp.json.template` | `mcp-json` | MCP server registry template. Copy to `.mcp.json` and fill secrets. | Technical roles. |
 | `.claude/association_map.yaml` | `association-map` | Codebase-entity → agent/skill mapping. | Technical roles. |
 | `.claude/document_state.yaml` | `document-state` | Persisted wizard state pointer. | Always. |
+| `SETUP.md` | `setup-instructions` | Per-agent install + activation + verification + troubleshooting guide at the repo root. Content adapts to whichever agents the user picked (Claude, Cursor, Copilot, Gemini, Windsurf, AGENTS.md). Emits whenever any of the six hosted-agent targets is selected — NOT tied to the Claude target specifically. | Any hosted-agent target selected. |
 
 Non-technical roles (Business Analyst / Product Manager / Executive):
 
@@ -110,6 +111,104 @@ Non-technical roles emit only `.github/copilot-instructions.md`.
 | Path | Generator | Role | Conditional |
 |---|---|---|---|
 | `.windsurfrules` | `windsurf-rules` | Single plain-markdown rules file at the project root. No frontmatter, no scoping. | Always. |
+
+## v3.3 Local-AI integration targets
+
+These targets are opt-in (`--targets continue-dev,aider,…`) and auto-included when the user opts into the wizard's local-AI branch (`TECH_013 == true`).
+
+### Target: `continue-dev`
+
+| Path | Generator | Role | Conditional |
+|---|---|---|---|
+| `.continue/config.json` | `continue-dev` | Continue.dev (VS Code / JetBrains extension) config pointing at the user's Ollama models from TECH_016 with the default selected at TECH_018. | Local AI enabled + Continue.dev in TECH_017. |
+
+### Target: `aider`
+
+| Path | Generator | Role | Conditional |
+|---|---|---|---|
+| `.aider.conf.yml` | `aider` | Aider terminal pair-programmer config — model name, edit format, auto-commits, dark mode toggles. | Local AI enabled + Aider in TECH_017. |
+| `.aiderignore` | `aider` | Aider-specific ignore list mirroring `.claudeignore` for the same project. | Local AI enabled + Aider in TECH_017. |
+
+### Target: `zed-ai`
+
+| Path | Generator | Role | Conditional |
+|---|---|---|---|
+| `.zed/settings.json` | `zed-ai` | Zed editor AI settings — assistant provider (Ollama), default model, slash command toggles. | Local AI enabled + Zed AI in TECH_017. |
+
+### Target: `ollama`
+
+| Path | Generator | Role | Conditional |
+|---|---|---|---|
+| `OLLAMA_SETUP.md` | `ollama-setup` | Ollama install + model-pull runbook. Lists each model from TECH_016 with its `ollama pull` command, approximate RAM footprint, and recommended use (autocomplete vs chat vs embeddings). | Local AI enabled. |
+
+### Target: `rag-scaffold`
+
+Runnable RAG starter — not just config. The chunker is FHIR-aware for healthcare profiles, plain-text otherwise.
+
+| Path | Generator | Role | Conditional |
+|---|---|---|---|
+| `rag/README.md` | `rag-scaffold` | Overview + smoke test. | Local AI enabled + opted in. |
+| `rag/pyproject.toml` | `rag-scaffold` | Dependencies + run scripts. | Same. |
+| `rag/.env.example` | `rag-scaffold` | Env-var template for the RAG service. | Same. |
+| `rag/src/chunker.py` | `rag-scaffold` | FHIR-aware chunker (healthcare) or plain-text chunker (other industries). | Same. |
+| `rag/src/embedder.py` | `rag-scaffold` | Ollama-embeddings wrapper. | Same. |
+| `rag/src/store.py` | `rag-scaffold` | SQLite-VSS vector store. | Same. |
+| `rag/src/audit.py` | `rag-scaffold` | Retrieval audit log. | Same. |
+| `rag/src/cli.py` | `rag-scaffold` | Index + query CLI. | Same. |
+| `RAG_RUNBOOK.md` | `rag-scaffold` | Setup, smoke test, compliance notes at the repo root. | Same. |
+| `.claude/rules/rag-hipaa-compliance.md` | `rag-scaffold` | HIPAA RAG rule (path-scoped to `rag/**`). | Healthcare profile. |
+| `.claude/rules/rag-pci-compliance.md` | `rag-scaffold` | PCI RAG rule. | PCI in compliance frameworks. |
+| `.claude/rules/rag-soc2-compliance.md` | `rag-scaffold` | SOC 2 RAG rule. | SOC 2 in compliance frameworks. |
+| `.claude/rules/rag-ferpa-compliance.md` | `rag-scaffold` | FERPA RAG rule. | FERPA in compliance frameworks. |
+
+### Target: `local-router`
+
+Runnable PHI-safe dispatch service — Express server that routes simple requests to a local model, escalates complex requests to a hosted LLM after optional redaction.
+
+| Path | Generator | Role | Conditional |
+|---|---|---|---|
+| `router/package.json` | `local-router` | Dependencies + run scripts. | Local AI enabled + router opted in (TECH_019). |
+| `router/.env.example` | `local-router` | Env-var template for credentials, model selection, redaction toggle. | Same. |
+| `router/README.md` | `local-router` | Overview + smoke test. | Same. |
+| `router/src/server.ts` | `local-router` | Express entrypoint. | Same. |
+| `router/src/classifier.ts` | `local-router` | Request classifier (rule-based or local-LLM, per FIN_003). | Same. |
+| `router/src/local-client.ts` | `local-router` | Ollama client. | Same. |
+| `router/src/hosted-client.ts` | `local-router` | Hosted-LLM client (Anthropic / OpenAI, per TECH_020). | Same. |
+| `router/src/audit.ts` | `local-router` | Routing audit log. | Same. |
+| `router/src/redactor.ts` | `local-router` | PHI redactor — strips MRN / SSN / DOB / etc. before any escalation. | Healthcare profile (auto-included). |
+| `router/src/confidence.ts` | `local-router` | Confidence-based escalation module — local model self-rates, escalates when below threshold. | Confidence escalation opted in (TECH_021). |
+| `ROUTER_RUNBOOK.md` | `local-router` | Setup, smoke test, hardening notes at the repo root. | Same. |
+| `.claude/rules/router-conventions.md` | `local-router` | Router conventions rule (path-scoped to `router/**`). | Same. |
+
+## v4.0 governance-output targets
+
+These four targets are opt-in only (`--targets oscal-component,cyclonedx-aibom,…`) so existing goldens regenerate byte-identically when not requested. Each runs as a **post-pass** step in the orchestrator after the regular parallel batch — order matters because each output's manifest names every other file emitted in the run.
+
+### Target: `cyclonedx-aibom`
+
+| Path | Generator | Role | Conditional |
+|---|---|---|---|
+| `.embediq/cyclonedx/aibom.json` | `cyclonedx-aibom` | CycloneDX 1.6 ML-BOM enumerating every AI component the harness invokes — Ollama local models, hosted-API providers (Anthropic / OpenAI), IDE-resident agents (Continue.dev, Aider, Zed AI), the local-router service. EO 14110-aligned. | Opt-in via `--targets cyclonedx-aibom`. |
+
+### Target: `oscal-component`
+
+| Path | Generator | Role | Conditional |
+|---|---|---|---|
+| `.embediq/oscal/component-definition.json` | `oscal-component` | OSCAL 1.1.2 Component Definition — the product-level claim describing the EmbedIQ-generated harness as a system component, citing the active compliance frameworks as control sources, with the artifact manifest naming every file emitted in this run. Drop into Drata / Vanta / FedRAMP audit pipelines. | Opt-in via `--targets oscal-component`. |
+
+### Target: `oscal-ssp-fragment`
+
+Operator-tunable via three env vars: `EMBEDIQ_OSCAL_SSP_PROFILE_HREF` (OSCAL profile reference), `EMBEDIQ_OSCAL_SSP_SYSTEM_NAME` (system name + metadata title), `EMBEDIQ_OSCAL_SSP_SENSITIVITY` (FIPS-199 level — `fips-199-low` / `fips-199-moderate` / `fips-199-high`).
+
+| Path | Generator | Role | Conditional |
+|---|---|---|---|
+| `.embediq/oscal/ssp-fragment.json` | `oscal-ssp-fragment` | OSCAL 1.1.2 System Security Plan **fragment** — control-implementation + harness-component sections only. Stamped `document-completion-status=fragment` so reviewers know it's a starter, not a standalone SSP. | Opt-in via `--targets oscal-ssp-fragment`. |
+
+### Target: `provenance`
+
+| Path | Generator | Role | Conditional |
+|---|---|---|---|
+| `.embediq/provenance/manifest.json` | `provenance-trace` | Per-file traceability — every file in the generated harness mapped to its generator, target format, domain pack, and skill. Fires LAST so the manifest covers every other output (including the v4.0 governance outputs above) plus itself. | Opt-in via `--targets provenance`. |
 
 ## Layout diagrams
 
@@ -182,6 +281,17 @@ AGENTS.md
 GEMINI.md
 .windsurfrules
 .mcp.json.template
+SETUP.md
+.continue/
+.aider.conf.yml
+.aiderignore
+.zed/
+OLLAMA_SETUP.md
+rag/
+RAG_RUNBOOK.md
+router/
+ROUTER_RUNBOOK.md
+.embediq/
 ```
 
 Anything else (your application source, test fixtures, build output)
@@ -192,7 +302,7 @@ is your domain.
 Every generated file carries a stamp like:
 
 ```
-<!-- Generated by EmbedIQ v3.2.0 | schema:2 | 2026-04-21T12:34:56Z -->
+<!-- Generated by EmbedIQ v4.0.0 | schema:2 | 2026-05-26T12:34:56Z -->
 ```
 
 The stamp format varies by file type:

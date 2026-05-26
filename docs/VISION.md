@@ -94,7 +94,7 @@ Industry and regulatory context drives generation. Permission tiers, DLP pattern
 
 ### 5. Multi-agent from a single interview
 
-A team using Claude Code today and Cursor tomorrow does not re-answer 74 questions. The Q&A, profile, priorities, compliance logic, and validation are all agent-agnostic. Only the Synthesizer targets specific formats — `CLAUDE.md` + `.claude/*`, `AGENTS.md`, `.cursor/rules/*.mdc`, `.github/copilot-instructions.md`, `GEMINI.md`, `.windsurfrules`. The Q&A interview feeds every target format from a single answer set.
+A team using Claude Code today and Cursor tomorrow does not re-answer 91 questions. The Q&A, profile, priorities, compliance logic, and validation are all agent-agnostic. Only the Synthesizer targets specific formats — `CLAUDE.md` + `.claude/*`, `AGENTS.md`, `.cursor/rules/*.mdc`, `.github/copilot-instructions.md`, `GEMINI.md`, `.windsurfrules`. The Q&A interview feeds every target format from a single answer set.
 
 ### 6. Type safety as the configuration source
 
@@ -126,7 +126,7 @@ EmbedIQ generates files and events. Existing enterprise tools handle the human c
 
 ### 1. Adaptive Q&A
 
-74 questions across seven dimensions — Strategic Intent, Problem Definition, Operational Reality, Technology Requirements, Regulatory Compliance, Financial Constraints, Innovation. 40 questions have branching conditions; irrelevant paths are hidden. Completing the wizard takes 5–15 minutes end-to-end.
+91 questions across seven dimensions — Strategic Intent, Problem Definition, Operational Reality, Technology Requirements, Regulatory Compliance, Financial Constraints, Innovation. 40 questions have branching conditions; irrelevant paths are hidden. Completing the wizard takes 5–15 minutes end-to-end.
 
 ### 2. Profile synthesis and priority derivation
 
@@ -134,7 +134,7 @@ Raw answers are folded into a structured `UserProfile`. Priorities are auto-deri
 
 ### 3. Multi-agent Synthesizer
 
-Seventeen generators produce configuration for every agent the team uses from a single profile: 12 Claude-Code generators (`CLAUDE.md`, `settings.json`, permissions, rules, commands, agents, skills, Python hooks, ignore files, MCP config, association map, document state) plus 5 multi-agent generators (`AGENTS.md`, Cursor `.mdc`, Copilot `.instructions.md` + scoped instructions, `GEMINI.md`, `.windsurfrules`). Target selection via `EMBEDIQ_OUTPUT_TARGETS` env var (default `claude`, preserving current behavior; `all` generates every format) or `--targets` CLI flag.
+**28 generators across 16 target formats** produce configuration for every agent the team uses from a single profile: 12 Claude-Code generators (`CLAUDE.md`, `settings.json`, permissions, rules, commands, agents, skills, Python hooks, ignore files, MCP config, association map, document state) plus 5 multi-agent generators (`AGENTS.md`, Cursor `.mdc`, Copilot `.instructions.md` + scoped instructions, `GEMINI.md`, `.windsurfrules`) plus 4 local-AI generators (Continue.dev, Aider, Zed AI, Ollama runbook) plus the RAG scaffold + PHI-safe local router + 4 v4.0 governance post-pass outputs (OSCAL component-definition, OSCAL SSP fragment, CycloneDX-ML AIBOM, provenance trace) plus the per-agent SETUP.md install guide. Target selection via the in-wizard `STRAT_TARGETS` question, the `EMBEDIQ_OUTPUT_TARGETS` env var, or the `--targets` CLI flag.
 
 ### 4. Multi-layer security defense
 
@@ -169,16 +169,16 @@ The generated configuration doesn't stop at the filesystem. A platform-agnostic 
 
 ## What Ships Today
 
-v3.3.0 is the current release. A complete capability inventory:
+v4.0 is the current release, with a 2026-05 wizard-UX overhaul layered on top. A complete capability inventory:
 
 **Adaptive wizard**
-- 74 questions across seven dimensions, 40 with conditional branching
+- 91 questions across seven dimensions, with admin-vs-user operator gating and per-question `purposeText` rendered only to admins
 - Eight role profiles (developer, DevOps, tech lead, QA, data, BA, PM, executive) with role-adaptive output
 - Three built-in domain packs — Healthcare (HIPAA/HITECH/42 CFR Part 2), Finance (PCI-DSS/SOX/GLBA/AML-BSA), Education (FERPA/COPPA) — plus a typed plugin interface for external packs
 - Composable skills system with a registry, typed skill interface, and external loading from `EMBEDIQ_SKILLS_DIR`
 
 **Synthesis and validation**
-- 17 deterministic generators (12 Claude-Code + 5 multi-agent: `AGENTS.md`, Cursor, Copilot, Gemini, Windsurf)
+- 28 deterministic generators across 16 target formats (12 Claude-Code + 5 multi-agent + 4 local-AI + RAG scaffold + local router + 4 v4.0 governance outputs + SETUP.md)
 - `OutputValidator` with eight check categories (universal, HIPAA, PCI-DSS, SOC2, GDPR, security, domain-pack custom)
 - Evaluation framework with golden-config scoring, CLI (`npm run evaluate`, `npm run benchmark`), and competitive benchmarking mode
 

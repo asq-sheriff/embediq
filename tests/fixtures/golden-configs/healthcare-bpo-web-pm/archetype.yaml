@@ -1,0 +1,18 @@
+id: healthcare-bpo-web-pm
+title: Healthcare BPO — Web stack, Product Manager
+description: |
+  Product manager working alongside the engineering team at a healthcare
+  business process outsourcing firm whose stack is TypeScript + Python
+  (Node.js / FastAPI) shipped through GitHub Actions. PHI exposure is
+  real but the PM's daily work is requirements, prioritization, and
+  cross-stakeholder coordination — not hands-on code.
+
+  This archetype exercises the role-adaptive output path: non-technical
+  role (pm) → coworker-shaped CLAUDE.md, skips technical generators
+  (hooks, association map). The healthcare domain pack still applies
+  (HIPAA compliance scaffolding), but tailored to a PM's day-to-day.
+
+  Sibling: `healthcare-bpo-web-developer` (developer persona on the
+  same stack). Together they verify the role-aware output axis on
+  the web-stack healthcare BPO.
+minimumFloor: 18

@@ -1,0 +1,18 @@
+id: healthcare-bpo-web-developer
+title: Healthcare BPO — Web stack, Developer
+description: |
+  Software engineer at a healthcare business process outsourcing firm
+  building services on a TypeScript + Python web stack (Node.js / FastAPI),
+  shipped through GitHub Actions, processing PHI on behalf of payer
+  clients. Full HIPAA + HITECH obligations, large team, strict permission
+  envelope.
+
+  One of two canonical healthcare-BPO archetypes:
+    - this one: TypeScript / Python / npm / GitHub Actions (web stack)
+    - sibling:  C# / Python / Java / dotnet+pip+maven / Azure DevOps
+                (`healthcare-bpo-microsoft-developer`)
+
+  Together these cover the two dominant stack patterns we see at
+  healthcare BPOs. Role-aware output is tested separately via the
+  `-pm` variants.
+minimumFloor: 18

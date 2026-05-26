@@ -22,9 +22,9 @@ configured with TLS (in-process or at a reverse proxy), use `wss://`.
 
 - When the main server auth strategy is **off**, the upgrade succeeds
   unconditionally.
-- When auth is **on** (`basic`, `oidc`, or `proxy`), the HTTP upgrade
-  request is authenticated exactly like a normal API call. The
-  resulting user identity is attached to the connection.
+- When auth is **on** (`basic`, `oidc`, `proxy`, or `demo`), the HTTP
+  upgrade request is authenticated exactly like a normal API call.
+  The resulting user identity is attached to the connection.
 - Authorization (who can *see* which events) happens at the
   subscribe frame — see next.
 

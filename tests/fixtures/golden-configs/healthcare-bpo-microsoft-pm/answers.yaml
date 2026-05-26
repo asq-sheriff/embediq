@@ -1,0 +1,32 @@
+STRAT_000: pm
+STRAT_000a: non_technical
+STRAT_001: Healthcare claims platform — product management; release coordination across payer-facing services and stakeholder communication
+STRAT_002: healthcare
+OPS_001: large
+TECH_001:
+  - csharp
+  - python
+  - java
+TECH_003: .NET 8 / ASP.NET Core / Entity Framework Core / FastAPI / Spring Boot
+TECH_004:
+  - vscode
+  - jetbrains
+TECH_005:
+  - dotnet
+  - pip
+  - maven
+TECH_006:
+  - xunit
+  - pytest
+  - junit
+TECH_007: azure_devops
+FIN_001: enterprise
+REG_001: true
+REG_002:
+  - hipaa
+REG_003: true
+REG_004: true
+REG_005: true
+REG_008: strict
+REG_012: true
+REG_014: true

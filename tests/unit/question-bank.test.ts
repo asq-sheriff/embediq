@@ -7,9 +7,9 @@ const bank = new QuestionBank();
 
 describe('QuestionBank', () => {
   describe('getAll', () => {
-    it('returns all 77 questions', () => {
+    it('returns all 91 questions', () => {
       const all = bank.getAll();
-      expect(all.length).toBe(77);
+      expect(all.length).toBe(91);
     });
 
     it('every question has an id, dimension, type, and text', () => {

@@ -44,7 +44,7 @@ out-of-scope clarifications).
 
 | Env var | Default | Type | Purpose |
 |---|---|---|---|
-| `EMBEDIQ_AUTH_STRATEGY` | (none) | enum | `basic` / `oidc` / `proxy` / `none`. Unset = open mode. |
+| `EMBEDIQ_AUTH_STRATEGY` | (none) | enum | `basic` / `oidc` / `proxy` / `demo` / `none`. Unset = open mode. The `demo` strategy enables the admin/user persona switcher for demo recordings — never for production. |
 | `EMBEDIQ_AUTH_USER` | — | string | Basic auth username. Auto-enables `basic` when `EMBEDIQ_AUTH_PASS` is also set. |
 | `EMBEDIQ_AUTH_PASS` | — | string **(secret)** | Basic auth password. |
 | `EMBEDIQ_OIDC_ISSUER` | — | URL | OIDC issuer URL. Must exactly match the JWT `iss` claim. |

@@ -7,7 +7,65 @@ All notable changes to EmbedIQ are documented in this file.
 The format is based on [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [Unreleased] — Wizard-UX overhaul
+
+A 2026-05-26 session layered substantial UX changes on top of v4.0:
+
+### Added — wizard surface
+
+- **`STRAT_TARGETS` agent-selection question** — MULTI_CHOICE of all six hosted-agent formats; the answer drives `config.targets` server-side so the harness only emits files for the selected agents. Defaults to all agents when unanswered.
+- **`STRAT_000b` admin-vs-user operator distinction** — orthogonal to role; auto-derived from auth role (`wizard-admin` → admin, `wizard-user` → user) when authenticated, gating ~28 admin-only questions (REG, FIN, security/audit) for non-admin operators.
+- **`purposeText` schema field on `Question`** — admin-only "WHY WE ASK" panel rendered below `helpText`. Populated for all 91 questions (full pass, no skipped entries).
+- **"Other (specify)" follow-up pattern** extended to 10 question dimensions where option lists can't be exhaustive: TECH_004 (IDE), TECH_005 (build), TECH_006 (testing), TECH_007 (CI/CD), TECH_009 (monitoring), TECH_010 (DB), TECH_011 (linting), TECH_014 (hardware), REG_002 (compliance frameworks), PROB_003 (prior solutions tried). Each adds a `<id>_other` FREE_TEXT follow-up gated on CONTAINS 'other'.
+- **PROB_003 conversion** — was pure FREE_TEXT; now MULTI_CHOICE of 11 common pre-failure patterns (Copilot deprecated APIs, generic agents without compliance, pre-commit hooks disabled, GRC without dev-side, etc.) + Other-specify follow-up.
+- **Four new REG framework follow-ups** parallel to the HIPAA / REG_003 pattern: REG_003a (PCI cardholder data), REG_003b (GDPR data-subject rights), REG_003c (FDA SaMD class), REG_003d (NIST AI RMF risk tier).
+- **Per-dimension review step** — after the last question in a dimension is answered, the user sees a review panel listing every Q&A pair for that dimension; clicking any answer returns to that question for editing.
+- **Back navigation** within a dimension; previous answers pre-fill on revisit.
+
+### Added — synthesizer
+
+- **`SETUP.md` generator** — emits a per-agent install + activation guide alongside the harness whenever any agent target is selected. Content adapts to the selected agent set: Claude Code install + verify, Cursor MDC discovery, Copilot install, Gemini Code Assist, Windsurf, plus AGENTS.md. Includes verification steps, compliance-specific checks (HIPAA / PCI), and troubleshooting.
+- **`relevantFor` on `AnswerOption`** — option-level filtering driven by upstream answers. Python-only project sees only Python test frameworks / linters in TECH_006 / TECH_011 instead of the full mixed-language list.
+
+### Added — auth
+
+- **`demo` auth strategy** — admin/user persona switcher activated via `EMBEDIQ_AUTH_STRATEGY=demo`. Reads `embediq_demo_user` cookie (or `?demo-user=` query param) and returns one of two preset users: `demo-admin@example.com` with `wizard-admin` role, or `demo-user@example.com` with `wizard-user` role. Permissive at the middleware level so the UI can render the persona picker. **Never for production** — anyone can claim any role.
+- **Header user-profile menu** — top-right avatar + dropdown showing signed-in user, role badge, DEMO badge when in demo mode, "Switch account" and "Sign out" actions. Replaces the welcome-screen identity banner for authenticated users.
+- **`/api/identity` endpoint** — surfaces auth state, OS-level host info (hostname, platform, release, username from `os.hostname()` + `os.userInfo()`), MDM-injected workstation ID (from `X-Workstation-Id` or `X-Device-Id` headers), and IP. Honest about device-verification source (`mdm-header` / `os-hostname` / `user-agent-fallback`).
+
+### Added — refactored
+
+- **`FIN_003` rewritten to be agent-agnostic** — was Claude-specific (OpusPlan / SonnetPlan / Manual / Auto-via-claude-router). Now: Deterministic rules / Local-LLM classifier (via TECH_013) / Tiered planning (per-agent) / Manual per-request / No routing.
+- **Healthcare BPO archetype refactor** — `healthcare-bpo-strict` renamed to `healthcare-bpo-web-developer`; three siblings added (`healthcare-bpo-web-pm`, `healthcare-bpo-microsoft-developer`, `healthcare-bpo-microsoft-pm`) to cover the two dominant healthcare-BPO stack patterns × role variants. **Nine customer-specific `sagility-class-*` archetypes deleted** — customer-named fixtures are no longer allowed in the repo; they're regenerable from the canonical archetypes with a customer overlay.
+- **Welcome screen repositioned** — "Claude Code Setup Wizard" → "Configure your AI coding agents"; subtitle covers all five IDE targets; three explanatory meta-pills (15 target formats, 23 generators, HIPAA · PCI · FedRAMP · NIST AI RMF) with hover tooltips explaining each.
+
+### Changed — counts
+
+- Total questions: **77 → 91** (+14 net: STRAT_TARGETS, STRAT_000b, 4 REG framework follow-ups, 8 Other-specify follow-ups, minus PROB_004 redundancy removal, minus OPS_007 redundancy removal).
+- Total generators: **23 → 28** (added SETUP.md + provenance-trace + cyclonedx-aibom + oscal-component + oscal-ssp-fragment all reframed into the canonical generator count).
+- Target formats: **15 → 16** (added `provenance` as a distinct target alongside the earlier governance outputs).
+- Auth strategies: **3 → 4** (added `demo`).
+- Healthcare-BPO archetypes: **1 → 4 canonical** (after deleting 9 customer-specific sagility-class fixtures).
+- Total archetypes: **19 → 13** (customer-neutral set; same coverage with fewer redundant fixtures).
+- Test count: **1,265 → 1,285** (snapshot regeneration after SETUP.md addition + golden regenerate after archetype refactor + new admin/user paths).
+- Priority percentages replaced with categorical labels (Top / High / Moderate / Light) in the playback view — raw percentage preserved as tooltip.
+
+### Fixed
+
+- Duplicate file-list rendering on Phase 3 — the preview list (`#file-preview`) and the result list (`#file-list`) both showed after Generate; preview now hides when results land.
+- "Setup Complete" h1 appeared before generation actually ran — now starts as "Ready to Generate" and swaps after success.
+- Question counter showed "1 of N-1" after answering each question because the re-fetched visible list was filtered to unanswered — refactored to keep the full visible list and navigate by index.
+- Pain-points multi-choice question was unresponsive — label/checkbox double-toggle bug; switched to manual state management with `event.preventDefault()`.
+- Silent failure when clicking Continue with no required value selected — now shows validation hint + card shake.
+- `eng_manager` role missing from `UserRole` union type (broke `tsc --noEmit`) — added.
+- Welcome page and CLI banner still said "Claude Code Setup Wizard" — updated to "AI Coding Agent Setup Wizard".
+- "Non-technical" proficiency option visible when role is developer/devops/lead/etc. — gated via `relevantFor` to only appear when role is BA/PM/Executive.
+
+### Documentation
+
+- **Full purposeText authoring pass** — all 91 questions now carry both `helpText` (context for everyone) and `purposeText` (admin-only "why we ask").
+- **6 new customer-facing showcase docs** in `docs/showcase/`: `EXECUTIVE-BRIEF.md`, `persona-healthcare-bpo.md`, `persona-federal-contractor.md`, `persona-consulting-firm.md`, `DEMO-SCRIPT.md`, `FAQ.md`, `PITCH-DECK.md`, `PROCUREMENT-EVIDENCE-PACK.md`, `README.md` (showcase index).
+- Sagility-demo runbook marked stale (references deleted archetypes); narrative content preserved with a re-mapping note pointing to the canonical archetypes.
 
 ## [4.0.0] — Enterprise AI Governance Foundation
 

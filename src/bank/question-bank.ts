@@ -57,7 +57,37 @@ export class QuestionBank {
 
   getVisibleQuestions(dimension: Dimension, answers: Map<string, Answer>): Question[] {
     return this.getByDimension(dimension)
-      .filter(q => this.evaluator.shouldShow(q.showConditions, answers));
+      .filter(q => this.evaluator.shouldShow(q.showConditions, answers))
+      .map(q => this.applyOptionRelevance(q, answers));
+  }
+
+  /**
+   * Filter a question's options by their `relevantFor` tags. Each tag has the
+   * shape `<questionId>:<value>`; an option is kept when at least one tag
+   * matches the user's upstream answer (or when no tags are declared).
+   * Returns the question untouched if no options carry a relevance tag.
+   */
+  private applyOptionRelevance(q: Question, answers: Map<string, Answer>): Question {
+    if (!q.options || q.options.length === 0) return q;
+    const anyTagged = q.options.some(o => o.relevantFor && o.relevantFor.length > 0);
+    if (!anyTagged) return q;
+
+    const filtered = q.options.filter(o => {
+      if (!o.relevantFor || o.relevantFor.length === 0) return true;
+      return o.relevantFor.some(tag => {
+        const [refQuestionId, refValue] = tag.split(':');
+        if (!refQuestionId || refValue === undefined) return true;
+        const upstream = answers.get(refQuestionId);
+        if (!upstream) return false;
+        const actual = upstream.value;
+        if (Array.isArray(actual)) {
+          return actual.some(v => String(v).toLowerCase() === refValue.toLowerCase());
+        }
+        return String(actual).toLowerCase() === refValue.toLowerCase();
+      });
+    });
+
+    return { ...q, options: filtered };
   }
 
   getDimensions(): Dimension[] {

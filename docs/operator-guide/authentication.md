@@ -7,13 +7,14 @@ credentials so local / single-user setups work out of the box. For any
 shared, multi-user, or internet-exposed deployment, pick an auth
 strategy via `EMBEDIQ_AUTH_STRATEGY` and configure its env vars.
 
-Three strategies ship:
+Four strategies ship:
 
 | Strategy | Use when | Pros | Cons |
 |---|---|---|---|
 | **Basic** | Quick private deploy, single admin account | Zero external dependency, trivial setup | One shared credential, no roles out of the box |
 | **OIDC** | Enterprise SSO (Okta, Auth0, Azure AD, Keycloak, Google) | Real users + real role claims, central revocation | Requires an IdP + a bit of claim mapping |
 | **Proxy header** | Already behind an identity-aware proxy (IAP, Pomerium, Teleport, oauth2-proxy) | Reuse existing SSO; EmbedIQ just trusts the proxy | Must guarantee no direct ingress; trust is upstream |
+| **Demo** | Recording demos, showing the admin/user distinction without standing up an IdP | Zero setup, persona switcher UI, makes the admin/user RBAC distinction visible | **Permissive — anyone can claim any role. Never for production.** |
 
 When no strategy is set, the server logs `Auth: none (open mode)` at
 startup and every route is anonymous.
@@ -26,6 +27,39 @@ startup and every route is anonymous.
 | Workforce SSO (Okta / Google Workspace / Azure AD / etc.) and no proxy | `EMBEDIQ_AUTH_STRATEGY=oidc` |
 | Already deployed identity-aware proxy in front of all internal apps | `EMBEDIQ_AUTH_STRATEGY=proxy` |
 | Public-ish multi-tenant deployment | `oidc` + a reverse proxy with WAF + rate limiting |
+| Recording a demo where the admin/user distinction needs to be visible | `EMBEDIQ_AUTH_STRATEGY=demo` (development / recording only) |
+
+## Strategy 4: Demo (demo-only — never for production)
+
+The demo strategy reads a cookie (`embediq_demo_user`) or query param
+(`?demo-user=`) and returns one of two preset users:
+
+- `admin` → `demo-admin@example.com` with role `wizard-admin`
+- `user` → `demo-user@example.com` with role `wizard-user`
+
+When no persona has been chosen, the welcome screen renders a persona
+picker with two buttons; clicking either sets the cookie and reloads.
+The header user-profile menu shows the chosen persona with a DEMO badge
+and a "Switch account" action.
+
+**Why it exists:** the admin vs. user operator distinction is one of
+EmbedIQ's most user-visible features (it gates ~28 admin-only questions
+and the per-question `purposeText` panels). Demonstrating this without
+the demo strategy requires standing up an OIDC IdP with two role
+mappings — too much setup for a recording.
+
+**Why it's not safe for production:** anyone with access to the page can
+set the cookie via JavaScript console or `?demo-user=` query param and
+claim any role. The middleware is intentionally permissive (unauthenticated
+requests are let through so the UI can render the picker). The strategy
+name itself is the security model: by appearing in `EMBEDIQ_AUTH_STRATEGY`
+it advertises that this is demo mode.
+
+```bash
+export EMBEDIQ_AUTH_STRATEGY=demo
+npm run dev:web
+# Visit http://localhost:3000 and click Coding Agent Admin or Coding Agent User
+```
 
 ## Roles (RBAC)
 

@@ -78,9 +78,10 @@ regulatory audit.
 **Not for**
 
 - **Hobbyist solo developers** who want a one-page `CLAUDE.md`. Shallow
-  generators serve that case well and a 74-question wizard would
+  generators serve that case well and a 91-question wizard would
   over-serve it — even with the engine's short-circuiting for
-  minimal-compliance profiles.
+  minimal-compliance profiles, admin-vs-user gating, and agent-target
+  filtering.
 
 ---
 
@@ -262,8 +263,9 @@ output) in
 
 | Area | What ships today |
 |---|---|
-| **Adaptive Q&A** | 74 questions · 7 dimensions · 40 with conditional branching |
-| **Role adaptation** | 8 roles (developer, devops, lead, BA, PM, executive, QA, data); role-specific output variants |
+| **Adaptive Q&A** | 91 questions · 7 dimensions · explicit agent-target selection (`STRAT_TARGETS`) and admin-vs-user split (`STRAT_000b`) gate ~28 admin-only questions for end-user operators |
+| **Role adaptation** | 9 roles (developer, devops, lead, eng_manager, BA, PM, executive, QA, data); role-specific output variants; admin/user operator-type orthogonal to role |
+| **Per-question context + purpose** | Every question carries `helpText` (shown to all users) plus admin-only `purposeText` explaining what the answer drives in the generated output |
 | **Multi-agent targets** | Claude Code, `AGENTS.md`, Cursor, Copilot, Gemini, Windsurf — from one interview |
 | **Local-AI integration** (v3.3) | Continue.dev, Aider, Zed AI, and Ollama — auto-included when the wizard's local-AI branch (`TECH_013`) is opted in |
 | **Runnable RAG scaffold** (v3.3) | `rag-scaffold` target emits chunker + embedder + SQLite-VSS store + audit + CLI under `rag/`, with FHIR-aware chunker for healthcare profiles and per-framework compliance rules (`rag-hipaa-`, `rag-pci-`, `rag-soc2-`, `rag-ferpa-compliance.md`) |
@@ -299,7 +301,7 @@ output) in
 
 | Area | What ships today |
 |---|---|
-| **Authentication** | Basic / OIDC / reverse-proxy header; three-tier RBAC (`wizard-viewer` / `wizard-user` ≡ `wizard-contributor` / `wizard-admin`) with legacy `wizard-user` preserved as a contributor alias |
+| **Authentication** | Basic / OIDC / reverse-proxy header / demo (admin-vs-user persona switcher for demo recordings — never for production); three-tier RBAC (`wizard-viewer` / `wizard-user` ≡ `wizard-contributor` / `wizard-admin`) with legacy `wizard-user` preserved as a contributor alias |
 | **Session persistence** | Null (default) / JSON file / SQLite / Postgres backends; AES-256-GCM optional payload encryption with side-by-side key rotation (`EMBEDIQ_SESSION_DATA_KEY_PREV`). Postgres backend supports horizontal scale-out — every web replica reads the same session table |
 | **Multi-engagement scoping** | `EMBEDIQ_ENGAGEMENT_ID` isolates session, autopilot, and audit state under `.embediq/engagements/<id>/` — one process per engagement |
 | **Observability** | Optional OpenTelemetry (`EMBEDIQ_OTEL_ENABLED=true`); JSONL audit log |
@@ -339,13 +341,13 @@ Three-layer design:
 ```
 ┌────────────────────────────────────────────────────┐
 │  Layer 1: Universal Question Bank                  │
-│  74 questions · 7 dimensions · 40 with branching   │
+│  91 questions · 7 dimensions · purposeText schema  │
 ├────────────────────────────────────────────────────┤
 │  Layer 2: Adaptive Logic Engine                    │
 │  Branch evaluation · profile building · priorities │
 ├────────────────────────────────────────────────────┤
 │  Layer 3: Unified Synthesizer                      │
-│  Target-aware generators · validation · stamping   │
+│  28 generators · 16 target formats · validation    │
 └────────────────────────────────────────────────────┘
 ```
 

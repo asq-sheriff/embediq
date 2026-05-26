@@ -1,0 +1,37 @@
+# Detailed context exclusions
+# These files are excluded from Claude Code context
+
+# Package lock files (large, not useful for context)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+Pipfile.lock
+poetry.lock
+Cargo.lock
+go.sum
+
+# Generated files
+*.min.js
+*.min.css
+*.map
+*.d.ts
+
+# Data files
+*.csv
+*.parquet
+*.sqlite
+*.db
+
+# Media
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.ico
+*.mp4
+*.webm
+
+# Documentation build
+docs/_build/
+site/

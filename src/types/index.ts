@@ -43,6 +43,14 @@ export interface AnswerOption {
   key: string;
   label: string;
   description?: string;
+  /**
+   * Optional list of upstream answer values that make this option relevant.
+   * When set, the option is shown only if at least one referenced value is
+   * present in the upstream answer. Format: `<questionId>:<value>`, e.g.,
+   * `TECH_001:python` for "show this option if TECH_001 contains 'python'".
+   * Empty/missing field means always show.
+   */
+  relevantFor?: string[];
 }
 
 export interface Condition {
@@ -55,7 +63,14 @@ export interface Question {
   id: string;
   dimension: Dimension;
   text: string;
+  /** Context shown to every user — plain-language explanation of the question. */
   helpText?: string;
+  /**
+   * Admin-only explanation of *why* this question is asked — what the answer
+   * drives in the generated harness. Only rendered when the user has
+   * identified as a Coding Agent Admin (STRAT_000b === 'admin').
+   */
+  purposeText?: string;
   type: QuestionType;
   options?: AnswerOption[];
   required: boolean;
@@ -87,7 +102,7 @@ export interface Priority {
 
 export type TeamSize = 'solo' | 'small' | 'medium' | 'large';
 export type BudgetTier = 'minimal' | 'moderate' | 'enterprise';
-export type UserRole = 'developer' | 'devops' | 'lead' | 'ba' | 'pm' | 'executive' | 'qa' | 'data';
+export type UserRole = 'developer' | 'devops' | 'lead' | 'eng_manager' | 'ba' | 'pm' | 'executive' | 'qa' | 'data';
 export type TechnicalProficiency = 'beginner' | 'intermediate' | 'advanced' | 'non_technical';
 
 export interface UserProfile {

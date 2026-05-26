@@ -17,6 +17,7 @@ import { IgnoreGenerator } from './generators/ignore.js';
 import { McpJsonGenerator } from './generators/mcp-json.js';
 import { AssociationMapGenerator } from './generators/association-map.js';
 import { DocumentStateGenerator } from './generators/document-state.js';
+import { SetupInstructionsGenerator } from './generators/setup-instructions.js';
 import { AgentsMdGenerator } from './generators/agents-md.js';
 import { CursorRulesGenerator } from './generators/cursor-rules.js';
 import { CopilotInstructionsGenerator } from './generators/copilot-instructions.js';
@@ -182,6 +183,35 @@ export class SynthesizerOrchestrator {
         // run, not the default claude-md generator output.
         generatorByPath.set(coworkerClaudeMd.relativePath, 'coworker-claude-md');
         targetByPath.set(coworkerClaudeMd.relativePath, TargetFormat.CLAUDE);
+      }
+
+      // Per-agent SETUP.md — emits whenever the user generated at least one
+      // agent-target file (Claude / Cursor / Copilot / Gemini / Windsurf /
+      // AGENTS.md). Skipped when the run is governance-only (an isolated
+      // OSCAL or AIBOM or provenance emission has no harness to set up).
+      // Content is tailored to the chosen agent set; default is Claude when
+      // nothing else is picked.
+      const agentTargets: readonly TargetFormat[] = [
+        TargetFormat.CLAUDE,
+        TargetFormat.AGENTS_MD,
+        TargetFormat.CURSOR,
+        TargetFormat.COPILOT,
+        TargetFormat.GEMINI,
+        TargetFormat.WINDSURF,
+      ];
+      const hasAgentTarget = agentTargets.some((t) => targets.has(t));
+      if (hasAgentTarget) {
+        const setupGen = new SetupInstructionsGenerator();
+        const setupFiles = setupGen.generate(config);
+        for (const f of setupFiles) {
+          allFiles.push(f);
+          generatorByPath.set(f.relativePath, 'setup-instructions');
+          targetByPath.set(f.relativePath, TargetFormat.CLAUDE);
+          this.bus.emit('file:generated', {
+            relativePath: f.relativePath,
+            size: f.content.length,
+          });
+        }
       }
 
       // v4.0 + the v4.0 governance outputs — governance-output post-pass. Opt-in only

@@ -10,6 +10,7 @@ exports[`SynthesizerOrchestrator > PM (non-technical) profile > snapshot: file l
   ".claudeignore",
   ".mcp.json.template",
   "CLAUDE.md",
+  "SETUP.md",
 ]
 `;
 
@@ -29,6 +30,7 @@ exports[`SynthesizerOrchestrator > healthcare HIPAA profile > snapshot: file lis
   ".claudeignore",
   ".mcp.json.template",
   "CLAUDE.md",
+  "SETUP.md",
 ]
 `;
 
@@ -43,5 +45,6 @@ exports[`SynthesizerOrchestrator > minimal developer profile > snapshot: file li
   ".claudeignore",
   ".mcp.json.template",
   "CLAUDE.md",
+  "SETUP.md",
 ]
 `;

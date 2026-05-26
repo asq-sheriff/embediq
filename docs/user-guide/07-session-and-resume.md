@@ -203,8 +203,8 @@ Full request/response shapes in
   can't be shared across user accounts. Use the dump/import admin
   flow if you genuinely need to hand off ownership.
 - **Contributors map is empty.** Auth is off — `contributedBy` isn't
-  being stamped. Turn on auth (Basic / OIDC / reverse-proxy header)
-  to populate the map.
+  being stamped. Turn on auth (Basic / OIDC / reverse-proxy header,
+  or `demo` for recording purposes only) to populate the map.
 - **Session exists on disk but `/api/sessions/:id` returns 404.** The
   TTL expired. The backend sweeps expired sessions at read time.
 - **Resume URL doesn't advance to the right question.** Make sure the

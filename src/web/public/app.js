@@ -16,6 +16,40 @@ const state = {
 
 const SESSION_STORAGE_KEY = 'embediq_session_id';
 
+// ─── Iconography ───
+//
+// Monochrome line icons (Lucide / Feather style — the open-source line-icon
+// language Apple SF Symbols popularized). `stroke="currentColor"` lets every
+// icon inherit its parent's text color; the .icon CSS class sets size.
+
+const ICONS = {
+  target: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>',
+  search: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>',
+  gear: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1.5v3M12 19.5v3M4.5 12h-3M22.5 12h-3M19 19l-2-2M19 5l-2 2M5 19l2-2M5 5l2 2"/><circle cx="12" cy="12" r="4"/></svg>',
+  code: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m8 7-5 5 5 5"/><path d="m16 7 5 5-5 5"/><path d="m14 4-4 16"/></svg>',
+  shield: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>',
+  dollar: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1.5v21"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
+  sparkle: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M5.5 5.5l2.1 2.1M16.4 16.4l2.1 2.1M3 12h3M18 12h3M5.5 18.5l2.1-2.1M16.4 7.6l2.1-2.1"/></svg>',
+  doc: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>',
+  check: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+  warn: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+  xCircle: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+  checkCircle: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+};
+
+// Icon order matching the seven dimensions (Strategic Intent, Problem
+// Definition, Operational Reality, Technology Requirements, Regulatory
+// Compliance, Financial Constraints, Innovation & Future-Proofing).
+const DIMENSION_ICONS = [
+  ICONS.target,
+  ICONS.search,
+  ICONS.gear,
+  ICONS.code,
+  ICONS.shield,
+  ICONS.dollar,
+  ICONS.sparkle,
+];
+
 // ─── Server-Side Session Helpers ───
 
 async function loadSessionsConfig() {
@@ -132,7 +166,7 @@ function showPhase(id) {
     'phase-generate': 3,
   };
 
-  document.querySelectorAll('.dot').forEach(d => {
+  document.querySelectorAll('.phase-step').forEach(d => {
     const idx = parseInt(d.dataset.phase);
     d.classList.toggle('active', idx === phaseMap[id]);
     d.classList.toggle('done', idx < phaseMap[id]);
@@ -182,11 +216,10 @@ async function startWizard() {
 // ─── Phase 1: Q&A ───
 
 function renderDimensionSidebar() {
-  const icons = ['🎯', '🔍', '⚙️', '💻', '🔒', '💰', '🚀'];
   const list = document.getElementById('dimension-list');
   list.innerHTML = state.dimensions.map((d, i) => `
     <div class="dim-item${i === 0 ? ' active' : ''}" id="dim-${i}">
-      <span class="dim-icon">${icons[i] || '•'}</span>
+      <span class="dim-icon">${DIMENSION_ICONS[i] || ICONS.target}</span>
       <span class="dim-label">${d.name}</span>
       <div class="dim-progress">
         <div class="dim-progress-fill" id="dim-progress-${i}" style="width: 0%"></div>
@@ -205,7 +238,8 @@ async function loadDimension(index) {
   });
 
   const dim = state.dimensions[index];
-  document.getElementById('current-dimension').textContent = dim.name;
+  // Dimension name is shown in the sidebar (active dim-item) — no duplicate
+  // header above the question card.
 
   // Fetch visible questions
   const res = await fetch('/api/questions', {
@@ -220,7 +254,30 @@ async function loadDimension(index) {
     return;
   }
 
+  // Reset the review/card visibility — switching dimensions always starts in
+  // the question-card view.
+  const reviewEl = document.getElementById('dimension-review');
+  if (reviewEl) reviewEl.style.display = 'none';
+  const cardEl = document.getElementById('question-card');
+  if (cardEl) cardEl.style.display = '';
+  state.editingFromReview = false;
+
+  // Advance past any already-answered questions (resuming or branching may
+  // mean the first visible question has already been answered).
+  state.currentQuestionIndex = findNextUnansweredIndex(0);
+  if (state.currentQuestionIndex === -1) {
+    showDimensionReview();
+    return;
+  }
+
   renderQuestion();
+}
+
+function findNextUnansweredIndex(startIdx) {
+  for (let i = startIdx; i < state.currentQuestions.length; i++) {
+    if (!state.answers[state.currentQuestions[i].id]) return i;
+  }
+  return -1;
 }
 
 function renderQuestion() {
@@ -233,6 +290,29 @@ function renderQuestion() {
     `Question ${state.currentQuestionIndex + 1} of ${state.currentQuestions.length}`;
   document.getElementById('question-text').textContent = q.text;
   document.getElementById('help-text').textContent = q.helpText || '';
+
+  // Admin-only purpose: shown when the user identified as a Coding Agent Admin
+  // via STRAT_000b. The field is optional on questions; render container
+  // empty when missing or when the user is not an admin.
+  const isAdmin = state.answers['STRAT_000b']?.value === 'admin';
+  let purposeEl = document.getElementById('purpose-text');
+  if (!purposeEl) {
+    const helpEl = document.getElementById('help-text');
+    if (helpEl) {
+      purposeEl = document.createElement('p');
+      purposeEl.id = 'purpose-text';
+      purposeEl.className = 'purpose-text';
+      helpEl.parentNode.insertBefore(purposeEl, helpEl.nextSibling);
+    }
+  }
+  if (purposeEl) {
+    if (isAdmin && q.purposeText) {
+      purposeEl.innerHTML = '<span class="purpose-label">WHY WE ASK</span> ' + q.purposeText;
+      purposeEl.style.display = '';
+    } else {
+      purposeEl.style.display = 'none';
+    }
+  }
   document.getElementById('btn-skip').style.display = q.required ? 'none' : '';
 
   const container = document.getElementById('answer-input');
@@ -262,8 +342,8 @@ function renderQuestion() {
     case 'multi_choice':
       container.innerHTML = `<div class="choice-group">
         ${(q.options || []).map(o => `
-          <label class="choice-item" onclick="toggleMulti(this, '${o.key}')">
-            <input type="checkbox" value="${o.key}">
+          <label class="choice-item" onclick="toggleMulti(event, this, '${o.key}')">
+            <input type="checkbox" value="${o.key}" tabindex="-1">
             <div class="choice-label">
               <div class="label-text">${o.label}</div>
               ${o.description ? `<div class="label-desc">${o.description}</div>` : ''}
@@ -301,6 +381,18 @@ function renderQuestion() {
       break;
   }
 
+  // Pre-fill any existing answer so the user sees their prior choice when
+  // navigating back or revisiting a question.
+  prefillExistingAnswer(q);
+
+  // Back button visibility: enabled when there's an earlier question to go to
+  // in this dimension.
+  const backBtn = document.getElementById('btn-back');
+  if (backBtn) {
+    const hasEarlier = state.currentQuestionIndex > 0;
+    backBtn.style.visibility = hasEarlier ? 'visible' : 'hidden';
+  }
+
   // Update progress
   const pct = Math.round(((state.currentQuestionIndex) / state.currentQuestions.length) * 100);
   const progressEl = document.getElementById(`dim-progress-${state.currentDimIndex}`);
@@ -311,31 +403,136 @@ function renderQuestion() {
   card.style.animation = 'none';
   card.offsetHeight; // reflow
   card.style.animation = '';
+  hideValidationHint();
+}
+
+function prefillExistingAnswer(q) {
+  const existing = state.answers[q.id];
+  if (!existing) return;
+  const value = existing.value;
+  switch (q.type) {
+    case 'free_text': {
+      const input = document.getElementById('text-answer');
+      if (input) {
+        input.value = String(value ?? '');
+        state.currentValue = input.value;
+      }
+      break;
+    }
+    case 'single_choice':
+    case 'yes_no': {
+      const items = document.querySelectorAll('#answer-input .choice-item');
+      items.forEach((el) => {
+        const input = el.querySelector('input');
+        const optionKey = input?.value;
+        const matches = optionKey !== undefined && (
+          String(optionKey).toLowerCase() === String(value).toLowerCase()
+          || (q.type === 'yes_no' && ((value === true && optionKey === 'true') || (value === false && optionKey === 'false')))
+        );
+        if (matches) {
+          el.classList.add('selected');
+          if (input) input.checked = true;
+          state.currentValue = q.type === 'yes_no' ? value : optionKey;
+        }
+      });
+      break;
+    }
+    case 'multi_choice': {
+      const arr = Array.isArray(value) ? value : [];
+      state.currentValue = [...arr];
+      const items = document.querySelectorAll('#answer-input .choice-item');
+      items.forEach((el) => {
+        const cb = el.querySelector('input[type="checkbox"]');
+        const optionKey = cb?.value;
+        if (optionKey !== undefined && arr.some((v) => String(v).toLowerCase() === String(optionKey).toLowerCase())) {
+          el.classList.add('selected');
+          if (cb) cb.checked = true;
+        }
+      });
+      break;
+    }
+    case 'scale': {
+      const items = document.querySelectorAll('#answer-input .scale-item');
+      items.forEach((el) => {
+        if (el.textContent.trim() === String(value)) {
+          el.classList.add('selected');
+          state.currentValue = Number(value);
+        }
+      });
+      break;
+    }
+  }
+}
+
+function previousQuestion() {
+  // Find the nearest earlier question in this dimension (skipping nothing —
+  // the user may want to revisit a Skip-ed question too).
+  if (state.currentQuestionIndex <= 0) return;
+  state.currentQuestionIndex = state.currentQuestionIndex - 1;
+  renderQuestion();
 }
 
 function selectChoice(el, value) {
   el.closest('.choice-group').querySelectorAll('.choice-item').forEach(c => c.classList.remove('selected'));
   el.classList.add('selected');
   state.currentValue = value;
+  hideValidationHint();
 }
 
-function toggleMulti(el, value) {
-  el.classList.toggle('selected');
+function toggleMulti(event, el, value) {
+  // The label wraps the checkbox, so the browser would otherwise forward
+  // the click to the checkbox and toggle it. We manage state ourselves to
+  // keep the checkbox tick, the .selected class, and state.currentValue
+  // in sync — preventing the default forwarding stops a double-toggle.
+  if (event && typeof event.preventDefault === 'function') event.preventDefault();
+  const nowSelected = !el.classList.contains('selected');
+  el.classList.toggle('selected', nowSelected);
   const cb = el.querySelector('input[type="checkbox"]');
-  cb.checked = !cb.checked;
+  if (cb) cb.checked = nowSelected;
 
   if (!Array.isArray(state.currentValue)) state.currentValue = [];
-  if (el.classList.contains('selected')) {
-    state.currentValue.push(value);
+  if (nowSelected) {
+    if (!state.currentValue.includes(value)) state.currentValue.push(value);
   } else {
     state.currentValue = state.currentValue.filter(v => v !== value);
   }
+  hideValidationHint();
 }
 
 function selectScale(el, value) {
   el.closest('.scale-group').querySelectorAll('.scale-item').forEach(s => s.classList.remove('selected'));
   el.classList.add('selected');
   state.currentValue = value;
+  hideValidationHint();
+}
+
+function showValidationHint(q) {
+  const card = document.getElementById('question-card');
+  if (!card) return;
+  let hint = document.getElementById('validation-hint');
+  if (!hint) {
+    hint = document.createElement('div');
+    hint.id = 'validation-hint';
+    hint.className = 'validation-hint';
+    const nav = card.querySelector('.question-nav');
+    if (nav) card.insertBefore(hint, nav);
+    else card.appendChild(hint);
+  }
+  const message = q && q.type === 'multi_choice'
+    ? 'Pick at least one option to continue.'
+    : q && q.type === 'free_text'
+      ? 'Please type an answer to continue.'
+      : 'Select an option to continue.';
+  hint.textContent = message;
+  hint.style.display = 'block';
+  card.classList.remove('shake');
+  void card.offsetWidth;
+  card.classList.add('shake');
+}
+
+function hideValidationHint() {
+  const hint = document.getElementById('validation-hint');
+  if (hint) hint.style.display = 'none';
 }
 
 async function nextQuestion() {
@@ -349,8 +546,10 @@ async function nextQuestion() {
 
   if (q.required && (value === null || value === undefined || value === '' ||
       (Array.isArray(value) && value.length === 0))) {
-    return; // Don't advance without required answer
+    showValidationHint(q);
+    return;
   }
+  hideValidationHint();
 
   // Store answer
   if (value !== null && value !== undefined && value !== '') {
@@ -368,49 +567,142 @@ async function nextQuestion() {
     }
   }
 
-  // Next question or next dimension
-  state.currentQuestionIndex++;
+  // Re-fetch visible questions (the answer just stored may have changed
+  // which downstream questions are visible — branching). Keep the full
+  // visible list so the counter reflects the whole dimension; navigate by
+  // index, skipping already-answered entries.
+  const dim = state.dimensions[state.currentDimIndex];
+  const res = await fetch('/api/questions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ dimension: dim.name, answers: state.answers }),
+  });
+  state.currentQuestions = await res.json();
 
-  if (state.currentQuestionIndex >= state.currentQuestions.length) {
-    // Mark dimension done
-    const progressEl = document.getElementById(`dim-progress-${state.currentDimIndex}`);
-    if (progressEl) progressEl.style.width = '100%';
-    const dimEl = document.getElementById(`dim-${state.currentDimIndex}`);
-    if (dimEl) dimEl.classList.add('done');
+  // If the user was editing from the dimension review, return to the review
+  // after their change is recorded rather than auto-advancing.
+  if (state.editingFromReview) {
+    state.editingFromReview = false;
+    showDimensionReview();
+    return;
+  }
 
-    await advanceDimension();
+  const nextIdx = findNextUnansweredIndex(state.currentQuestionIndex + 1);
+  if (nextIdx === -1) {
+    // No more unanswered questions in this dimension — show the review step.
+    showDimensionReview();
   } else {
-    // Re-fetch visible questions (answer may have changed visibility)
-    const dim = state.dimensions[state.currentDimIndex];
-    const res = await fetch('/api/questions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dimension: dim.name, answers: state.answers }),
-    });
-    const updated = await res.json();
-    const answeredIds = Object.keys(state.answers);
-    state.currentQuestions = updated.filter(q => !answeredIds.includes(q.id));
-
-    if (state.currentQuestionIndex >= state.currentQuestions.length) {
-      const progressEl = document.getElementById(`dim-progress-${state.currentDimIndex}`);
-      if (progressEl) progressEl.style.width = '100%';
-      const dimEl = document.getElementById(`dim-${state.currentDimIndex}`);
-      if (dimEl) dimEl.classList.add('done');
-      await advanceDimension();
-    } else {
-      state.currentQuestionIndex = 0; // reset since we re-filtered
-      renderQuestion();
-    }
+    state.currentQuestionIndex = nextIdx;
+    renderQuestion();
   }
 }
 
 function skipQuestion() {
-  state.currentQuestionIndex++;
-  if (state.currentQuestionIndex >= state.currentQuestions.length) {
-    advanceDimension();
+  const nextIdx = findNextUnansweredIndex(state.currentQuestionIndex + 1);
+  if (nextIdx === -1) {
+    showDimensionReview();
   } else {
+    state.currentQuestionIndex = nextIdx;
     renderQuestion();
   }
+}
+
+// ─── Dimension review step ───
+//
+// After every question in a dimension has been answered (or skipped) the
+// user sees a per-dimension review before advancing. They can click any
+// answer to edit it; doing so returns to that question and, after Continue,
+// brings them back to this review instead of auto-advancing.
+
+function showDimensionReview() {
+  const dim = state.dimensions[state.currentDimIndex];
+  const card = document.getElementById('question-card');
+  const review = document.getElementById('dimension-review');
+  if (!review) return;
+
+  card.style.display = 'none';
+  review.style.display = 'block';
+
+  const title = document.getElementById('dim-review-title');
+  if (title) title.textContent = `Review your answers · ${dim.name}`;
+
+  const list = document.getElementById('dim-review-list');
+  if (!list) return;
+
+  // Build a row per visible question. Use the current `state.currentQuestions`
+  // which is the full visible list for this dimension.
+  list.innerHTML = state.currentQuestions.map((q) => {
+    const ans = state.answers[q.id];
+    const summary = formatAnswerSummary(q, ans);
+    const answered = ans !== undefined;
+    return `
+      <div class="dim-review-row${answered ? '' : ' unanswered'}" onclick="editAnswerFromReview('${q.id}')">
+        <div class="dim-review-row-main">
+          <div class="dim-review-question">${escapeHtml(q.text)}</div>
+          <div class="dim-review-answer">${answered ? escapeHtml(summary) : 'Not answered'}</div>
+        </div>
+        <div class="dim-review-edit">Change</div>
+      </div>
+    `;
+  }).join('');
+
+  // Mark sidebar dimension as fully filled while we're on the review.
+  const progressEl = document.getElementById(`dim-progress-${state.currentDimIndex}`);
+  if (progressEl) progressEl.style.width = '100%';
+
+  // Update the next-button copy to name the next dimension if there is one.
+  const nextDim = state.dimensions[state.currentDimIndex + 1];
+  const btn = document.getElementById('btn-review-continue');
+  if (btn) {
+    btn.textContent = nextDim ? `Continue · ${nextDim.name}` : 'Continue · Review';
+  }
+}
+
+function formatAnswerSummary(q, ans) {
+  if (!ans) return '';
+  const v = ans.value;
+  if (Array.isArray(v)) {
+    const labels = v.map((key) => {
+      const opt = (q.options || []).find((o) => o.key === key);
+      return opt ? opt.label : String(key);
+    });
+    return labels.join(', ');
+  }
+  if (q.options) {
+    const opt = q.options.find((o) => String(o.key) === String(v));
+    if (opt) return opt.label;
+  }
+  if (typeof v === 'boolean') return v ? 'Yes' : 'No';
+  return String(v);
+}
+
+function editAnswerFromReview(questionId) {
+  const idx = state.currentQuestions.findIndex((q) => q.id === questionId);
+  if (idx === -1) return;
+  state.editingFromReview = true;
+  state.currentQuestionIndex = idx;
+  document.getElementById('dimension-review').style.display = 'none';
+  document.getElementById('question-card').style.display = '';
+  renderQuestion();
+}
+
+function reviewPreviousQuestion() {
+  // From the review, jump back to the last visible question for editing.
+  if (state.currentQuestions.length === 0) return;
+  state.editingFromReview = true;
+  state.currentQuestionIndex = state.currentQuestions.length - 1;
+  document.getElementById('dimension-review').style.display = 'none';
+  document.getElementById('question-card').style.display = '';
+  renderQuestion();
+}
+
+async function confirmDimensionAndAdvance() {
+  // Hide the review and advance to the next dimension.
+  document.getElementById('dimension-review').style.display = 'none';
+  document.getElementById('question-card').style.display = '';
+  const dimEl = document.getElementById(`dim-${state.currentDimIndex}`);
+  if (dimEl) dimEl.classList.add('done');
+  await advanceDimension();
 }
 
 async function advanceDimension() {
@@ -500,22 +792,33 @@ function renderPlayback() {
     </div>
   `;
 
-  // Priorities
+  // Priorities — rendered with categorical labels (Top / High / Moderate /
+  // Light) instead of raw confidence percentages. The bar still scales with
+  // the underlying confidence so users can see relative intensity at a
+  // glance, but the label is the headline. Hover the label to see the raw
+  // value for users who want it.
   const prioSection = document.getElementById('priorities-section');
   if (p.priorities?.length) {
     prioSection.innerHTML = `
       <div class="profile-card">
         <h3>Interpreted Priorities</h3>
-        ${p.priorities.map((pr, i) => `
-          <div class="priority-item">
-            <div class="priority-rank">${i + 1}</div>
-            <div class="priority-name">${pr.name}</div>
-            <div class="priority-bar">
-              <div class="priority-fill" style="width: ${Math.round(pr.confidence * 100)}%"></div>
+        ${p.priorities.map((pr, i) => {
+          const c = pr.confidence;
+          const label = c >= 0.60 ? 'Top'
+            : c >= 0.45 ? 'High'
+            : c >= 0.30 ? 'Moderate'
+            : 'Light';
+          const tier = label.toLowerCase();
+          const raw = Math.round(c * 100);
+          return `
+            <div class="priority-item">
+              <div class="priority-rank">${i + 1}</div>
+              <div class="priority-name">${pr.name}</div>
+              <div class="priority-bar" title="Signal intensity ${raw}% of maximum for this category"><div class="priority-fill priority-fill-${tier}" style="width: ${raw}%"></div></div>
+              <div class="priority-label priority-label-${tier}" title="${raw}% of maximum signal intensity from your answers across all questions tagged for this priority. Top ≥ 60% · High 45-60% · Moderate 30-45% · Light < 30%.">${label}</div>
             </div>
-            <div class="priority-pct">${Math.round(pr.confidence * 100)}%</div>
-          </div>
-        `).join('')}
+          `;
+        }).join('')}
       </div>
     `;
   }
@@ -530,30 +833,89 @@ function editProfile() {
 }
 
 async function approveAndGenerate() {
-  // Preview files first
-  const res = await fetch('/api/preview', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ answers: state.answers }),
-  });
-  const files = await res.json();
+  // Find the Looks Good / Generate button to show a loading state while the
+  // preview API runs. For complex profiles (healthcare + multi-framework
+  // compliance) the orchestrator can take several seconds to produce all
+  // generators' output, and the user otherwise sees no feedback.
+  const btn = document.querySelector('#phase-playback .btn-primary');
+  let originalLabel = '';
+  if (btn) {
+    originalLabel = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Preparing your files…';
+  }
 
-  const preview = document.getElementById('file-preview');
-  preview.classList.remove('hidden');
-  preview.innerHTML = `
-    <h3 style="padding: 16px 16px 8px; font-size: 14px; color: var(--text-secondary);">
-      Files to generate (${files.length})
-    </h3>
-    ${files.map(f => `
-      <div class="file-item" onclick="togglePreview(this, '${encodeURIComponent(f.content)}', '${f.path}')">
-        <span class="file-icon">📄</span>
-        <span class="file-path">${f.path}</span>
-        <span class="file-desc">${f.description}</span>
-      </div>
-    `).join('')}
-  `;
+  try {
+    const res = await fetch('/api/preview', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ answers: state.answers }),
+    });
 
-  showPhase('phase-generate');
+    if (!res.ok) {
+      const errBody = await res.text();
+      throw new Error(`Preview API returned ${res.status}: ${errBody.slice(0, 240)}`);
+    }
+
+    const payload = await res.json();
+    // /api/preview returns { files, validation } — accept either that shape
+    // or a bare files array (older response shape).
+    const files = Array.isArray(payload) ? payload : (payload.files || []);
+
+    // Reset the generate-phase chrome to its pre-generation state, in case
+    // the user reached this phase before (made changes, came back).
+    const heading = document.getElementById('generate-heading');
+    if (heading) heading.textContent = 'Ready to Generate';
+    const subtitle = document.getElementById('generate-subtitle');
+    if (subtitle) subtitle.style.display = '';
+    const targetInput = document.getElementById('target-dir-input');
+    if (targetInput) targetInput.style.display = '';
+    const results = document.getElementById('generation-results');
+    if (results) results.classList.add('hidden');
+    const liveProgress = document.getElementById('live-progress');
+    if (liveProgress) liveProgress.classList.add('hidden');
+
+    const preview = document.getElementById('file-preview');
+    preview.classList.remove('hidden');
+    preview.innerHTML = `
+      <h3 style="padding: 16px 16px 8px; font-size: 14px; color: var(--text-secondary);">
+        Files to generate (${files.length})
+      </h3>
+      ${files.map(f => `
+        <div class="file-item" onclick="togglePreview(this, '${encodeURIComponent(f.content || '')}', '${f.path}')">
+          <span class="file-icon">${ICONS.doc}</span>
+          <span class="file-path">${f.path}</span>
+          <span class="file-desc">${f.description || ''}</span>
+        </div>
+      `).join('')}
+    `;
+
+    showPhase('phase-generate');
+  } catch (err) {
+    console.error('approveAndGenerate failed', err);
+    // Surface the error inline so the user can see what happened instead of
+    // wondering whether their click did anything.
+    const playback = document.getElementById('phase-playback');
+    let banner = document.getElementById('approve-error-banner');
+    if (!banner && playback) {
+      banner = document.createElement('div');
+      banner.id = 'approve-error-banner';
+      banner.className = 'validation-hint';
+      banner.style.display = 'block';
+      banner.style.margin = '16px auto';
+      banner.style.maxWidth = '640px';
+      playback.appendChild(banner);
+    }
+    if (banner) {
+      banner.textContent = `Could not prepare files: ${err instanceof Error ? err.message : String(err)}. Check the browser console for details and try again.`;
+      banner.style.display = 'block';
+    }
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = originalLabel || 'Looks Good — Generate';
+    }
+  }
 }
 
 function togglePreview(el, encodedContent, path) {
@@ -607,16 +969,17 @@ function dispatchEnvelope(env) {
     if (state.filesStreamed.has(env.payload.relativePath)) return;
     state.filesStreamed.add(env.payload.relativePath);
     const line = document.createElement('div');
-    line.className = 'progress-line';
-    line.textContent = `✓ ${env.payload.relativePath}`;
+    line.className = 'progress-line progress-line-ok';
+    line.innerHTML = `${ICONS.check}<span>${env.payload.relativePath}</span>`;
     progress.appendChild(line);
   } else if (env.name === 'validation:completed') {
     const { passCount, failCount } = env.payload;
     const line = document.createElement('div');
-    line.className = 'progress-line';
-    line.textContent = failCount === 0
-      ? `✓ Validation passed (${passCount} checks)`
-      : `⚠ Validation: ${passCount} passed, ${failCount} failed`;
+    const isOk = failCount === 0;
+    line.className = `progress-line ${isOk ? 'progress-line-ok' : 'progress-line-warn'}`;
+    line.innerHTML = isOk
+      ? `${ICONS.check}<span>Validation passed (${passCount} checks)</span>`
+      : `${ICONS.warn}<span>Validation: ${passCount} passed, ${failCount} failed</span>`;
     progress.appendChild(line);
   }
 }
@@ -650,13 +1013,36 @@ async function generateFiles() {
   });
   const result = await res.json();
 
+  // The pre-generation preview list and the post-generation result list are
+  // two different DOM elements that would otherwise stack visually. Hide the
+  // preview now that the real result is in.
+  const preview = document.getElementById('file-preview');
+  if (preview) preview.classList.add('hidden');
+
+  // Live-progress event stream is also redundant once the final list lands.
+  const progress = document.getElementById('live-progress');
+  if (progress) progress.classList.add('hidden');
+
+  // Swap the page heading + subtitle from "Ready to Generate" → "Setup
+  // Complete" now that generation actually happened. This avoids the
+  // confusing pre-generate "Setup Complete" h1.
+  const heading = document.getElementById('generate-heading');
+  if (heading) heading.textContent = 'Setup Complete';
+  const subtitle = document.getElementById('generate-subtitle');
+  if (subtitle) subtitle.style.display = 'none';
+
+  // Hide the target-dir input + Generate button once results are in —
+  // re-running generation from the same screen would surprise the user.
+  const targetInput = document.getElementById('target-dir-input');
+  if (targetInput) targetInput.style.display = 'none';
+
   const results = document.getElementById('generation-results');
   results.classList.remove('hidden');
 
   const fileList = document.getElementById('file-list');
   fileList.innerHTML = result.files.map(f => `
-    <div class="file-item">
-      <span class="file-icon">${f.written ? '✅' : '❌'}</span>
+    <div class="file-item${f.written ? ' file-item-ok' : ' file-item-fail'}">
+      <span class="file-icon">${f.written ? ICONS.checkCircle : ICONS.xCircle}</span>
       <span class="file-path">${f.path}</span>
       <span class="file-desc">${f.description}</span>
     </div>
@@ -686,6 +1072,7 @@ async function generateFiles() {
 
 async function initWizard() {
   showPhase('phase-welcome');
+  await renderIdentityBanner();
   const config = await loadSessionsConfig();
   state.serverBackend = !!config.enabled;
   if (!state.serverBackend) return;
@@ -710,6 +1097,204 @@ async function initWizard() {
   state.resumeView = resume;
   renderResumeBanner(resume);
 }
+
+/**
+ * Demo-mode persona signin. Sets the `embediq_demo_user` cookie that the
+ * DemoAuthStrategy reads on the next request, then reloads the page so the
+ * identity banner and downstream auth-gated questions reflect the choice.
+ */
+function signInDemo(persona) {
+  document.cookie = `embediq_demo_user=${encodeURIComponent(persona)}; path=/; max-age=86400; samesite=lax`;
+  // Also auto-prefill STRAT_000b so the wizard flow matches the SSO identity
+  // (saves the user one click during the demo recording).
+  if (persona === 'admin' || persona === 'user') {
+    state.answers['STRAT_000b'] = { value: persona, timestamp: new Date().toISOString() };
+  }
+  window.location.reload();
+}
+
+/**
+ * Switch to the other demo persona (admin ↔ user). Reads the current cookie
+ * and flips it.
+ */
+function switchDemoUser() {
+  const cookieMatch = document.cookie.match(/embediq_demo_user=([^;]+)/);
+  const current = cookieMatch ? decodeURIComponent(cookieMatch[1]) : '';
+  const next = current === 'admin' ? 'user' : 'admin';
+  signInDemo(next);
+}
+
+async function renderIdentityBanner() {
+  // Fetches identity, auto-derives the wizard's admin/user answer from the
+  // authenticated role (so STRAT_000b doesn't have to ask the user something
+  // they already told us by signing in), populates the header profile menu,
+  // and renders the welcome-screen banner (simplified — the header menu now
+  // carries the persistent identity, the banner just covers demo-mode
+  // persona selection when unauthenticated).
+  try {
+    const res = await fetch('/api/identity');
+    if (!res.ok) return;
+    const id = await res.json();
+    state.identity = id;
+
+    // Auto-derive STRAT_000b from auth role. wizard-admin → admin, wizard-user
+    // → user. This skips the redundant in-wizard question for authenticated
+    // users. If the user is unauthenticated (no SSO, or demo-mode without a
+    // chosen persona), the wizard still asks STRAT_000b like before.
+    if (id.authenticated && Array.isArray(id.roles)) {
+      const persona = id.roles.includes('wizard-admin') ? 'admin'
+        : id.roles.includes('wizard-user') || id.roles.includes('wizard-contributor') ? 'user'
+        : null;
+      if (persona) {
+        state.answers['STRAT_000b'] = {
+          value: persona,
+          timestamp: new Date().toISOString(),
+          source: 'auth',
+        };
+      }
+    }
+
+    renderHeaderProfile(id);
+    renderWelcomeIdentityBanner(id);
+  } catch (err) {
+    // Best-effort — don't block the wizard if the identity endpoint fails.
+    console.warn('Failed to load identity', err);
+  }
+}
+
+function renderHeaderProfile(id) {
+  const wrapper = document.getElementById('user-profile');
+  if (!wrapper) return;
+  if (!id.authenticated) {
+    wrapper.style.display = 'none';
+    return;
+  }
+  const name = id.displayName || id.userId || 'User';
+  const initial = name.trim().charAt(0).toUpperCase() || '?';
+  document.getElementById('user-profile-initial').textContent = initial;
+  document.getElementById('user-profile-name').textContent = name;
+  const isAdmin = id.roles && id.roles.includes('wizard-admin');
+  document.getElementById('user-profile-role').innerHTML =
+    `<span class="user-profile-role-badge ${isAdmin ? 'admin' : 'user'}">${isAdmin ? 'Coding Agent Admin' : 'Coding Agent User'}</span>${id.authStrategy === 'demo' ? ' <span class="demo-badge">DEMO</span>' : ''}`;
+  document.getElementById('user-profile-email').textContent = id.email || id.userId || '';
+  document.getElementById('user-profile-switch-icon').innerHTML = ICONS.target;
+  document.getElementById('user-profile-signout-icon').innerHTML = ICONS.xCircle;
+  wrapper.style.display = '';
+}
+
+function renderWelcomeIdentityBanner(id) {
+  // The welcome-screen banner is now only used for the demo-mode
+  // persona-picker (when unauthenticated) and the device info. Persistent
+  // identity lives in the header profile menu.
+  const banner = document.getElementById('identity-banner');
+  if (!banner) return;
+
+  // Authenticated: just surface the device line (header profile carries identity).
+  if (id.authenticated) {
+    const deviceLine = renderDeviceLine(id);
+    if (deviceLine) {
+      banner.innerHTML = deviceLine;
+      banner.style.display = '';
+    } else {
+      banner.style.display = 'none';
+    }
+    return;
+  }
+
+  // Unauthenticated + demo strategy: show the persona picker.
+  if (id.authStrategy === 'demo') {
+    const userLine = `<div class="identity-user"><span class="identity-icon">${ICONS.shield}</span>
+      <span class="demo-picker-label">Demo Mode — sign in as:</span>
+      <button class="demo-pick-btn demo-pick-admin" onclick="signInDemo('admin')">Coding Agent Admin</button>
+      <button class="demo-pick-btn demo-pick-user" onclick="signInDemo('user')">Coding Agent User</button>
+      <span class="demo-badge">DEMO</span></div>`;
+    banner.innerHTML = userLine + (renderDeviceLine(id) || '');
+    banner.style.display = '';
+    return;
+  }
+
+  // Unauthenticated + no auth strategy configured: explain why.
+  const userLine = `<div class="identity-user"><span class="identity-icon">${ICONS.shield}</span>
+    <span>No enterprise sign-in active
+      <span class="identity-help" title="EmbedIQ supports HTTP Basic, OIDC (Okta / Entra / Auth0 / any compliant IdP), and reverse-proxy header strategies. Set EMBEDIQ_AUTH_STRATEGY=oidc and the OIDC env vars to enable SSO. Set EMBEDIQ_AUTH_STRATEGY=demo to enable the admin/user demo personas. Currently running in local mode — auth=${escapeHtml(id.authStrategy)}.">why?</span>
+    </span></div>`;
+  banner.innerHTML = userLine + (renderDeviceLine(id) || '');
+  banner.style.display = '';
+}
+
+function renderDeviceLine(id) {
+  if (id.deviceVerification === 'mdm-header') {
+    return `<div class="identity-device">
+      <span class="identity-device-label">Device</span>
+      <code>${escapeHtml(id.workstationId)}</code>
+      <span class="identity-verified" title="Workstation ID supplied by a managed reverse proxy or MDM agent.">verified by MDM</span>
+    </div>`;
+  }
+  if (id.deviceVerification === 'os-hostname' && id.host) {
+    const platformLabel =
+      id.host.platform === 'darwin' ? 'macOS' :
+      id.host.platform === 'win32' ? 'Windows' :
+      id.host.platform === 'linux' ? 'Linux' :
+      id.host.platform;
+    return `<div class="identity-device">
+      <span class="identity-device-label">Device</span>
+      <code>${escapeHtml(id.host.hostname)}</code>
+      <span class="identity-device-os">${escapeHtml(platformLabel)} ${escapeHtml(id.host.release)} · ${escapeHtml(id.host.arch)}</span>
+      ${id.host.username ? `<span class="identity-device-user">${escapeHtml(id.host.username)}</span>` : ''}
+      <span class="identity-unverified" title="Browsers cannot access hardware serial numbers. To get MDM-verified device identity (Intune / JAMF / CrowdStrike registration), configure your managed reverse proxy to inject an X-Workstation-Id header.">local hostname</span>
+    </div>`;
+  }
+  const ua = id.userAgent || '';
+  const browser =
+    ua.includes('Firefox') ? 'Firefox' :
+    ua.includes('Edg/') ? 'Edge' :
+    ua.includes('Chrome') ? 'Chrome' :
+    ua.includes('Safari') ? 'Safari' : 'Browser';
+  const platform =
+    ua.includes('Mac OS X') ? 'macOS' :
+    ua.includes('Windows') ? 'Windows' :
+    ua.includes('Linux') ? 'Linux' : 'unknown OS';
+  return `<div class="identity-device">
+    <span class="identity-device-label">Device</span>
+    <code>${escapeHtml(browser)} on ${escapeHtml(platform)}</code>
+    <span class="identity-unverified" title="Hardware serial numbers and device IDs are not available to browsers. To get verifiable device identity, your IT team can configure a managed reverse proxy (or an MDM agent like Intune / JAMF / CrowdStrike) to inject an X-Workstation-Id header on every request.">unverified — see details</span>
+  </div>`;
+}
+
+// ─── Header user-profile menu ───
+
+function toggleProfileMenu() {
+  const menu = document.getElementById('user-profile-menu');
+  if (!menu) return;
+  menu.style.display = menu.style.display === 'none' ? '' : 'none';
+}
+
+function switchAccount() {
+  // Re-show the demo-mode persona picker: clear the cookie and reload.
+  document.cookie = 'embediq_demo_user=; path=/; max-age=0; samesite=lax';
+  // Also clear the auto-set STRAT_000b so the wizard re-asks (or re-derives) after a fresh signin.
+  if (state.answers['STRAT_000b'] && state.answers['STRAT_000b'].source === 'auth') {
+    delete state.answers['STRAT_000b'];
+  }
+  window.location.reload();
+}
+
+function signOut() {
+  document.cookie = 'embediq_demo_user=; path=/; max-age=0; samesite=lax';
+  storeSessionId(null);
+  writeSessionToUrl(null);
+  window.location.reload();
+}
+
+// Close the profile menu when clicking outside it.
+document.addEventListener('click', (e) => {
+  const menu = document.getElementById('user-profile-menu');
+  const avatar = document.getElementById('user-profile-avatar');
+  if (!menu || !avatar) return;
+  if (menu.style.display === 'none') return;
+  if (avatar.contains(e.target) || menu.contains(e.target)) return;
+  menu.style.display = 'none';
+});
 
 function renderResumeBanner(resume) {
   const banner = document.getElementById('resume-banner');
