@@ -19,7 +19,7 @@ export interface GitPullRequestRef {
 }
 
 export interface GitPlatformOptions {
-  /** Repository slug — GitHub: `owner/repo`. */
+  /** Repository slug — GitHub/GitLab/Bitbucket: `owner/repo`; Azure Repos: `organization/project/repository`. */
   repo: string;
   /** Auth token with write scope (contents + pull requests). */
   token: string;
@@ -31,7 +31,7 @@ export interface GitPlatformOptions {
   fetchImpl?: typeof fetch;
 }
 
-export type GitProviderId = 'github' | 'gitlab' | 'bitbucket';
+export type GitProviderId = 'github' | 'gitlab' | 'bitbucket' | 'azure-repos';
 
 /**
  * The minimal surface every platform adapter must implement to serve

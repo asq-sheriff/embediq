@@ -15,6 +15,9 @@ import {
   GitIntegrationError,
   openPrForGeneration,
 } from './integrations/git/index.js';
+import { buildProfileReport } from './engine/profile-report.js';
+import { validateAnswers } from './engine/answer-validator.js';
+import { writeFileSync } from 'node:fs';
 import type { SetupConfig } from './types/index.js';
 
 async function runWizard(): Promise<void> {
@@ -98,6 +101,20 @@ async function runWizard(): Promise<void> {
   const outputManager = new FileOutputManager(targetDir);
   outputManager.ensureTargetDir();
   const { written, errors } = outputManager.writeAll(files);
+
+  // ─── Optional: write a profile report (answers + determinations) ───
+  const reportPath = profileReportPath();
+  if (reportPath) {
+    const asJson = reportPath.endsWith('.json');
+    const report = buildProfileReport(approvedProfile, {
+      targets: targets as unknown as string[],
+      warnings: validateAnswers(approvedProfile.answers),
+      generatedAt: new Date().toISOString(),
+    });
+    writeFileSync(reportPath, asJson ? JSON.stringify(report.json, null, 2) : report.markdown, 'utf-8');
+    ui.blank();
+    console.log(chalk.green(`  ✓ Profile report written to ${reportPath}`));
+  }
 
   // ─── Optional: push to a git branch and open a PR ───
   // Opt-in via `--git-pr`. Environment variables supply the repo/token/base
@@ -190,6 +207,16 @@ function resolveCliTargets() {
  */
 function shouldOpenGitPr(): boolean {
   return process.argv.slice(2).includes('--git-pr');
+}
+
+/** Path for `--profile-report <path>` (or `--profile-report=<path>`), else null. */
+function profileReportPath(): string | null {
+  const argv = process.argv.slice(2);
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i] === '--profile-report' && argv[i + 1]) return argv[i + 1];
+    if (argv[i].startsWith('--profile-report=')) return argv[i].slice('--profile-report='.length);
+  }
+  return null;
 }
 
 async function main(): Promise<void> {

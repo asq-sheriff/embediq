@@ -18,6 +18,14 @@ Files: `CLAUDE.md` (project memory), `.claude/settings.json` (team settings), `.
 - Add `.claude/settings.local.json` to your `.gitignore` (it should already be there). It contains your personal permission tier and shouldn't be shared.
 - In Claude Code, type `/rules` to see the active rule list. Type `/commands` to see custom slash commands.
 - Verify hooks are active: run `claude --help` and confirm "PreToolUse/PostToolUse hooks enabled" appears in the startup banner.
+### JetBrains (IntelliJ, PyCharm, WebStorm, Rider)
+
+Files: `.junie/guidelines.md` (Junie / AI Assistant project guidelines), `.aiignore` (AI context exclusions).
+
+- Install the AI Assistant + Junie plugin (Settings → Plugins → Marketplace), or the GitHub Copilot plugin if you use Copilot.
+- JetBrains Junie reads `.junie/guidelines.md` automatically — restart the IDE after the file lands.
+- `.aiignore` keeps the listed paths (build outputs, secrets, and any PHI/PII fixtures) out of AI context.
+- Using Copilot for JetBrains instead? It reads `.github/copilot-instructions.md` — select the `copilot` target so that file is generated.
 ### Local AI (Ollama)
 
 Files: `OLLAMA.md` (setup runbook). If `Continue.dev` / `Aider` / `Zed AI` are selected, additional config files were written.

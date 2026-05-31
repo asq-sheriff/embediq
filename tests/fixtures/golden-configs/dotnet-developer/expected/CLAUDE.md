@@ -5,12 +5,14 @@
 
 - Languages: csharp
 - Build: dotnet
+- Testing: xunit
 - CI/CD: github_actions
 
 ## Build & Test
 
 - Install: `dotnet restore`
 - Build: `dotnet build`
+- Test: `dotnet test`
 
 ## Code Conventions
 

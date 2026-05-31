@@ -12,6 +12,7 @@ TECH_003: .NET 8 / ASP.NET Core / Entity Framework Core / FastAPI / Spring Boot
 TECH_004:
   - vscode
   - jetbrains
+  - visual_studio
 TECH_005:
   - dotnet
   - pip
@@ -21,6 +22,7 @@ TECH_006:
   - pytest
   - junit
 TECH_007: azure_devops
+TECH_022: azure
 FIN_001: enterprise
 REG_001: true
 REG_002:

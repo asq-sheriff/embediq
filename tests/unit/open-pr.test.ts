@@ -153,4 +153,12 @@ describe('resolveGitConfigFromEnv', () => {
     const platform = buildPlatform();
     expect(platform.providerId).toBe('bitbucket');
   });
+
+  it('buildPlatform returns an AzureReposAdapter when provider=azure-repos', () => {
+    process.env.EMBEDIQ_GIT_PROVIDER = 'azure-repos';
+    process.env.EMBEDIQ_GIT_REPO = 'org/project/repo';
+    process.env.EMBEDIQ_GIT_TOKEN = 'tkn';
+    const platform = buildPlatform();
+    expect(platform.providerId).toBe('azure-repos');
+  });
 });

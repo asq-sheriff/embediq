@@ -63,8 +63,23 @@ export interface Question {
   id: string;
   dimension: Dimension;
   text: string;
+  /**
+   * Team-framed variant of `text`, shown when the operator is a Coding Agent
+   * Admin (STRAT_000b === 'admin') configuring the harness for a team rather
+   * than for themselves. Falls back to `text` when absent.
+   */
+  adminText?: string;
   /** Context shown to every user — plain-language explanation of the question. */
   helpText?: string;
+  /** Team-framed variant of `helpText` for Coding Agent Admins. Falls back to `helpText`. */
+  adminHelpText?: string;
+  /**
+   * Short description of what the app will infer if this (optional) question
+   * is skipped, e.g. "a test framework per language". When present, the skip
+   * control reads "Skip — we'll infer: <inferredNote>". Only meaningful on
+   * `required: false` questions whose value the profile-builder can infer.
+   */
+  inferredNote?: string;
   /**
    * Admin-only explanation of *why* this question is asked — what the answer
    * drives in the generated harness. Only rendered when the user has
@@ -92,6 +107,10 @@ export interface DevOpsProfile {
   cicd: string;
   monitoring: string[];
   containerization: string[];
+  /** Primary cloud / deployment target (TECH_022): azure | aws | gcp | on_premises | hybrid | other | '' / undefined when unanswered. */
+  cloudTarget?: string;
+  /** Free-text cloud target when cloudTarget === 'other' (TECH_022_other). Empty otherwise. */
+  cloudTargetOther?: string;
 }
 
 export interface Priority {
@@ -136,6 +155,13 @@ export interface UserProfile {
   externalApis?: string[];
   /** True when the router should self-evaluate and escalate below a threshold (TECH_021). */
   confidenceEscalation?: boolean;
+  /**
+   * Fields whose value was inferred from other answers because the user
+   * skipped the (optional) source question — keyed by a human label, value
+   * is the inferred option key(s). Surfaced in the profile report as
+   * "inferred". Empty when the user answered everything explicitly.
+   */
+  inferredDefaults?: Record<string, string[]>;
 }
 
 export interface SetupConfig {
@@ -198,6 +224,7 @@ export function createEmptyProfile(): UserProfile {
       cicd: '',
       monitoring: [],
       containerization: [],
+      cloudTarget: '',
     },
     complianceFrameworks: [],
     budgetTier: 'moderate',

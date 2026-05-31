@@ -57,6 +57,23 @@ export interface GenerationHistoryEntry {
 }
 
 /**
+ * An immutable, versioned snapshot of the profile that drove one generation,
+ * retained for audit. `profileHash`/`answersHash` make the snapshot
+ * tamper-evident (they also appear in the chained audit log via a
+ * `profile_snapshot` entry), and `report` is the human-readable markdown
+ * profile report as it stood at generation time.
+ */
+export interface SerializedProfileSnapshot {
+  /** Sequence number of this snapshot within the session (1-based). */
+  snapshotVersion: number;
+  generatedAt: string;
+  profileHash: string;
+  answersHash: string;
+  report: string;
+  contributors: string[];
+}
+
+/**
  * Canonical server-side record for a wizard session. Backends store this
  * shape verbatim. Fields marked optional reflect progression through the
  * wizard — `profile` exists only after the profile is built, etc.
@@ -74,6 +91,8 @@ export interface WizardSession {
   profile?: SerializedProfile;
   priorities?: SerializedPriority[];
   generationHistory: GenerationHistoryEntry[];
+  /** Versioned, audit-retained profile snapshots — one appended per generation. */
+  profileHistory?: SerializedProfileSnapshot[];
   createdAt: string;
   updatedAt: string;
   expiresAt: string;

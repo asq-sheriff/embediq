@@ -17,6 +17,9 @@ import { IgnoreGenerator } from './generators/ignore.js';
 import { McpJsonGenerator } from './generators/mcp-json.js';
 import { AssociationMapGenerator } from './generators/association-map.js';
 import { DocumentStateGenerator } from './generators/document-state.js';
+import { CiPipelineGenerator } from './generators/ci-pipeline.js';
+import { EditorConfigGenerator } from './generators/editorconfig.js';
+import { JetBrainsGenerator } from './generators/jetbrains.js';
 import { SetupInstructionsGenerator } from './generators/setup-instructions.js';
 import { AgentsMdGenerator } from './generators/agents-md.js';
 import { CursorRulesGenerator } from './generators/cursor-rules.js';
@@ -55,6 +58,11 @@ export class SynthesizerOrchestrator {
       new McpJsonGenerator(),
       new AssociationMapGenerator(),
       new DocumentStateGenerator(),
+      // Project-infrastructure generators — ride on the Claude target but
+      // emit only when their profile signal is present (CI platform / IDE).
+      new CiPipelineGenerator(),
+      new EditorConfigGenerator(),
+      new JetBrainsGenerator(),
       // Multi-agent targets — opt-in via `config.targets` / EMBEDIQ_OUTPUT_TARGETS.
       new AgentsMdGenerator(),
       new CursorRulesGenerator(),

@@ -1,0 +1,28 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+[*.cs]
+indent_size = 4
+# .NET code style
+dotnet_sort_system_directives_first = true
+csharp_new_line_before_open_brace = all
+csharp_prefer_braces = true:warning
+dotnet_style_require_accessibility_modifiers = always:warning
+# Roslyn analyzer severities
+dotnet_diagnostic.CA2007.severity = none
+dotnet_diagnostic.IDE0058.severity = silent
+dotnet_analyzer_diagnostic.category-Security.severity = warning
+
+[*.py]
+indent_size = 4
+max_line_length = 88
+
+[*.{json,yml,yaml}]
+indent_size = 2

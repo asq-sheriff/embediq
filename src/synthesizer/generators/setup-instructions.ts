@@ -114,6 +114,42 @@ export class SetupInstructionsGenerator implements ConfigGenerator {
       md.bullet('No installation step — `AGENTS.md` lives at the repository root and is picked up by any tool that supports the format.');
     }
 
+    // IDE-specific and CI activation blocks describe files emitted by the
+    // editorconfig / jetbrains / ci-pipeline generators, which skip
+    // non-technical roles — so the guidance must skip them too, or it
+    // would reference files that were never generated.
+    const isTechnical = !['ba', 'pm', 'executive'].includes(profile.role);
+    const ides = profile.devOps.ide ?? [];
+
+    if (isTechnical && ides.includes('visual_studio')) {
+      md.h3('Visual Studio (full IDE)');
+      md.paragraph(
+        'Visual Studio uses GitHub Copilot as its AI assistant. The Copilot harness files (`.github/copilot-instructions.md`, `.github/instructions/*.md`) apply to Visual Studio 2022 17.10+ — make sure the `copilot` target was selected so those files were generated.',
+      );
+      md.bullet('Install the GitHub Copilot + Copilot Chat components via the Visual Studio Installer (Individual components → "GitHub Copilot").');
+      md.bullet('Confirm Tools → Options → GitHub → Copilot → "Enable custom instructions" is on so `.github/copilot-instructions.md` is read.');
+      md.bullet('`.editorconfig` at the repository root drives Visual Studio formatting and Roslyn analyzer severities — VS applies it with no extra setup.');
+      md.bullet('Configure `.vsconfig` (installer workloads) and per-project `launchSettings.json` manually — these depend on your solution layout and are not generated.');
+    }
+
+    if (isTechnical && ides.includes('jetbrains')) {
+      md.h3('JetBrains (IntelliJ, PyCharm, WebStorm, Rider)');
+      md.paragraph(
+        'Files: `.junie/guidelines.md` (Junie / AI Assistant project guidelines), `.aiignore` (AI context exclusions).',
+      );
+      md.bullet('Install the AI Assistant + Junie plugin (Settings → Plugins → Marketplace), or the GitHub Copilot plugin if you use Copilot.');
+      md.bullet('JetBrains Junie reads `.junie/guidelines.md` automatically — restart the IDE after the file lands.');
+      md.bullet('`.aiignore` keeps the listed paths (build outputs, secrets, and any PHI/PII fixtures) out of AI context.');
+      md.bullet('Using Copilot for JetBrains instead? It reads `.github/copilot-instructions.md` — select the `copilot` target so that file is generated.');
+    }
+
+    if (isTechnical && profile.devOps.cicd === 'azure_devops') {
+      md.h3('Azure Pipelines');
+      md.paragraph('File: `azure-pipelines.yml` — a starter CI pipeline matched to your stack.');
+      md.bullet('In Azure DevOps → Pipelines → New pipeline → "Azure Repos Git" → "Existing Azure Pipelines YAML file" → select `/azure-pipelines.yml`.');
+      md.bullet('Review the build/test stages and the compliance security stage; wire your org secret scanner where the TODO placeholder appears.');
+    }
+
     if (profile.localAiEnabled) {
       md.h3('Local AI (Ollama)');
       md.paragraph(

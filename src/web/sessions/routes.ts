@@ -239,6 +239,19 @@ export function createSessionRoutes(
     res.json(buildResumeView(session));
   });
 
+  // Versioned profile audit trail — one immutable snapshot per generation,
+  // each with profile/answers hashes (mirrored into the tamper-evident audit
+  // log) and the human-readable report as it stood at that generation.
+  router.get('/:id/profile-history', readLimiter, (req: Request, res: Response) => {
+    const ctx = getRequestContext();
+    const session = ctx?.sessionStore?.current();
+    if (!session || session.sessionId !== req.params.id) {
+      res.status(404).json({ error: 'Session not found' });
+      return;
+    }
+    res.json({ sessionId: session.sessionId, version: session.version, snapshots: session.profileHistory ?? [] });
+  });
+
   router.patch('/:id', updateLimiter, (req: Request, res: Response) => {
     const ctx = getRequestContext();
     const store = ctx?.sessionStore;

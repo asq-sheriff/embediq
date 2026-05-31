@@ -12,7 +12,8 @@ export interface WizardAuditEntry {
     | 'generation_started'
     | 'file_written'
     | 'session_complete'
-    | 'session_error';
+    | 'session_error'
+    | 'profile_snapshot';
   userId?: string;
   requestId?: string;
   engagementId?: string;
@@ -30,6 +31,12 @@ export interface WizardAuditEntry {
   validationPassed?: boolean;
   validationErrorCount?: number;
   errorMessage?: string;
+  /** Identifier of the session a profile_snapshot belongs to. */
+  sessionId?: string;
+  /** SHA-256 of the canonical profile, recorded with a profile_snapshot event. */
+  profileHash?: string;
+  /** 1-based sequence of the profile snapshot within its session. */
+  snapshotVersion?: number;
 }
 
 export function auditLog(entry: WizardAuditEntry): void {

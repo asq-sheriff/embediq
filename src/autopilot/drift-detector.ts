@@ -21,14 +21,18 @@ import { EMBEDIQ_VERSION } from '../synthesizer/generation-header.js';
 const MANAGED_TREES: readonly string[] = [
   '.claude',
   '.cursor',
+  '.junie',
   '.github/copilot-instructions.md',
   '.github/instructions',
   '.claudeignore',
+  '.aiignore',
+  '.editorconfig',
   'CLAUDE.md',
   'AGENTS.md',
   'GEMINI.md',
   '.windsurfrules',
   '.mcp.json.template',
+  'azure-pipelines.yml',
   'SETUP.md',
 ];
 

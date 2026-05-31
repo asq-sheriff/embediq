@@ -15,6 +15,11 @@ import { QuestionBank } from '../bank/question-bank.js';
 import { BranchEvaluator } from '../engine/branch-evaluator.js';
 import { ProfileBuilder } from '../engine/profile-builder.js';
 import { PriorityAnalyzer } from '../engine/priority-analyzer.js';
+import { validateAnswers } from '../engine/answer-validator.js';
+import { buildProfileReport } from '../engine/profile-report.js';
+import { stampGeneratedFile } from '../synthesizer/generation-header.js';
+import { auditLog } from '../util/wizard-audit.js';
+import { hashEntry } from '../util/audit-chain.js';
 import { SynthesizerOrchestrator } from '../synthesizer/orchestrator.js';
 import { FileOutputManager } from '../util/file-output.js';
 import { analyzeDiffs } from '../synthesizer/diff-analyzer.js';
@@ -396,6 +401,50 @@ export async function createApp(opts: CreateAppOptions = {}) {
     res.json(serializable);
   });
 
+  // Cross-answer consistency check — returns non-blocking warnings (with
+  // suggested fixes) for typed answers that contradict earlier answers.
+  app.post('/api/validate', (req, res) => {
+    const { answers: rawAnswers } = req.body as {
+      answers: Record<string, { value: unknown; timestamp: string }>;
+    };
+    const warnings = validateAnswers(hydrateAnswers(rawAnswers));
+    res.json({ warnings });
+  });
+
+  // Profile report — a human-readable (markdown) or machine-readable (json)
+  // document of the user's answers + the determinations EmbedIQ derived.
+  app.post('/api/profile/report', (req, res) => {
+    const { answers: rawAnswers, targets: rawTargets, version } = req.body as {
+      answers: Record<string, { value: unknown; timestamp: string }>;
+      targets?: string | string[];
+      version?: number;
+    };
+    const answers = hydrateAnswers(rawAnswers);
+    const profile = profileBuilder.build(answers);
+    profile.priorities = priorityAnalyzer.analyze(answers, bank.getAll());
+    const domainPack = resolveDomainPack(answers);
+    let targets: string[] = [];
+    try {
+      targets = (rawTargets !== undefined ? parseTargets(rawTargets) : (deriveTargetsFromAnswers(rawAnswers) ?? parseTargetsFromEnv())) as unknown as string[];
+    } catch { /* leave targets empty on parse error */ }
+
+    const report = buildProfileReport(profile, {
+      targets,
+      domainPackName: domainPack?.name,
+      warnings: validateAnswers(answers),
+      version,
+      generatedAt: new Date().toISOString(),
+    });
+
+    const format = (req.query.format as string) || 'md';
+    if (format === 'json') {
+      res.json(report.json);
+      return;
+    }
+    const stamped = stampGeneratedFile({ relativePath: 'PROFILE.md', content: report.markdown, description: 'EmbedIQ profile report' });
+    res.type('text/markdown').send(stamped.content);
+  });
+
   // Generate configuration files
   app.post('/api/generate', requireRole('wizard-admin'), async (req, res) => {
     const { answers: rawAnswers, targetDir, sessionId: clientSessionId, targets: rawTargets } = req.body as {
@@ -459,6 +508,21 @@ export async function createApp(opts: CreateAppOptions = {}) {
     const { written, errors } = outputManager.writeAll(files);
 
     if (loadedSession && ctx?.sessionStore) {
+      // Build a versioned, audit-retained profile snapshot for this generation.
+      const generatedAt = new Date().toISOString();
+      const snapshotVersion = (loadedSession.profileHistory?.length ?? 0) + 1;
+      const report = buildProfileReport(profile, {
+        targets: targets as unknown as string[],
+        domainPackName: domainPack?.name,
+        warnings: validateAnswers(answers),
+        version: snapshotVersion,
+        generatedAt,
+      });
+      const profileHash = hashEntry(report.json);
+      const answersHash = hashEntry(
+        Object.fromEntries([...answers].map(([k, a]) => [k, a.value])) as Record<string, unknown>,
+      );
+
       ctx.sessionStore.mutate((s) => {
         for (const [id, answer] of answers) {
           s.answers[id] = {
@@ -470,12 +534,34 @@ export async function createApp(opts: CreateAppOptions = {}) {
         s.phase = 'complete';
         s.generationHistory.push({
           runId: randomUUID(),
-          timestamp: new Date().toISOString(),
+          timestamp: generatedAt,
           fileCount: written.length,
           validationPassed: validation.passed,
           targetDir,
         });
-        s.updatedAt = new Date().toISOString();
+        const contributors = [...new Set(
+          Object.values(s.answers).map((a) => a.contributedBy).filter((c): c is string => !!c),
+        )];
+        s.profileHistory = s.profileHistory ?? [];
+        s.profileHistory.push({
+          snapshotVersion,
+          generatedAt,
+          profileHash,
+          answersHash,
+          report: report.markdown,
+          contributors,
+        });
+        s.updatedAt = generatedAt;
+      });
+
+      // Chain the snapshot into the tamper-evident audit log (opt-in via
+      // EMBEDIQ_AUDIT_LOG / EMBEDIQ_AUDIT_CHAIN_ENABLED).
+      auditLog({
+        timestamp: generatedAt,
+        eventType: 'profile_snapshot',
+        sessionId: loadedSession.sessionId,
+        profileHash,
+        snapshotVersion,
       });
     }
 

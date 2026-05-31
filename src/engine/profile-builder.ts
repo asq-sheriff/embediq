@@ -1,6 +1,7 @@
 import type { Answer, UserProfile, TeamSize, BudgetTier, DevOpsProfile, UserRole, TechnicalProficiency } from '../types/index.js';
 import { createEmptyProfile } from '../types/index.js';
 import { getEventBus, type EventBus } from '../events/bus.js';
+import { inferIdes, inferBuildTools, inferTestFrameworks, orInfer } from './answer-inference.js';
 
 export class ProfileBuilder {
   private bus: EventBus;
@@ -21,7 +22,9 @@ export class ProfileBuilder {
     profile.problemAreas = this.getStringArray(answers, 'PROB_001');
     profile.languages = this.getStringArray(answers, 'TECH_001');
     profile.techStack = this.buildTechStack(answers);
-    profile.devOps = this.buildDevOpsProfile(answers);
+    const inferred: Record<string, string[]> = {};
+    profile.devOps = this.buildDevOpsProfile(answers, profile.languages, inferred);
+    if (Object.keys(inferred).length > 0) profile.inferredDefaults = inferred;
     profile.complianceFrameworks = this.resolveCompliance(answers);
     profile.budgetTier = this.resolveBudget(answers);
     profile.securityConcerns = this.resolveSecurityConcerns(answers);
@@ -66,14 +69,26 @@ export class ProfileBuilder {
     return stack;
   }
 
-  private buildDevOpsProfile(answers: Map<string, Answer>): DevOpsProfile {
+  private buildDevOpsProfile(
+    answers: Map<string, Answer>,
+    languages: string[],
+    inferred: Record<string, string[]>,
+  ): DevOpsProfile {
+    // Optional questions (TECH_004/005/006) that the user skipped get a
+    // sensible default inferred from the selected languages, so a skipped
+    // answer still produces a correct config. Explicit answers always win
+    // (orInfer is a no-op when the actual answer is non-empty). The `inferred`
+    // map records what was filled so the profile report can tag it.
+    const record = (field: string, values: string[]) => { inferred[field] = values; };
     return {
-      ide: this.getStringArray(answers, 'TECH_004'),
-      buildTools: this.getStringArray(answers, 'TECH_005'),
-      testFrameworks: this.getStringArray(answers, 'TECH_006'),
+      ide: orInfer('IDE', this.getStringArray(answers, 'TECH_004'), inferIdes(), record),
+      buildTools: orInfer('Build tools', this.getStringArray(answers, 'TECH_005'), inferBuildTools(languages), record),
+      testFrameworks: orInfer('Testing', this.getStringArray(answers, 'TECH_006'), inferTestFrameworks(languages), record),
       cicd: this.getString(answers, 'TECH_007'),
       monitoring: this.getStringArray(answers, 'TECH_009'),
       containerization: this.getStringArray(answers, 'TECH_008'),
+      cloudTarget: this.getString(answers, 'TECH_022'),
+      cloudTargetOther: this.getString(answers, 'TECH_022_other') || undefined,
     };
   }
 

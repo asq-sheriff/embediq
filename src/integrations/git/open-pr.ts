@@ -1,4 +1,5 @@
 import type { GeneratedFile, UserProfile, ValidationResult } from '../../types/index.js';
+import { AzureReposAdapter } from './azure-repos-adapter.js';
 import { BitbucketAdapter } from './bitbucket-adapter.js';
 import { GitHubAdapter } from './github-adapter.js';
 import { GitLabAdapter } from './gitlab-adapter.js';
@@ -96,6 +97,8 @@ export function buildPlatform(
       return new GitLabAdapter(platformOptions);
     case 'bitbucket':
       return new BitbucketAdapter(platformOptions);
+    case 'azure-repos':
+      return new AzureReposAdapter(platformOptions);
   }
 }
 
@@ -113,9 +116,9 @@ export function resolveGitConfigFromEnv(
   }
 
   const provider = (providerOverride ?? process.env.EMBEDIQ_GIT_PROVIDER ?? 'github') as GitProviderId;
-  if (!(['github', 'gitlab', 'bitbucket'] as const).includes(provider)) {
+  if (!(['github', 'gitlab', 'bitbucket', 'azure-repos'] as const).includes(provider)) {
     throw new GitConfigurationError(
-      `Unknown git provider "${provider}". Valid values: github, gitlab, bitbucket.`,
+      `Unknown git provider "${provider}". Valid values: github, gitlab, bitbucket, azure-repos.`,
     );
   }
 
@@ -124,7 +127,11 @@ export function resolveGitConfigFromEnv(
   const baseBranch = optionsOverride?.baseBranch ?? process.env.EMBEDIQ_GIT_BASE_BRANCH ?? 'main';
   const apiBaseUrl = optionsOverride?.apiBaseUrl ?? process.env.EMBEDIQ_GIT_API_BASE_URL;
 
-  if (!repo) throw new GitConfigurationError('EMBEDIQ_GIT_REPO is required (e.g. "owner/repo")');
+  if (!repo) {
+    throw new GitConfigurationError(
+      'EMBEDIQ_GIT_REPO is required (e.g. "owner/repo", or "organization/project/repository" for Azure Repos)',
+    );
+  }
   if (!token) throw new GitConfigurationError('EMBEDIQ_GIT_TOKEN is required');
 
   return {

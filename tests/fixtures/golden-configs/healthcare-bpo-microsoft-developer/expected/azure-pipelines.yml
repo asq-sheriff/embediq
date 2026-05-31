@@ -1,0 +1,79 @@
+# Azure DevOps pipeline for Healthcare claims platform — developer view; ASP.NET Core services, FastAPI ML pipelines, Java payer-integration
+# Regenerate with the EmbedIQ wizard; edits here are not auto-preserved.
+trigger:
+  branches:
+    include:
+      - main
+      - develop
+pr:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  buildConfiguration: Release
+
+stages:
+  - stage: Build_Test
+    displayName: Build and test
+    jobs:
+      - job: dotnet
+        displayName: .NET build & test
+        steps:
+          - task: UseDotNet@2
+            inputs:
+              packageType: sdk
+              version: 8.0.x
+          - script: 'dotnet restore'
+            displayName: Restore
+          - script: 'dotnet build --configuration $(buildConfiguration) --no-restore'
+            displayName: Build
+          - script: 'dotnet test --no-build --configuration $(buildConfiguration) --logger trx --results-directory $(Agent.TempDirectory)'
+            displayName: Test
+          - task: PublishTestResults@2
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFormat: VSTest
+              testResultsFiles: '**/*.trx'
+              searchFolder: $(Agent.TempDirectory)
+      - job: python
+        displayName: Python build & test
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: 3.x
+          - script: 'python -m pip install --upgrade pip'
+            displayName: Upgrade pip
+          - script: 'pip install -r requirements.txt'
+            displayName: Install dependencies
+          - script: 'pytest --junitxml=junit/test-results.xml'
+            displayName: Test (pytest)
+          - task: PublishTestResults@2
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFiles: 'junit/test-results.xml'
+      - job: java_maven
+        displayName: Java build & test (Maven)
+        steps:
+          - task: Maven@4
+            inputs:
+              mavenPomFile: pom.xml
+              goals: 'clean verify'
+              publishJUnitResults: true
+              testResultsFiles: '**/surefire-reports/TEST-*.xml'
+  - stage: Security
+    displayName: Security & compliance checks (HIPAA)
+    dependsOn: Build_Test
+    jobs:
+      - job: audit
+        displayName: Dependency & secret scan
+        steps:
+          - script: 'dotnet list package --vulnerable --include-transitive'
+            displayName: .NET vulnerable packages
+          - script: 'pip install pip-audit && pip-audit'
+            displayName: Python dependency audit
+          - script: 'echo "TODO: wire your org secret scanner (e.g. gitleaks / Credential Scanner)"'
+            displayName: Secret scan

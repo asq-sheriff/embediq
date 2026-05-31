@@ -1,0 +1,28 @@
+# JetBrains AI context exclusions
+# Files matched here are excluded from AI Assistant / Junie context.
+
+# Dependencies and build outputs
+node_modules/
+.venv/
+dist/
+build/
+target/
+bin/
+obj/
+
+# Environment and secrets
+.env
+.env.*
+*.pem
+*.key
+*.p12
+
+# PHI data (HIPAA)
+patient_data/
+phi/
+health_records/
+**/phi/**
+
+# PII data
+pii/
+personal_data/

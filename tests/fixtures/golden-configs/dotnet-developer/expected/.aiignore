@@ -1,0 +1,18 @@
+# JetBrains AI context exclusions
+# Files matched here are excluded from AI Assistant / Junie context.
+
+# Dependencies and build outputs
+node_modules/
+.venv/
+dist/
+build/
+target/
+bin/
+obj/
+
+# Environment and secrets
+.env
+.env.*
+*.pem
+*.key
+*.p12

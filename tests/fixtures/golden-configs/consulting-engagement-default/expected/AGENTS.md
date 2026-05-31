@@ -6,12 +6,14 @@ This file is read by AI coding agents that understand the `AGENTS.md` format. It
 
 - Languages: typescript
 - Build: npm
+- Testing: jest
 - CI/CD: github_actions
 
 ## Commands
 
 - Install: `npm install`
 - Build: `npm run build`
+- Test: `npm test`
 
 ## Boundaries
 

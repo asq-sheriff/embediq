@@ -280,6 +280,25 @@ function findNextUnansweredIndex(startIdx) {
   return -1;
 }
 
+// True when the operator identified as a Coding Agent Admin (STRAT_000b),
+// either by signing in (auto-derived from the auth role before the wizard
+// starts) or by answering the question. Drives both the "WHY WE ASK" panel
+// and the team-framed question copy below.
+function isAdminOperator() {
+  return state.answers['STRAT_000b']?.value === 'admin';
+}
+
+// Admins configure the harness for a team, so user-profile questions
+// (role, proficiency) read better in team framing. Fall back to the
+// first-person `text`/`helpText` for individual users and any question
+// without an admin variant.
+function questionText(q) {
+  return (isAdminOperator() && q.adminText) || q.text;
+}
+function questionHelpText(q) {
+  return (isAdminOperator() && q.adminHelpText) || q.helpText || '';
+}
+
 function renderQuestion() {
   const q = state.currentQuestions[state.currentQuestionIndex];
   if (!q) return;
@@ -288,13 +307,13 @@ function renderQuestion() {
 
   document.getElementById('question-counter').textContent =
     `Question ${state.currentQuestionIndex + 1} of ${state.currentQuestions.length}`;
-  document.getElementById('question-text').textContent = q.text;
-  document.getElementById('help-text').textContent = q.helpText || '';
+  document.getElementById('question-text').textContent = questionText(q);
+  document.getElementById('help-text').textContent = questionHelpText(q);
 
   // Admin-only purpose: shown when the user identified as a Coding Agent Admin
   // via STRAT_000b. The field is optional on questions; render container
   // empty when missing or when the user is not an admin.
-  const isAdmin = state.answers['STRAT_000b']?.value === 'admin';
+  const isAdmin = isAdminOperator();
   let purposeEl = document.getElementById('purpose-text');
   if (!purposeEl) {
     const helpEl = document.getElementById('help-text');
@@ -313,7 +332,11 @@ function renderQuestion() {
       purposeEl.style.display = 'none';
     }
   }
-  document.getElementById('btn-skip').style.display = q.required ? 'none' : '';
+  const skipBtn = document.getElementById('btn-skip');
+  skipBtn.style.display = q.required ? 'none' : '';
+  // When the app can infer a default for a skipped optional question, say so
+  // on the control itself so skipping feels safe rather than lossy.
+  skipBtn.textContent = q.inferredNote ? `Skip — we'll infer: ${q.inferredNote}` : 'Skip';
 
   const container = document.getElementById('answer-input');
   container.innerHTML = '';
@@ -638,13 +661,18 @@ function showDimensionReview() {
     return `
       <div class="dim-review-row${answered ? '' : ' unanswered'}" onclick="editAnswerFromReview('${q.id}')">
         <div class="dim-review-row-main">
-          <div class="dim-review-question">${escapeHtml(q.text)}</div>
+          <div class="dim-review-question">${escapeHtml(questionText(q))}</div>
           <div class="dim-review-answer">${answered ? escapeHtml(summary) : 'Not answered'}</div>
         </div>
         <div class="dim-review-edit">Change</div>
       </div>
     `;
   }).join('');
+
+  // Non-blocking consistency check: warn + suggest a fix for typed answers
+  // that contradict earlier answers. Fire-and-forget so the review renders
+  // immediately; warnings populate when the response lands.
+  renderDimensionWarnings(list);
 
   // Mark sidebar dimension as fully filled while we're on the review.
   const progressEl = document.getElementById(`dim-progress-${state.currentDimIndex}`);
@@ -655,6 +683,67 @@ function showDimensionReview() {
   const btn = document.getElementById('btn-review-continue');
   if (btn) {
     btn.textContent = nextDim ? `Continue · ${nextDim.name}` : 'Continue · Review';
+  }
+}
+
+// Fetch cross-answer warnings and render any that belong to a question in the
+// current dimension, with the suggested fix and a click-to-edit affordance.
+async function renderDimensionWarnings(listEl) {
+  let box = document.getElementById('dim-review-warnings');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'dim-review-warnings';
+    box.className = 'dim-review-warnings';
+    listEl.parentNode.insertBefore(box, listEl);
+  }
+  box.innerHTML = '';
+  let warnings = [];
+  try {
+    const res = await fetch('/api/validate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ answers: state.answers }),
+    });
+    if (res.ok) warnings = (await res.json()).warnings || [];
+  } catch (err) { return; }
+
+  const here = new Set(state.currentQuestions.map((q) => q.id));
+  const relevant = warnings.filter((w) => here.has(w.questionId));
+  if (relevant.length === 0) return;
+
+  box.innerHTML = relevant.map((w) => `
+    <div class="dim-review-warning" onclick="editAnswerFromReview('${w.questionId}')">
+      <span class="warn-icon">⚠</span>
+      <div>
+        <div class="warn-message">${escapeHtml(w.message)}</div>
+        ${w.suggestion ? `<div class="warn-suggestion">Suggestion: ${escapeHtml(w.suggestion)}</div>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+// Download the profile report (answers + the app's determinations) as a
+// versioned, stamped document. `format` is 'md' or 'json'.
+async function downloadProfileReport(format) {
+  try {
+    const res = await fetch(`/api/profile/report?format=${format === 'json' ? 'json' : 'md'}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ answers: state.answers, targets: state.targets }),
+    });
+    if (!res.ok) return;
+    const body = format === 'json' ? JSON.stringify(await res.json(), null, 2) : await res.text();
+    const blob = new Blob([body], { type: format === 'json' ? 'application/json' : 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = format === 'json' ? 'embediq-profile.json' : 'embediq-profile.md';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    console.warn('Failed to download profile report', err);
   }
 }
 
@@ -940,12 +1029,6 @@ function togglePreview(el, encodedContent, path) {
   el.after(previewEl);
 }
 
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
-
 // ─── Live Event Stream ───
 
 function openEventStream(sessionId) {
@@ -1020,7 +1103,6 @@ async function generateFiles() {
   if (preview) preview.classList.add('hidden');
 
   // Live-progress event stream is also redundant once the final list lands.
-  const progress = document.getElementById('live-progress');
   if (progress) progress.classList.add('hidden');
 
   // Swap the page heading + subtitle from "Ready to Generate" → "Setup

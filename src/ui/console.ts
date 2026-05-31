@@ -39,6 +39,9 @@ export class ConsoleUI {
     if (question.helpText) {
       console.log(chalk.dim(`  ℹ ${question.helpText}`));
     }
+    if (!question.required && question.inferredNote) {
+      console.log(chalk.dim(`  ↪ optional — leave blank and we'll infer: ${question.inferredNote}`));
+    }
 
     let value: string | string[] | number | boolean;
 

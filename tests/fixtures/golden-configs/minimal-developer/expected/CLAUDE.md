@@ -4,9 +4,14 @@
 ## Tech Stack
 
 - Languages: typescript
+- Build: npm
+- Testing: jest
 
 ## Build & Test
 
+- Install: `npm install`
+- Build: `npm run build`
+- Test: `npm test`
 
 ## Code Conventions
 

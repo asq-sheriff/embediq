@@ -5,12 +5,14 @@
 
 - Languages: typescript
 - Build: npm
+- Testing: jest
 - CI/CD: github_actions
 
 ## Build & Test
 
 - Install: `npm install`
 - Build: `npm run build`
+- Test: `npm test`
 
 ## Code Conventions
 
