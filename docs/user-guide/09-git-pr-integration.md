@@ -1,11 +1,12 @@
 <!-- audience: public -->
 
-# Git PR integration (GitHub, GitLab, Bitbucket)
+# Git PR integration (GitHub, GitLab, Bitbucket, Azure Repos)
 
 With `--git-pr`, EmbedIQ opens a pull request containing the generated
 configuration instead of (or in addition to) writing files to disk.
-GitHub, GitLab, and Bitbucket Cloud are all first-class via the same
-`GitPlatform` interface — select with `EMBEDIQ_GIT_PROVIDER`.
+GitHub, GitLab, Bitbucket Cloud, and Azure DevOps Repos are all
+first-class via the same `GitPlatform` interface — select with
+`EMBEDIQ_GIT_PROVIDER`.
 The PR body includes the profile summary, per-generator file list,
 validation results, contributor attribution (from multi-stakeholder
 sessions), and drift context (when triggered by autopilot). The team
@@ -34,7 +35,14 @@ override. GitLab (cloud and self-hosted) is also supported — set
 token with the `api` scope. Bitbucket Cloud is supported as well —
 set `EMBEDIQ_GIT_PROVIDER=bitbucket`, use `workspace/repo` as the
 repo identifier, and supply a Repository Access Token or Workspace
-Access Token (Bearer auth, not app-password Basic auth).
+Access Token (Bearer auth, not app-password Basic auth). Azure DevOps
+Repos is supported too — set `EMBEDIQ_GIT_PROVIDER=azure-repos`, use
+the three-part `organization/project/repository` identifier as
+`EMBEDIQ_GIT_REPO`, and supply an Azure DevOps PAT with **Code
+(Read & Write)** and **Pull Request** scopes (sent via HTTP Basic with
+an empty username). For Azure DevOps Server (on-prem), point
+`EMBEDIQ_GIT_API_BASE_URL` at the collection URL, e.g.
+`https://tfs.example.com/tfs/DefaultCollection`.
 
 ## Enable it
 

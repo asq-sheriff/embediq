@@ -43,7 +43,7 @@ npm start [-- --targets <list>] [-- --git-pr]
 | Flag | Purpose |
 |---|---|
 | `--targets <list>` | Comma/space-separated output targets (overrides `EMBEDIQ_OUTPUT_TARGETS`). Hosted agents: `claude`, `agents-md`, `cursor`, `copilot`, `gemini`, `windsurf`. v3.3 local AI: `continue-dev`, `aider`, `zed-ai`, `ollama`, `rag-scaffold`, `local-router`. v4.0 governance (opt-in): `oscal-component`, `oscal-ssp-fragment`, `cyclonedx-aibom`, `provenance`. Aliases: `all`. |
-| `--git-pr` | After writing files, open a pull request. Requires `EMBEDIQ_GIT_PROVIDER` + `EMBEDIQ_GIT_REPO` + `EMBEDIQ_GIT_TOKEN`. Supported providers: `github`, `gitlab`, `bitbucket`. |
+| `--git-pr` | After writing files, open a pull request. Requires `EMBEDIQ_GIT_PROVIDER` + `EMBEDIQ_GIT_REPO` + `EMBEDIQ_GIT_TOKEN`. Supported providers: `github`, `gitlab`, `bitbucket`, `azure-repos`. |
 
 Env vars read:
 

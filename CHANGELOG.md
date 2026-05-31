@@ -27,6 +27,15 @@ A 2026-05-26 session layered substantial UX changes on top of v4.0:
 - **`SETUP.md` generator** — emits a per-agent install + activation guide alongside the harness whenever any agent target is selected. Content adapts to the selected agent set: Claude Code install + verify, Cursor MDC discovery, Copilot install, Gemini Code Assist, Windsurf, plus AGENTS.md. Includes verification steps, compliance-specific checks (HIPAA / PCI), and troubleshooting.
 - **`relevantFor` on `AnswerOption`** — option-level filtering driven by upstream answers. Python-only project sees only Python test frameworks / linters in TECH_006 / TECH_011 instead of the full mixed-language list.
 
+### Added — Azure / Microsoft stack
+
+- **Azure DevOps Repos git adapter** — `EMBEDIQ_GIT_PROVIDER=azure-repos` opens PRs directly into Azure Repos via the Git REST API (`api-version=7.1`). Three-part `organization/project/repository` identifier, HTTP Basic PAT auth, and a ref-update + single-push flow (add/edit classified against the base tree). Self-hosted Azure DevOps Server via `EMBEDIQ_GIT_API_BASE_URL`.
+- **`azure-pipelines.yml` generator** — emits a runnable Azure Pipelines CI file when CI/CD is Azure DevOps (TECH_007). Build/test jobs are matched to the stack (.NET, Python, Java/Maven/Gradle, Node, Go, Rust); a Security stage with dependency + secret scanning is added for regulated profiles (HIPAA/PCI/SOC2/GDPR/FedRAMP).
+- **`visual_studio` IDE option (TECH_004)** + a **`.editorconfig` generator** — Visual Studio users get a root `.editorconfig` driving formatting and Roslyn analyzer severities from the selected languages.
+- **JetBrains generator** — IntelliJ / PyCharm / WebStorm / Rider users get `.junie/guidelines.md` (Junie / AI Assistant project guidelines) and `.aiignore` (AI context exclusions, including PHI/PII paths for regulated repos).
+- **`TECH_022` cloud / deployment-target question** (Azure / AWS / GCP / on-prem / hybrid / other) threaded into `DevOpsProfile.cloudTarget`; surfaces a deployment-target line and gates Azure-specific scaffolding. Optional and branched — existing archetypes that don't answer it regenerate byte-identically.
+- **Drift + SETUP.md coverage** — `azure-pipelines.yml`, `.editorconfig`, `.aiignore`, and `.junie/` are tracked by the drift detector's managed trees; SETUP.md emits Visual Studio, JetBrains, and Azure Pipelines activation sections (technical roles only).
+
 ### Added — auth
 
 - **`demo` auth strategy** — admin/user persona switcher activated via `EMBEDIQ_AUTH_STRATEGY=demo`. Reads `embediq_demo_user` cookie (or `?demo-user=` query param) and returns one of two preset users: `demo-admin@example.com` with `wizard-admin` role, or `demo-user@example.com` with `wizard-user` role. Permissive at the middleware level so the UI can render the persona picker. **Never for production** — anyone can claim any role.

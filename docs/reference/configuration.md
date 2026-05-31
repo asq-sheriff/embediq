@@ -119,11 +119,11 @@ See [user-guide/05-multi-agent-targets.md](../user-guide/05-multi-agent-targets.
 
 | Env var | Default | Type | Purpose |
 |---|---|---|---|
-| `EMBEDIQ_GIT_PROVIDER` | `github` | enum | `github`, `gitlab`, or `bitbucket`. |
-| `EMBEDIQ_GIT_REPO` | — | string | Repository identifier. GitHub: `owner/repo`. GitLab: full project path `group/project` (or `parent-group/sub-group/project`). Bitbucket: `workspace/repo`. Required when `--git-pr` is used. |
-| `EMBEDIQ_GIT_TOKEN` | — | string **(secret)** | GitHub PAT/fine-grained token (`contents: write`, `pull_requests: write`); GitLab PAT/group/project token (`api` scope); or Bitbucket Repository/Workspace Access Token (Bearer auth — app-password Basic is not supported). |
+| `EMBEDIQ_GIT_PROVIDER` | `github` | enum | `github`, `gitlab`, `bitbucket`, or `azure-repos`. |
+| `EMBEDIQ_GIT_REPO` | — | string | Repository identifier. GitHub: `owner/repo`. GitLab: full project path `group/project` (or `parent-group/sub-group/project`). Bitbucket: `workspace/repo`. Azure Repos: `organization/project/repository`. Required when `--git-pr` is used. |
+| `EMBEDIQ_GIT_TOKEN` | — | string **(secret)** | GitHub PAT/fine-grained token (`contents: write`, `pull_requests: write`); GitLab PAT/group/project token (`api` scope); Bitbucket Repository/Workspace Access Token (Bearer auth — app-password Basic is not supported); or an Azure DevOps PAT with **Code (Read & Write)** + **Pull Request** scopes (sent via HTTP Basic with an empty username). |
 | `EMBEDIQ_GIT_BASE_BRANCH` | `main` | string | Branch the new branch is forked from and the PR/MR targets. |
-| `EMBEDIQ_GIT_API_BASE_URL` | — | URL | Override the API base for self-hosted instances. GitHub Enterprise: `https://git.example.com/api/v3`. Self-hosted GitLab: `https://gitlab.example.com` (the adapter appends `/api/v4`). Bitbucket Cloud always uses `https://api.bitbucket.org`; override only for proxies. |
+| `EMBEDIQ_GIT_API_BASE_URL` | — | URL | Override the API base for self-hosted instances. GitHub Enterprise: `https://git.example.com/api/v3`. Self-hosted GitLab: `https://gitlab.example.com` (the adapter appends `/api/v4`). Bitbucket Cloud always uses `https://api.bitbucket.org`; override only for proxies. Azure DevOps Server: the collection URL, e.g. `https://tfs.example.com/tfs/DefaultCollection` (Azure DevOps Services defaults to `https://dev.azure.com`). |
 
 See [user-guide/09-git-pr-integration.md](../user-guide/09-git-pr-integration.md).
 
