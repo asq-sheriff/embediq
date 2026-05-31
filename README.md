@@ -78,7 +78,7 @@ regulatory audit.
 **Not for**
 
 - **Hobbyist solo developers** who want a one-page `CLAUDE.md`. Shallow
-  generators serve that case well and a 91-question wizard would
+  generators serve that case well and a 93-question wizard would
   over-serve it — even with the engine's short-circuiting for
   minimal-compliance profiles, admin-vs-user gating, and agent-target
   filtering.
@@ -263,7 +263,11 @@ output) in
 
 | Area | What ships today |
 |---|---|
-| **Adaptive Q&A** | 91 questions · 7 dimensions · explicit agent-target selection (`STRAT_TARGETS`) and admin-vs-user split (`STRAT_000b`) gate ~28 admin-only questions for end-user operators |
+| **Adaptive Q&A** | 93 questions · 7 dimensions · explicit agent-target selection (`STRAT_TARGETS`) and admin-vs-user split (`STRAT_000b`) gate ~28 admin-only questions for end-user operators |
+| **Operator-aware framing** | User-profile questions (role, proficiency) reframe for a Coding Agent Admin configuring for a team vs. an individual personalizing their own setup |
+| **Cross-answer validation** | Typed answers are checked against earlier ones (framework↔language, serverless-without-cloud, duplicate "Other" entries, invalid DLP regex) — non-blocking warn + suggested fix |
+| **Optional questions + inference** | Skippable questions infer a sensible default from your stack (e.g. testing framework from selected languages); inferred values are tagged in the profile report |
+| **Profile report + versioned audit** | Human-readable (md/json) report of every answer + the determinations EmbedIQ made — downloadable from the wizard or via `--profile-report`; each generation writes a versioned, audit-chained profile snapshot |
 | **Role adaptation** | 9 roles (developer, devops, lead, eng_manager, BA, PM, executive, QA, data); role-specific output variants; admin/user operator-type orthogonal to role |
 | **Per-question context + purpose** | Every question carries `helpText` (shown to all users) plus admin-only `purposeText` explaining what the answer drives in the generated output |
 | **Multi-agent targets** | Claude Code, `AGENTS.md`, Cursor, Copilot, Gemini, Windsurf — from one interview |
@@ -274,6 +278,16 @@ output) in
 | **Evaluation framework** | Golden-config replay scoring; benchmark mode against competing tools |
 | **Domain packs + composable skills** | Built-in Healthcare / Finance / Education plus `SKILL.md` authoring format; external packs via `EMBEDIQ_PLUGINS_DIR` / `EMBEDIQ_SKILLS_DIR` |
 
+### Azure / Microsoft stack
+
+| Area | What ships today |
+|---|---|
+| **Azure DevOps Repos PR** | `EMBEDIQ_GIT_PROVIDER=azure-repos` opens PRs into Azure Repos (`organization/project/repository`, PAT auth, Git REST API; Azure DevOps Server via `EMBEDIQ_GIT_API_BASE_URL`) |
+| **Azure Pipelines** | `azure-pipelines.yml` generator matched to your stack (.NET / Python / Java / Node / Go / Rust) with a compliance security stage, when CI/CD = Azure DevOps |
+| **Visual Studio** | root `.editorconfig` (formatting + Roslyn analyzer severities) when Visual Studio is a selected IDE |
+| **JetBrains** | `.junie/guidelines.md` (Junie / AI Assistant project guidelines) + `.aiignore` for IntelliJ / PyCharm / WebStorm / Rider |
+| **Cloud / deployment target** | `TECH_022` (Azure / AWS / GCP / on-prem / hybrid) drives provider-specific scaffolding |
+
 ### Operational features
 
 | Area | What ships today |
@@ -281,7 +295,7 @@ output) in
 | **Drift detection** | `npm run drift` classifies files as match / missing / modified / stale / version-mismatch / extra |
 | **Autopilot** | Scheduled drift scans (`@hourly` / `@daily` / `@weekly` / `@monthly` presets or arbitrary 5-field cron expressions in any IANA timezone with DST handling) plus webhook triggers. Multi-replica scheduling via the Postgres-backed store (`claimSchedule()` CAS — every replica reads the shared table, each due schedule fires exactly once). Failure-streak alerting via the `autopilot:alerting` event (one-shot per crossing). |
 | **Interrupt & resume** | Shareable `?session=<id>` URLs; per-answer contributor attribution for multi-stakeholder workflows |
-| **Multi-platform PR integration** | `--git-pr` opens a PR via GitHub, GitLab, or Bitbucket Cloud (atomic multi-file commits through each platform's native API) |
+| **Multi-platform PR integration** | `--git-pr` opens a PR via GitHub, GitLab, Bitbucket Cloud, or **Azure DevOps Repos** (atomic multi-file commits through each platform's native API) |
 | **Outbound notifications** | Slack Block Kit / Teams MessageCard / generic JSON via `EMBEDIQ_WEBHOOK_URLS` |
 | **Compliance webhooks** | Drata, Vanta, and generic adapters translate external findings into autopilot runs; HMAC-SHA256 signature verification opt-in per adapter |
 
@@ -341,13 +355,13 @@ Three-layer design:
 ```
 ┌────────────────────────────────────────────────────┐
 │  Layer 1: Universal Question Bank                  │
-│  91 questions · 7 dimensions · purposeText schema  │
+│  93 questions · 7 dimensions · purposeText schema  │
 ├────────────────────────────────────────────────────┤
 │  Layer 2: Adaptive Logic Engine                    │
 │  Branch evaluation · profile building · priorities │
 ├────────────────────────────────────────────────────┤
 │  Layer 3: Unified Synthesizer                      │
-│  28 generators · 16 target formats · validation    │
+│  31 generators · 16 target formats · validation    │
 └────────────────────────────────────────────────────┘
 ```
 
