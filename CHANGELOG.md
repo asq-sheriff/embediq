@@ -36,7 +36,7 @@ A 2026-05-26 session layered substantial UX changes on top of v4.0:
 ### Added — refactored
 
 - **`FIN_003` rewritten to be agent-agnostic** — was Claude-specific (OpusPlan / SonnetPlan / Manual / Auto-via-claude-router). Now: Deterministic rules / Local-LLM classifier (via TECH_013) / Tiered planning (per-agent) / Manual per-request / No routing.
-- **Healthcare BPO archetype refactor** — `healthcare-bpo-strict` renamed to `healthcare-bpo-web-developer`; three siblings added (`healthcare-bpo-web-pm`, `healthcare-bpo-microsoft-developer`, `healthcare-bpo-microsoft-pm`) to cover the two dominant healthcare-BPO stack patterns × role variants. **Nine customer-specific `sagility-class-*` archetypes deleted** — customer-named fixtures are no longer allowed in the repo; they're regenerable from the canonical archetypes with a customer overlay.
+- **Healthcare BPO archetype refactor** — `healthcare-bpo-strict` renamed to `healthcare-bpo-web-developer`; three siblings added (`healthcare-bpo-web-pm`, `healthcare-bpo-microsoft-developer`, `healthcare-bpo-microsoft-pm`) to cover the two dominant healthcare-BPO stack patterns × role variants. **Nine customer-specific archetypes deleted** — customer-named fixtures are no longer allowed in the repo; they're regenerable from the canonical archetypes with a customer overlay.
 - **Welcome screen repositioned** — "Claude Code Setup Wizard" → "Configure your AI coding agents"; subtitle covers all five IDE targets; three explanatory meta-pills (15 target formats, 23 generators, HIPAA · PCI · FedRAMP · NIST AI RMF) with hover tooltips explaining each.
 
 ### Changed — counts
@@ -45,7 +45,7 @@ A 2026-05-26 session layered substantial UX changes on top of v4.0:
 - Total generators: **23 → 28** (added SETUP.md + provenance-trace + cyclonedx-aibom + oscal-component + oscal-ssp-fragment all reframed into the canonical generator count).
 - Target formats: **15 → 16** (added `provenance` as a distinct target alongside the earlier governance outputs).
 - Auth strategies: **3 → 4** (added `demo`).
-- Healthcare-BPO archetypes: **1 → 4 canonical** (after deleting 9 customer-specific sagility-class fixtures).
+- Healthcare-BPO archetypes: **1 → 4 canonical** (after deleting 9 customer-specific fixtures).
 - Total archetypes: **19 → 13** (customer-neutral set; same coverage with fewer redundant fixtures).
 - Test count: **1,265 → 1,285** (snapshot regeneration after SETUP.md addition + golden regenerate after archetype refactor + new admin/user paths).
 - Priority percentages replaced with categorical labels (Top / High / Moderate / Light) in the playback view — raw percentage preserved as tooltip.
@@ -65,7 +65,7 @@ A 2026-05-26 session layered substantial UX changes on top of v4.0:
 
 - **Full purposeText authoring pass** — all 91 questions now carry both `helpText` (context for everyone) and `purposeText` (admin-only "why we ask").
 - **6 new customer-facing showcase docs** in `docs/showcase/`: `EXECUTIVE-BRIEF.md`, `persona-healthcare-bpo.md`, `persona-federal-contractor.md`, `persona-consulting-firm.md`, `DEMO-SCRIPT.md`, `FAQ.md`, `PITCH-DECK.md`, `PROCUREMENT-EVIDENCE-PACK.md`, `README.md` (showcase index).
-- Sagility-demo runbook marked stale (references deleted archetypes); narrative content preserved with a re-mapping note pointing to the canonical archetypes.
+- A customer-demo runbook marked stale (references deleted archetypes); narrative content preserved with a re-mapping note pointing to the canonical archetypes.
 
 ## [4.0.0] — Enterprise AI Governance Foundation
 

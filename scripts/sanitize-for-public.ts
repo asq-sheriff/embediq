@@ -62,11 +62,11 @@ const PRIVATE_PATH_PREFIXES: readonly string[] = [
   // healthcare-bpo-microsoft-developer, healthcare-bpo-microsoft-pm,
   // consulting-engagement-default, etc.) that DO ship publicly.
   // Customer-specific demo *materials* (runbooks, day-in-life
-  // narratives, framing slides) under docs/showcase/sagility-demo/
-  // are private. Customer-specific golden-config *fixtures* are not
-  // allowed in the repo at all — anyone needing them regenerates from
-  // the canonical archetypes with a customer overlay.
-  'docs/showcase/sagility-demo/',
+  // narratives, framing slides) under the private customer-demo
+  // showcase directory are private. Customer-specific golden-config
+  // *fixtures* are not allowed in the repo at all — anyone needing them
+  // regenerates from the canonical archetypes with a customer overlay.
+  'docs/showcase/customer-demo/',
 ];
 
 /** Hard leak markers — appearing in a public-tagged file is a defect. */
