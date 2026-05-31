@@ -897,6 +897,17 @@ function validateScheduleInput(body: Partial<ScheduleCreateInput>):
   };
 }
 
+/**
+ * Parse a client-supplied timestamp into a valid Date. An unparseable or
+ * missing value would otherwise yield an Invalid Date that crashes a later
+ * `.toISOString()` (e.g. when persisting answers to a session). Falls back
+ * to "now" so a malformed timestamp can never crash the request.
+ */
+export function safeTimestamp(raw: unknown): Date {
+  const parsed = new Date(raw as string | number);
+  return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+}
+
 function mergeSessionAnswers(
   session: WizardSession | null | undefined,
   rawBodyAnswers: Record<string, { value: unknown; timestamp: string }> | undefined,
@@ -907,16 +918,17 @@ function mergeSessionAnswers(
       merged.set(id, {
         questionId: entry.questionId,
         value: entry.value,
-        timestamp: new Date(entry.timestamp),
+        timestamp: safeTimestamp(entry.timestamp),
       });
     }
   }
   if (rawBodyAnswers) {
     for (const [id, data] of Object.entries(rawBodyAnswers)) {
+      if (!data) continue;
       merged.set(id, {
         questionId: id,
         value: data.value as string | string[] | number | boolean,
-        timestamp: new Date(data.timestamp),
+        timestamp: safeTimestamp(data.timestamp),
       });
     }
   }
@@ -928,10 +940,11 @@ function hydrateAnswers(raw: Record<string, { value: unknown; timestamp: string 
   if (!raw) return map;
 
   for (const [id, data] of Object.entries(raw)) {
+    if (!data) continue;
     map.set(id, {
       questionId: id,
       value: data.value as string | string[] | number | boolean,
-      timestamp: new Date(data.timestamp),
+      timestamp: safeTimestamp(data.timestamp),
     });
   }
   return map;

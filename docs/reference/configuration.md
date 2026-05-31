@@ -58,9 +58,11 @@ See [operator-guide/authentication.md](../operator-guide/authentication.md).
 
 ## Session persistence
 
+With `EMBEDIQ_SESSION_BACKEND=none` (the default) the API is fully stateless — `POST /api/sessions` returns `503 "Session persistence is not enabled"`. The session-dependent features are unavailable until a backend is configured: **interrupt-and-resume**, **multi-contributor `contributedBy` attribution**, and the **versioned profile audit trail** (`GET /api/sessions/:id/profile-history` and the per-generation profile snapshots). For a demo or single node, `EMBEDIQ_SESSION_BACKEND=json-file` (optionally with `EMBEDIQ_SESSION_DIR`) is enough; for multi-replica, use `database` with `EMBEDIQ_SESSION_DB_DRIVER=postgres`. The profile snapshots are also written to the tamper-evident audit chain when `EMBEDIQ_AUDIT_LOG` + `EMBEDIQ_AUDIT_CHAIN_ENABLED=true` are set (see [Observability](#observability)).
+
 | Env var | Default | Type | Purpose |
 |---|---|---|---|
-| `EMBEDIQ_SESSION_BACKEND` | `none` | enum | `none` / `json-file` / `database` / `redis`. `redis` is reserved. `database` is the multi-node-ready backend (SQLite default; Postgres via `EMBEDIQ_SESSION_DB_DRIVER=postgres`). |
+| `EMBEDIQ_SESSION_BACKEND` | `none` | enum | `none` / `json-file` / `database` / `redis`. `redis` is reserved. `database` is the multi-node-ready backend (SQLite default; Postgres via `EMBEDIQ_SESSION_DB_DRIVER=postgres`). Must be non-`none` for resume, contributor attribution, and the versioned profile-history. |
 | `EMBEDIQ_SESSION_TTL_MS` | `604800000` (7d) | integer | Session lifetime in ms. Clamped to [60 000, 2 592 000 000] (1 min – 30 d). |
 | `EMBEDIQ_SESSION_DIR` | `./.embediq/sessions` (or `./.embediq/engagements/<id>/sessions` when [`EMBEDIQ_ENGAGEMENT_ID`](#multi-engagement-deployment) is set) | path | Per-session JSON file directory. Applies only when `EMBEDIQ_SESSION_BACKEND=json-file`. Explicit value always wins over engagement scoping. |
 | `EMBEDIQ_SESSION_DB_DRIVER` | `sqlite` | enum | `sqlite` / `postgres`. Applies when `EMBEDIQ_SESSION_BACKEND=database`. Postgres is the multi-node-ready driver — every web replica shares the same session store. SQLite stays single-node. |
