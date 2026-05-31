@@ -7,9 +7,15 @@ All notable changes to EmbedIQ are documented in this file.
 The format is based on [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] — Wizard-UX overhaul
+## [Unreleased]
 
-A 2026-05-26 session layered substantial UX changes on top of v4.0:
+## [4.0.1] — 2026-05-31 — Azure / Microsoft stack + wizard quality
+
+Layered on top of v4.0: a wizard-UX overhaul, the Azure / Microsoft stack
+(Azure Repos PR adapter, azure-pipelines.yml, Visual Studio + JetBrains output,
+cloud/deployment question), and a wizard-quality pass (operator-aware framing,
+cross-answer validation, optional-question inference, profile report export, and
+versioned audit-chained profile snapshots).
 
 ### Added — wizard surface
 
@@ -35,6 +41,15 @@ A 2026-05-26 session layered substantial UX changes on top of v4.0:
 - **JetBrains generator** — IntelliJ / PyCharm / WebStorm / Rider users get `.junie/guidelines.md` (Junie / AI Assistant project guidelines) and `.aiignore` (AI context exclusions, including PHI/PII paths for regulated repos).
 - **`TECH_022` cloud / deployment-target question** (Azure / AWS / GCP / on-prem / hybrid / other) threaded into `DevOpsProfile.cloudTarget`; surfaces a deployment-target line and gates Azure-specific scaffolding. Optional and branched — existing archetypes that don't answer it regenerate byte-identically.
 - **Drift + SETUP.md coverage** — `azure-pipelines.yml`, `.editorconfig`, `.aiignore`, and `.junie/` are tracked by the drift detector's managed trees; SETUP.md emits Visual Studio, JetBrains, and Azure Pipelines activation sections (technical roles only).
+
+### Added — wizard quality
+
+- **Operator-aware question framing** — user-profile questions (role, proficiency) render team-framed copy for a Coding Agent Admin configuring for a team, first-person copy for an individual; selected from the auth-derived operator type.
+- **Cross-answer consistency validation** — rule-based checks warn (with a suggested fix, non-blocking) when a typed answer contradicts earlier ones: framework↔language, duplicate "Other" entries, serverless-without-cloud, invalid DLP regex, under-spec local-model hardware, purpose↔industry. `POST /api/validate`. LLM-assisted semantic checks reserved as an extension point.
+- **Optional questions with default-inference** — TECH_004/005/006 (IDE / build / testing) are skippable; the profile infers a sensible default from the selected languages when skipped (tagged "inferred" in the report).
+- **Profile report export** — human-readable (md) / machine-readable (json) report of every answer plus the determinations EmbedIQ derived (resolved domain pack, targets, inferred defaults, priorities, consistency warnings); `POST /api/profile/report`, web download, and CLI `--profile-report`.
+- **Versioned, audit-retained profile snapshots** — each session-bound generation appends an immutable profile snapshot (`GET /api/sessions/:id/profile-history`) with profile/answers hashes, chained into the tamper-evident audit log via a `profile_snapshot` entry.
+- **Question-bank quality pass** — reordering (free-form purpose last; cloud after CI/CD; agent-teams before concurrent sessions) and the FIN_003 local-classifier routing option gated on local AI being enabled.
 
 ### Added — auth
 

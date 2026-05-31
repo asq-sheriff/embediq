@@ -30,7 +30,7 @@ integrity break.
 Everything is **deterministic, offline, and audit-ready**: no LLM calls,
 no telemetry, no database. Same answers in → byte-identical files out.
 
-[Latest release: **v4.0**](https://github.com/asq-sheriff/embediq/releases/latest) ·
+[Latest release: **v4.0.1**](https://github.com/asq-sheriff/embediq/releases/latest) ·
 [Full changelog](CHANGELOG.md) ·
 [Security model](SECURITY.md) ·
 [Governance suite docs](docs/extension-guide/writing-oscal-imports.md)
