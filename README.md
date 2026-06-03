@@ -4,7 +4,11 @@
 
 **Governed configuration for every AI coding agent — from one interview.**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) · [Latest release: **v4.0.1**](https://github.com/asq-sheriff/embediq/releases/latest) · Deterministic & offline
+*Answer a few questions about your project, and EmbedIQ writes the setup files
+that make Claude Code, Cursor, Copilot, and other AI coding assistants follow
+your team's rules — consistently, and with an audit trail.*
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) · [Latest release: **v4.0.2**](https://github.com/asq-sheriff/embediq/releases/latest) · Deterministic & offline
 
 EmbedIQ interviews you once about your project, team, and compliance
 obligations, then generates a complete, governed agent harness — typically
@@ -17,51 +21,109 @@ always produce **byte-identical output** — including under regulatory audit.
 [Security model](SECURITY.md) ·
 [Documentation](docs/getting-started.md)
 
-![EmbedIQ demo — drift, evaluation, and multi-engagement scoping in ~70 seconds](docs/assets/demo.gif)
+![The EmbedIQ web wizard interviewing an operator — seven dimensions in the sidebar, role-adaptive questions, and an admin-only "why we ask" panel](docs/assets/wizard.png)
+
+---
+
+## What EmbedIQ does, in plain terms
+
+AI coding assistants — Claude Code, Cursor, GitHub Copilot, and the rest — each
+read a small **setup file** that tells them the rules of *your* project: what
+you're building, what language it's written in, and what they must never do
+(at a hospital, for example, *"never put a patient's record into code, comments,
+or logs"*). Writing those files by hand for every tool — and keeping them all
+saying the same thing — is slow and easy to get wrong.
+
+**EmbedIQ does it for you.** You answer a set of plain questions about your
+project, your team, and any rules you have to follow. EmbedIQ turns those answers
+into all of the setup files automatically — the same way every time, with no AI
+guesswork in the middle.
+
+- **Who it's for** — any team using AI coding assistants that wants them set up
+  the same way for everyone, especially in regulated fields like healthcare,
+  finance, or government, where an assistant doing the wrong thing is a
+  compliance problem, not just a bug.
+- **What you do** — answer an interview (10–15 minutes), in the browser or the
+  terminal. No coding required to run it.
+- **What you get** — a folder of ready-to-use config files you drop into your
+  project, so every developer's AI assistant follows the same safe rules from
+  day one, plus a record you can show an auditor proving what was set up and why.
 
 ---
 
 ## Why it matters
 
-Teams adopting AI coding agents juggle four to six tools, each with its own
-config language. Configurations duplicate, drift, and decay; compliance teams
-have no single artifact to audit; security posture varies by each developer's
-local setup; and every new hire rebuilds the harness from scratch.
+Most teams use four to six AI coding tools at once, and each one wants its rules
+written in its own way. So the same rules get copied from tool to tool, fall out
+of step as people edit them by hand, and quietly go stale. Compliance teams have
+no single place to check; every developer's machine ends up a little different;
+and each new hire sets the whole thing up again from scratch.
 
-EmbedIQ produces one **governed source of truth** from a structured interview
-and keeps it that way — drift detection, scheduled regeneration, and
-byte-identical re-runs. Because no model sits in the generator path, the output
-is reproducible and provable, not best-effort.
+EmbedIQ replaces all of that with **one source of truth** built from your
+answers — and keeps it that way. It spots when files have been changed or have
+drifted out of date, can regenerate them on a schedule, and produces the exact
+same output every time. Because no AI runs while the files are written, the
+result is repeatable and provable, not a best guess.
+
+---
+
+## What the compliance standards mean — and why enterprises care
+
+In a large company, much of EmbedIQ's value is keeping AI assistants on the
+right side of rules the company is legally or contractually bound to. Those
+rules have names. Here's what they are in plain English, and what's at stake
+when they're broken:
+
+| Standard | What it is | Why an enterprise cares |
+| --- | --- | --- |
+| **HIPAA** | US law protecting patients' health information (PHI). | A hospital or insurer that leaks patient data faces heavy fines and lawsuits. An AI assistant that pastes a medical record into a log *is* a HIPAA breach. |
+| **PCI-DSS** | The payment-card industry's rules for handling credit-card data. | Any company that takes card payments must comply or lose the ability to process cards at all. A leaked card number is a reportable incident. |
+| **SOC 2** | An independent audit proving a company handles customer data securely. | Enterprise buyers routinely *refuse to purchase* software without a SOC 2 report — it's a gate to closing deals. |
+| **GDPR** | The EU's privacy law covering anyone's personal data. | Applies to any company with EU users; fines reach 4% of global annual revenue. |
+| **FedRAMP** | The US government's security bar for cloud services. | Required to sell cloud software to federal agencies — no authorization, no contract. |
+| **NIST AI RMF** | A US government framework for managing the risks of AI systems. | The emerging benchmark for proving you use AI responsibly — increasingly required in enterprise and government deals. |
+
+EmbedIQ can also produce the **evidence** auditors actually ask for, so adopting
+AI doesn't mean a pile of manual paperwork:
+
+- **OSCAL** — a standard, machine-readable format for compliance documents, so audit platforms (Drata, Vanta, FedRAMP pipelines) can read EmbedIQ's output directly instead of someone retyping it into a spreadsheet.
+- **CycloneDX AIBOM** — an "ingredient list" of every AI model and service the harness uses, so you can answer *"exactly what AI is running in here?"* on demand.
+- **Tamper-evident audit chain** — a sealed log that proves the records weren't quietly edited after the fact.
+
+**The bottom line:** an AI coding assistant that ignores these rules isn't a
+small bug — it's a fine, a failed audit, or a lost contract. EmbedIQ bakes the
+right guardrails into every assistant up front and generates the proof, so the
+upside of AI doesn't come with new compliance risk.
 
 ---
 
 ## Capabilities at a glance
 
-**One interview, every agent**
-- Claude Code, Cursor, GitHub Copilot, Gemini, Windsurf, and `AGENTS.md` from one answer set.
-- Role-adaptive: developers get a full harness (rules, hooks, settings); business analysts, product managers, and executives get a research-and-analysis "coworker" setup instead of code config.
-- **Three-role delegation**: each question is owned by the Admin (policy), the Team Lead (the project + lived experience), or the Individual (per-seat preferences) — the admin sets policy and delegates the rest via a shareable link, with per-answer attribution. [→](docs/user-guide/13-three-role-delegation.md)
-- Optional local-AI stack — Continue.dev, Aider, Zed AI, Ollama — plus a runnable RAG scaffold (FHIR-aware for healthcare, plain-text otherwise).
+**One interview, every agent** — *answer once; EmbedIQ sets up every AI assistant your team uses.*
+- One set of answers configures Claude Code, Cursor, GitHub Copilot, Gemini, Windsurf, and the cross-tool `AGENTS.md` format.
+- Adapts to the person: developers get the full technical setup (rules, safety hooks, permissions); non-technical people (analysts, PMs, executives) get a simpler research-and-writing assistant instead of code config.
+- **Hand the right questions to the right people**: the admin sets policy, then delegates the project questions to a team lead and the personal-preference questions to each developer — via a shareable link, with every answer tagged by who gave it. [→](docs/user-guide/13-three-role-delegation.md)
+- Optional local-AI setup that runs models on your own hardware (Continue.dev, Aider, Zed AI, Ollama), plus a ready-to-run starter for searching your own documents.
 
-**Governance & compliance**
-- Pre-write validators that *refuse* non-compliant output for HIPAA, PCI-DSS, SOC 2, and GDPR.
-- Machine-readable evidence: OSCAL Component Definition + SSP fragment, CycloneDX-ML AIBOM, and a per-file provenance manifest — ingestible by Drata, Vanta, FedRAMP, and Dependency-Track pipelines.
-- Built-in NIST AI RMF + AI 600-1 domain pack; composable with HIPAA / PCI / FERPA.
+**Governance & compliance** — *keeps the AI inside the rules, and produces the paperwork to prove it.*
+- Before any file is written, EmbedIQ checks it and *refuses* output that would break HIPAA, PCI-DSS, SOC 2, or GDPR.
+- Generates audit evidence in the formats audit tools read directly — OSCAL documents, a CycloneDX "bill of materials" listing every AI in use, and a per-file record of what produced it — ready for Drata, Vanta, FedRAMP, and Dependency-Track.
+- Built-in support for the NIST AI RMF AI-risk framework, mixable with healthcare (HIPAA), payments (PCI), and education (FERPA) rule sets.
 
-**Deterministic & audit-ready**
-- No LLM calls in the generator path — same answers in, byte-identical files out.
-- Optional RFC-6962 tamper-evident audit chain with a `verify-audit-log` CLI.
-- A versioned, downloadable profile report capturing every answer and the decisions EmbedIQ derived from it.
+**Deterministic & audit-ready** — *the same answers always produce exactly the same files — no AI surprises.*
+- No AI model runs while files are generated, so identical answers give byte-for-byte identical output every time.
+- Optional tamper-evident log that proves the records weren't edited after the fact, with a one-command `verify-audit-log` check.
+- A downloadable, versioned report of every answer and every decision EmbedIQ made from it.
 
-**Stays in sync**
-- Drift detection classifies every managed file (match / missing / hand-edited / stale / extra).
-- Autopilot runs scheduled drift scans and can open a regeneration PR automatically.
-- `--git-pr` opens that PR via GitHub, GitLab, Bitbucket Cloud, or Azure DevOps Repos.
+**Stays in sync** — *catches when the setup drifts out of date, and can fix it.*
+- "Drift detection" flags every managed file as unchanged, missing, hand-edited, out-of-date, or unexpected.
+- Autopilot runs those checks on a schedule and can open a pull request to regenerate stale files automatically.
+- `--git-pr` opens that pull request on GitHub, GitLab, Bitbucket Cloud, or Azure DevOps.
 
-**Enterprise integration**
-- Azure DevOps: Azure Repos PRs + a stack-matched `azure-pipelines.yml`; Visual Studio (`.editorconfig`) and JetBrains (`.junie/`, `.aiignore`) output.
-- Pluggable auth (HTTP Basic / OIDC / reverse-proxy header) with three-tier RBAC.
-- Per-engagement state isolation for consulting/MSP use; Docker / Kubernetes deploy; optional OpenTelemetry.
+**Enterprise integration** — *fits the tools and controls a large organization already runs on.*
+- Microsoft / Azure stack: Azure Repos pull requests, a matching `azure-pipelines.yml` build file, and Visual Studio + JetBrains editor settings.
+- Plugs into your existing login (HTTP Basic, OIDC single-sign-on, or reverse-proxy headers), with three permission tiers covering who can view, run, and administer.
+- Run many client engagements from one install; deploy with Docker or Kubernetes; optional OpenTelemetry monitoring.
 
 ---
 
@@ -113,19 +175,22 @@ developer role, strict security tier:
 - For PHI handling details, see .claude/rules/hipaa-compliance.md
 ````
 
-That `CLAUDE.md` is one of ~16 files for this profile: path-scoped rule files,
-Python DLP / audit / command-guard hooks, a permissions-tiered
-`settings.json` + local allow-list, an `.mcp.json.template`, and egress
-controls. Opt in more targets and the same answers also produce `AGENTS.md`,
-`.cursor/rules/*.mdc`, Copilot instructions, `GEMINI.md`, and `.windsurfrules`.
+That `CLAUDE.md` is one of about 16 files generated for this profile. Alongside
+it: rule files that apply to specific folders; Python "safety hooks" that scan
+edits for sensitive data, log activity, and block risky commands; a permissions
+file limiting what the assistant may touch; a template for connecting external
+tools (`.mcp.json`); and controls on what it can reach over the network. Opt in
+to more targets and the same answers also produce `AGENTS.md`, Cursor rules,
+Copilot instructions, `GEMINI.md`, and `.windsurfrules`.
 Full inventory: [`docs/user-guide/02-generated-files.md`](docs/user-guide/02-generated-files.md).
 
 ---
 
 ## What it generates
 
-Select targets via `--targets` (or `EMBEDIQ_OUTPUT_TARGETS`). The default is
-`claude`.
+Each AI tool reads its instructions from a different file in a different place.
+Pick which tools to generate for with `--targets` (or the `EMBEDIQ_OUTPUT_TARGETS`
+setting); the default is Claude Code.
 
 | Hosted agent | Output |
 | --- | --- |
@@ -139,8 +204,9 @@ Select targets via `--targets` (or `EMBEDIQ_OUTPUT_TARGETS`). The default is
 - **Local AI** — opting into the local-AI branch adds Continue.dev, Aider, Zed AI, and Ollama configs plus a runnable RAG scaffold. → [`docs/user-guide/05-multi-agent-targets.md`](docs/user-guide/05-multi-agent-targets.md)
 - **Governance evidence** — `cyclonedx-aibom`, `oscal-component`, `oscal-ssp-fragment`, and `provenance` are opt-in post-pass outputs; existing output regenerates byte-identically without them. → [`docs/extension-guide/`](docs/extension-guide/)
 
-Non-technical roles (BA / PM / Executive) get coworker-shaped output focused on
-research, analysis, and documentation, and never see the local-AI targets.
+Non-technical roles (business analysts, product managers, executives) get a
+simpler assistant aimed at research, analysis, and writing — not code setup —
+and never see the local-AI options.
 
 ---
 
@@ -158,6 +224,11 @@ research, analysis, and documentation, and never see the local-AI targets.
 │  31 generators · 16 target formats · validation    │
 └────────────────────────────────────────────────────┘
 ```
+
+In plain terms: **Layer 1** is the interview — the questions you answer.
+**Layer 2** is the logic that works out which questions actually matter to you
+and what your answers imply. **Layer 3** is the writer that turns those answers
+into the real config files. You only ever see Layer 1; the other two run for you.
 
 CLI and web interfaces share this core. The web API is stateless by default —
 the browser holds the answer map; opt-in server-side sessions add
@@ -201,11 +272,11 @@ to *use*; output for other agents has no runtime dependency beyond the agent.
 
 ## Data privacy
 
-- **No database** unless you opt into a session backend; default is volatile memory only.
-- **No telemetry** — EmbedIQ never phones home.
-- **No LLM calls** — the wizard is 100% deterministic; answers are never sent to any AI service.
-- **No hidden disk writes** — output lands only in the directory you name.
-- **Air-gap compatible** — the only optional outbound traffic (OpenTelemetry, git PR, webhooks) is opt-in via env vars.
+- **No database** unless you turn one on; by default your answers live in memory only and are gone when you close it.
+- **No telemetry** — EmbedIQ never phones home or tracks you.
+- **No AI in the loop** — the wizard runs entirely on your machine; your answers are never sent to any AI service.
+- **No hidden writes** — files land only in the folder you name, nowhere else.
+- **Works fully offline** — the only network traffic (monitoring, opening pull requests, webhooks) is optional and off unless you switch it on.
 
 Full threat model in [`SECURITY.md`](SECURITY.md).
 

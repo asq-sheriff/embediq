@@ -6,7 +6,7 @@ The synthesizer turns a `UserProfile` into the final configuration.
 It's the only layer that writes to disk or opens PRs. Everything
 upstream is data; everything downstream is output.
 
-**Source**: [`src/synthesizer/`](../../src/synthesizer/) — 28 generator
+**Source**: [`src/synthesizer/`](../../src/synthesizer/) — 31 generator
 files under `generators/`, plus the orchestrator, validator,
 stamper, target-format enum, and diff analyzer. The orchestrator
 runs the regular generators in a parallel batch, then performs a
@@ -35,7 +35,7 @@ Every generator is **pure** — takes a `SetupConfig`, returns
 `GeneratedFile[]`. No I/O, no mutation, no event-bus emits. The
 orchestrator is the only piece with side effects.
 
-## The 28 generators
+## The 31 generators
 
 ### Parallel batch (filtered by `config.targets` + role)
 
@@ -53,6 +53,9 @@ orchestrator is the only piece with side effects.
 | McpJsonGenerator | `claude` | `.mcp.json.template` |
 | AssociationMapGenerator | `claude` | `.claude/association_map.yaml` |
 | DocumentStateGenerator | `claude` | `.claude/document_state.yaml` |
+| CiPipelineGenerator | `claude` | `azure-pipelines.yml` (only when CI/CD = Azure DevOps) |
+| EditorConfigGenerator | `claude` | `.editorconfig` (Visual Studio; only when the profile signals it) |
+| JetBrainsGenerator | `claude` | `.junie/guidelines.md` + `.aiignore` (only when the profile signals it) |
 | AgentsMdGenerator | `agents-md` | `AGENTS.md` |
 | CursorRulesGenerator | `cursor` | `.cursor/rules/*.mdc` |
 | CopilotInstructionsGenerator | `copilot` | `.github/copilot-instructions.md` + `.github/instructions/*.instructions.md` |

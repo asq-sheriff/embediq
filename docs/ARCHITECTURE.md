@@ -59,7 +59,7 @@ The system serves two interfaces (CLI and web) from a single shared core, adapts
 │  ┌─────────────────────────────────────────────────────────────┐   │
 │  │         Layer 3: Unified Specification Synthesizer           │   │
 │  │                                                             │   │
-│  │  SynthesizerOrchestrator → 28 generators across 16 targets  │   │
+│  │  SynthesizerOrchestrator → 31 generators across 16 targets  │   │
 │  │  → FileOutputManager → 15-40 config files + SETUP.md        │   │
 │  └─────────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────────┘
@@ -100,7 +100,7 @@ embediq/
     │   ├── priority-analyzer.ts  # Tag-weight priority derivation
     │   └── dimension-tracker.ts  # Progress tracking per dimension
     ├── synthesizer/
-    │   ├── orchestrator.ts       # Coordinates 28 generators across 16 targets (12 Claude + 5 multi-agent + 4 local-AI + 1 RAG scaffold + 1 local-router + 4 v4.0 governance post-pass + 1 SETUP.md) + validation
+    │   ├── orchestrator.ts       # Coordinates 31 generators across 16 targets (12 Claude + 3 Azure/Microsoft + 5 multi-agent + 4 local-AI + 1 RAG scaffold + 1 local-router + 4 v4.0 governance post-pass + 1 SETUP.md) + validation
     │   ├── generator.ts          # ConfigGenerator interface
     │   ├── output-validator.ts   # Post-generation compliance verification
     │   ├── generation-header.ts  # Version stamps for generated files

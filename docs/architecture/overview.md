@@ -108,8 +108,9 @@ POST /api/generate                           (orchestrator → generators)
     ClaudeMdGenerator   ──▶  CLAUDE.md
     SettingsJsonGen     ──▶  .claude/settings.json
     RulesGenerator      ──▶  .claude/rules/*.md
-    …                        (28 generators across 16 targets:
+    …                        (31 generators across 16 targets:
                               12 Claude Code
+                              +  3 Azure/Microsoft
                               +  5 multi-agent
                               +  4 local-AI (v3.3)
                               +  1 RAG scaffold (v3.3)
