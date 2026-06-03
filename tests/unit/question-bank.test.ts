@@ -8,9 +8,9 @@ const bank = new QuestionBank();
 
 describe('QuestionBank', () => {
   describe('getAll', () => {
-    it('returns all 93 questions', () => {
+    it('returns all 95 questions', () => {
       const all = bank.getAll();
-      expect(all.length).toBe(93);
+      expect(all.length).toBe(95);
     });
 
     it('every question has an id, dimension, type, and text', () => {
@@ -137,6 +137,21 @@ describe('QuestionBank', () => {
     it('stamps the resolved respondent on served questions', () => {
       const prob = bank.getVisibleQuestions(Dimension.PROBLEM_DEFINITION, ans());
       expect(prob.find(q => q.id === 'PROB_001')?.respondent).toBe('lead');
+    });
+
+    it('classifies the agent-isolation posture (TECH_023) as an admin policy decision', () => {
+      const q = questions.find(x => x.id === 'TECH_023')!;
+      expect(respondentOf(q)).toBe('admin');
+    });
+
+    it('shows the isolation posture (TECH_023) only to the admin operator, never a non-admin', () => {
+      const sees = (operator: string): boolean => bank
+        .getVisibleQuestions(Dimension.TECHNOLOGY_REQUIREMENTS, buildAnswerMap([
+          ['STRAT_000', 'developer'], ['STRAT_000a', 'advanced'], ['STRAT_000b', operator],
+        ]))
+        .some(q => q.id === 'TECH_023');
+      expect(sees('admin')).toBe(true);
+      expect(sees('user')).toBe(false);
     });
   });
 });

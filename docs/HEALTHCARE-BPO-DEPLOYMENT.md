@@ -381,6 +381,8 @@ jq -c 'select(.requestId == "REQUEST_ID" and .eventType == "file_written")
 - [`docs/reference/audit-log-schema.md`](reference/audit-log-schema.md) — schema +
   retention guidance per framework
 - [`docs/CONSULTING-FIRM-DEPLOYMENT.md`](CONSULTING-FIRM-DEPLOYMENT.md) — per-engagement scoping
+- [`docs/evaluators/isolation-decision-guide.md`](evaluators/isolation-decision-guide.md) — native sandbox vs container vs VM/VDI for the agent
+- [`docs/operator-guide/azure-isolation-runbook.md`](operator-guide/azure-isolation-runbook.md) — AVD + WSL2 + Intune sandbox enforcement + Zero-Trust
 - [`docs/operator-guide/deployment.md`](operator-guide/deployment.md) — general
   deployment guide
 - [`docs/operator-guide/observability.md`](operator-guide/observability.md) — audit

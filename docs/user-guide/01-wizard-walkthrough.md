@@ -17,7 +17,7 @@ this chapter is the longer reference for each phase.
 
 ## Quick reference to the four phases
 
-1. **Discovery** — adaptive Q&A, up to ~50 of the 91 questions based
+1. **Discovery** — adaptive Q&A, up to ~50 of the 95 questions based
    on your answers, agent-target selection (`STRAT_TARGETS`),
    admin-vs-user operator type (`STRAT_000b`), chosen industry,
    and compliance frameworks.

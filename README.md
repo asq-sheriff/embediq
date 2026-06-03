@@ -8,7 +8,7 @@
 that make Claude Code, Cursor, Copilot, and other AI coding assistants follow
 your team's rules — consistently, and with an audit trail.*
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) · [Latest release: **v4.0.2**](https://github.com/asq-sheriff/embediq/releases/latest) · Deterministic & offline
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) · [Latest release: **v4.0.3**](https://github.com/asq-sheriff/embediq/releases/latest) · Deterministic & offline
 
 EmbedIQ interviews you once about your project, team, and compliance
 obligations, then generates a complete, governed agent harness — typically
@@ -122,6 +122,7 @@ upside of AI doesn't come with new compliance risk.
 
 **Enterprise integration** — *fits the tools and controls a large organization already runs on.*
 - Microsoft / Azure stack: Azure Repos pull requests, a matching `azure-pipelines.yml` build file, and Visual Studio + JetBrains editor settings.
+- **Agent isolation, enforced**: the admin picks where the coding agent runs (managed device, dev container, AVD/VDI, ephemeral cloud) and EmbedIQ emits the enforcement — a fleet `managed-settings.json` that *requires* Claude Code's native OS sandbox (deliver via Intune) and an optional dev container. [→](docs/evaluators/isolation-decision-guide.md)
 - Plugs into your existing login (HTTP Basic, OIDC single-sign-on, or reverse-proxy headers), with three permission tiers covering who can view, run, and administer.
 - Run many client engagements from one install; deploy with Docker or Kubernetes; optional OpenTelemetry monitoring.
 
@@ -215,13 +216,13 @@ and never see the local-AI options.
 ```
 ┌────────────────────────────────────────────────────┐
 │  Layer 1: Universal Question Bank                  │
-│  93 questions · 7 dimensions · purposeText schema  │
+│  95 questions · 7 dimensions · purposeText schema  │
 ├────────────────────────────────────────────────────┤
 │  Layer 2: Adaptive Logic Engine                    │
 │  Branch evaluation · profile building · priorities │
 ├────────────────────────────────────────────────────┤
 │  Layer 3: Unified Synthesizer                      │
-│  31 generators · 16 target formats · validation    │
+│  33 generators · 16 target formats · validation    │
 └────────────────────────────────────────────────────┘
 ```
 
@@ -264,6 +265,8 @@ to *use*; output for other agents has no runtime dependency beyond the agent.
 | Deploy to Docker or Kubernetes | [`docs/operator-guide/deployment.md`](docs/operator-guide/deployment.md) |
 | Run multiple engagements from one checkout | [`docs/CONSULTING-FIRM-DEPLOYMENT.md`](docs/CONSULTING-FIRM-DEPLOYMENT.md) |
 | Deploy in a HIPAA healthcare environment | [`docs/HEALTHCARE-BPO-DEPLOYMENT.md`](docs/HEALTHCARE-BPO-DEPLOYMENT.md) |
+| Decide whether the agent needs a VM / sandbox | [`docs/evaluators/isolation-decision-guide.md`](docs/evaluators/isolation-decision-guide.md) |
+| Run the agent safely on Azure (AVD / Intune / Zero-Trust) | [`docs/operator-guide/azure-isolation-runbook.md`](docs/operator-guide/azure-isolation-runbook.md) |
 | Look up every env var / HTTP endpoint | [`docs/reference/configuration.md`](docs/reference/configuration.md) · [`docs/reference/rest-api.md`](docs/reference/rest-api.md) |
 | Read the architecture | [`docs/architecture/overview.md`](docs/architecture/overview.md) |
 | Evaluate EmbedIQ vs. competitors | [`docs/evaluators/competitive-comparison.md`](docs/evaluators/competitive-comparison.md) |

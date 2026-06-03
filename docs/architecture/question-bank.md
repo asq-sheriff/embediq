@@ -2,7 +2,7 @@
 
 # Architecture — question bank (Layer 1)
 
-The question bank is the static knowledge EmbedIQ ships. **91 questions
+The question bank is the static knowledge EmbedIQ ships. **95 questions
 across 7 dimensions**, with conditional branching driving question
 visibility and an admin-vs-user operator distinction (`STRAT_000b`)
 that gates ~28 admin-only questions for non-admin operators.

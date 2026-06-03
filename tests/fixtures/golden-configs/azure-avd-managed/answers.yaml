@@ -1,0 +1,31 @@
+STRAT_000: developer
+STRAT_000a: advanced
+STRAT_000b: admin
+STRAT_001: Healthcare claims platform on Azure Virtual Desktop — sandbox-enforced agent environment
+STRAT_002: healthcare
+OPS_001: large
+TECH_001:
+  - csharp
+  - python
+TECH_003: .NET 8 / ASP.NET Core / Entity Framework Core / FastAPI
+TECH_004:
+  - visual_studio
+TECH_005:
+  - dotnet
+  - pip
+TECH_006:
+  - xunit
+  - pytest
+TECH_007: azure_devops
+TECH_022: azure
+TECH_023: vdi
+FIN_001: enterprise
+REG_001: true
+REG_002:
+  - hipaa
+REG_003: true
+REG_004: true
+REG_005: true
+REG_008: strict
+REG_012: true
+REG_014: true

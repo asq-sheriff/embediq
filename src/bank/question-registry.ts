@@ -775,6 +775,45 @@ export const questions: Question[] = [
     tags: ['cloud', 'deployment', 'other_specify'],
   },
   {
+    id: 'TECH_023',
+    dimension: Dimension.TECHNOLOGY_REQUIREMENTS,
+    text: 'Where will the coding agent run, and how is it isolated?',
+    helpText: "Single-select — a team-wide policy you set once as the admin. It defines where the AI coding agent runs and how its blast radius is contained (not where your application deploys), and the result configures the environment for everyone: a managed-settings.json that requires Claude Code's native OS sandbox is delivered to every endpoint, and a dev container (if chosen) is committed for every developer. Individual users inherit this posture — they aren't asked. Leave as 'No specific isolation requirement' to keep the baseline harness. See the isolation decision guide.",
+    purposeText: "An admin-only, fleet-wide enforcement decision the admin defines once; every other user's environment is provisioned from it. Managed device, dev container, virtual desktop, and ephemeral cloud all emit deploy/claude-code/managed-settings.json with the native OS sandbox required (you deliver it to every endpoint via Intune/Jamf/MDM); 'Dev container' additionally emits .devcontainer/devcontainer.json (committed for the whole team). 'CI/CD only' and 'No isolation requirement' emit no enforcement files. Distinct from application containerization/orchestration (TECH_020/TECH_021) — this contains the agent, not the workload.",
+    type: QuestionType.SINGLE_CHOICE,
+    options: [
+      { key: 'managed_endpoint', label: 'Local managed device + native OS sandbox (EDR/Zero-Trust)' },
+      { key: 'dev_container', label: 'Dev container (.devcontainer)' },
+      { key: 'vdi', label: 'Virtual desktop (AVD / Windows 365 / VDI)' },
+      { key: 'ephemeral_cloud', label: 'Ephemeral cloud dev environment (Codespaces-style)' },
+      { key: 'ci_only', label: 'CI/CD runners only (no interactive use)' },
+      { key: 'none', label: 'No specific isolation requirement' },
+      { key: 'other', label: 'Other (specify)' },
+    ],
+    required: false,
+    order: 7.6,
+    showConditions: [
+      // Agent isolation posture is an admin-only security policy (like the
+      // security tier REG_008) — only the Coding Agent Admin is asked it.
+      { questionId: 'STRAT_000b', operator: ConditionOperator.EQUALS, value: 'admin' },
+    ],
+    tags: ['security', 'isolation', 'sandbox', 'infrastructure'],
+  },
+  {
+    id: 'TECH_023_other',
+    dimension: Dimension.TECHNOLOGY_REQUIREMENTS,
+    text: 'Describe how the coding agent is isolated.',
+    helpText: 'Examples: gVisor/microVM per task, a hardened Hyper-V image, a remote dev server, a bastion-only jump host. Recorded as context; the curated options above are what emit enforcement scaffolding.',
+    purposeText: 'Recorded in CLAUDE.md as the isolation posture. Enforcement artifacts (managed-settings.json, .devcontainer) are generated only for the curated options above; for others, the agent gets the description as context but no enforcement files.',
+    type: QuestionType.FREE_TEXT,
+    required: false,
+    order: 7.61,
+    showConditions: [
+      { questionId: 'TECH_023', operator: ConditionOperator.EQUALS, value: 'other' },
+    ],
+    tags: ['security', 'isolation', 'other_specify'],
+  },
+  {
     id: 'TECH_010',
     dimension: Dimension.TECHNOLOGY_REQUIREMENTS,
     text: 'What databases or data stores does your project use?',
@@ -1760,6 +1799,9 @@ export const RESPONDENT_BY_ID: Readonly<Record<string, Respondent>> = {
   TECH_014: 'individual', TECH_014_other: 'individual',
   TECH_015: 'lead', TECH_016: 'individual', TECH_017: 'individual', TECH_018: 'individual',
   TECH_019: 'lead', TECH_020: 'lead', TECH_021: 'lead',
+  // Agent isolation/sandbox posture is a security-enforcement policy (like the
+  // security tier REG_008) — admin-owned, not the lead's call.
+  TECH_023: 'admin', TECH_023_other: 'admin',
 
   // ── Regulatory — policy switches = admin; actual data flows = lead ──
   REG_001: 'admin', REG_002: 'admin', REG_002_other: 'admin',

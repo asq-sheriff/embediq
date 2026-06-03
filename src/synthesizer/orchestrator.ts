@@ -20,6 +20,8 @@ import { DocumentStateGenerator } from './generators/document-state.js';
 import { CiPipelineGenerator } from './generators/ci-pipeline.js';
 import { EditorConfigGenerator } from './generators/editorconfig.js';
 import { JetBrainsGenerator } from './generators/jetbrains.js';
+import { ManagedSettingsGenerator } from './generators/managed-settings.js';
+import { DevContainerGenerator } from './generators/devcontainer.js';
 import { SetupInstructionsGenerator } from './generators/setup-instructions.js';
 import { AgentsMdGenerator } from './generators/agents-md.js';
 import { CursorRulesGenerator } from './generators/cursor-rules.js';
@@ -63,6 +65,11 @@ export class SynthesizerOrchestrator {
       new CiPipelineGenerator(),
       new EditorConfigGenerator(),
       new JetBrainsGenerator(),
+      // Agent-isolation enforcement — ride on the Claude target but emit only
+      // when the isolation posture (TECH_023) calls for it: a fleet-enforced
+      // managed-settings.json (sandbox required) and/or a dev container.
+      new ManagedSettingsGenerator(),
+      new DevContainerGenerator(),
       // Multi-agent targets — opt-in via `config.targets` / EMBEDIQ_OUTPUT_TARGETS.
       new AgentsMdGenerator(),
       new CursorRulesGenerator(),

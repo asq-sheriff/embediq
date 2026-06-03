@@ -1,0 +1,14 @@
+id: azure-avd-managed
+title: Healthcare BPO — Azure Virtual Desktop, sandbox-enforced
+description: |
+  Healthcare-BPO developer on the Microsoft / Azure stack whose coding agent
+  runs inside Azure Virtual Desktop with the native OS sandbox enforced
+  fleet-wide (TECH_023 = vdi). Exercises the agent-isolation enforcement layer:
+  alongside the standard Claude harness, the orchestrator emits
+  deploy/claude-code/managed-settings.json (sandbox required) + a delivery
+  README. HIPAA + HITECH, strict permission tier, large team.
+
+  Pairs with healthcare-bpo-microsoft-developer (same stack, no isolation
+  posture set) — the two together prove the isolation generators are purely
+  additive: identical answers minus TECH_023 produce no enforcement files.
+minimumFloor: 18

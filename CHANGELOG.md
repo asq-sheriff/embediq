@@ -9,6 +9,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.3] — 2026-06-03 — Agent isolation & sandbox enforcement
+
+"Do we need a VM to run the coding agents?" — answered as both product capability
+and guidance. The wizard generates the agent's **isolation enforcement layer**, and
+two new docs frame the decision (native OS sandbox vs dev container vs microVM vs
+full VM/VDI, plus the Azure patterns).
+
+### Added
+- **Isolation-posture question (`TECH_023`, admin-only).** A team-wide policy the
+  admin sets once — managed endpoint / dev container / VDI / ephemeral cloud / CI-only
+  / none. Gated to the Coding Agent Admin (`STRAT_000b` **and** `respondent: admin`);
+  individual users inherit the posture, they are not asked.
+- **`managed-settings.json` generator.** Emits `deploy/claude-code/managed-settings.json`
+  (`"sandbox": { "enabled": true }` + a non-wideable deny floor matched to the security
+  tier) plus a delivery README, for fleet enforcement via Intune / Jamf / MDM.
+- **Dev-container generator.** Emits `.devcontainer/devcontainer.json` (+ README),
+  language-matched, when the posture is a dev container.
+- **Docs:** `docs/evaluators/isolation-decision-guide.md` (the isolation ladder, where a
+  VM earns its place, Azure patterns, a decision matrix) and
+  `docs/operator-guide/azure-isolation-runbook.md` (AVD + WSL2 + Intune managed-settings
+  + Zero-Trust).
+
+### Notes
+- Both generators are opt-in on the posture and **no-op otherwise**, so existing goldens
+  regenerate byte-identically. Totals are now **33 generators** and **95 questions**.
+
 ## [4.0.2] — 2026-06-03 — Three-role respondent model + delegation workflow
 
 The wizard previously asked a single "Coding Agent Admin" nearly every question.

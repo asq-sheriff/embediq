@@ -165,6 +165,9 @@ For a referral target:
 **"How is your data security?"**
 > "The wizard runs locally by default. Answers never leave your machine. If you run the web server, four pluggable auth strategies and three-tier RBAC. The optional local-AI integration means PHI never has to touch a hosted model. Zero telemetry."
 
+**"Do we need a VM to run the coding agents?"**
+> "Usually not. Claude Code's native OS sandbox already contains the blast radius people reach for VMs to get — and if you already run AVD or managed endpoints, you've met the 'no source on endpoints' bar. The admin picks an isolation posture once in the wizard, and EmbedIQ emits the enforcement: a fleet `managed-settings.json` that *requires* the sandbox (you push it via Intune) and, if you want a container boundary for unattended runs, a dev container. A VM only earns its place for untrusted code or fully unattended automation. See the isolation decision guide — it's a decision matrix, not a sales pitch."
+
 **"What does it cost?"**
 > "The core is MIT licensed. Free to use, modify, and self-host for unlimited engagements. Professional services through Praglogic for custom domain packs, GRC integration, and audit support."
 

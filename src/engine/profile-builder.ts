@@ -89,6 +89,8 @@ export class ProfileBuilder {
       containerization: this.getStringArray(answers, 'TECH_008'),
       cloudTarget: this.getString(answers, 'TECH_022'),
       cloudTargetOther: this.getString(answers, 'TECH_022_other') || undefined,
+      isolationModel: this.getString(answers, 'TECH_023'),
+      isolationModelOther: this.getString(answers, 'TECH_023_other') || undefined,
     };
   }
 

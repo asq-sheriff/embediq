@@ -45,7 +45,7 @@ The system serves two interfaces (CLI and web) from a single shared core, adapts
 │  ┌─────────────────────────────────────────────────────────────┐   │
 │  │              Layer 1: Universal Question Bank               │   │
 │  │                                                             │   │
-│  │  91 questions · 7 dimensions · admin-vs-user gating         │   │
+│  │  95 questions · 7 dimensions · admin-vs-user gating         │   │
 │  │  question-registry.ts → QuestionBank                        │   │
 │  └─────────────────────────┬───────────────────────────────────┘   │
 │                             ▼                                       │
@@ -59,7 +59,7 @@ The system serves two interfaces (CLI and web) from a single shared core, adapts
 │  ┌─────────────────────────────────────────────────────────────┐   │
 │  │         Layer 3: Unified Specification Synthesizer           │   │
 │  │                                                             │   │
-│  │  SynthesizerOrchestrator → 31 generators across 16 targets  │   │
+│  │  SynthesizerOrchestrator → 33 generators across 16 targets  │   │
 │  │  → FileOutputManager → 15-40 config files + SETUP.md        │   │
 │  └─────────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────────┘
@@ -90,7 +90,7 @@ embediq/
     ├── types/
     │   └── index.ts              # All interfaces, enums, type aliases
     ├── bank/
-    │   ├── question-registry.ts  # 91 question definitions
+    │   ├── question-registry.ts  # 95 question definitions
     │   ├── question-bank.ts      # Query/filter interface
     │   └── profile-templates.ts  # Organizational template loader
     ├── engine/
@@ -100,7 +100,7 @@ embediq/
     │   ├── priority-analyzer.ts  # Tag-weight priority derivation
     │   └── dimension-tracker.ts  # Progress tracking per dimension
     ├── synthesizer/
-    │   ├── orchestrator.ts       # Coordinates 31 generators across 16 targets (12 Claude + 3 Azure/Microsoft + 5 multi-agent + 4 local-AI + 1 RAG scaffold + 1 local-router + 4 v4.0 governance post-pass + 1 SETUP.md) + validation
+    │   ├── orchestrator.ts       # Coordinates 33 generators across 16 targets (12 Claude + 3 Azure/Microsoft + 2 agent-isolation + 5 multi-agent + 4 local-AI + 1 RAG scaffold + 1 local-router + 4 v4.0 governance post-pass + 1 SETUP.md) + validation
     │   ├── generator.ts          # ConfigGenerator interface
     │   ├── output-validator.ts   # Post-generation compliance verification
     │   ├── generation-header.ts  # Version stamps for generated files
@@ -198,7 +198,7 @@ The taxonomy is derived from Praglogic's Adaptive Architecture Specifications' c
 | 6 | Financial Constraints | 5 | Budget, model routing, cost optimization |
 | 7 | Innovation & Future | 7 | Plugins, doc tracking, memory, agents, commands |
 
-**Total**: 91 questions. Most have conditional show logic, including the admin-vs-user operator gate (`STRAT_000b`) that hides ~28 admin-only questions for non-admin operators.
+**Total**: 95 questions. Most have conditional show logic, including the admin-vs-user operator gate (`STRAT_000b`) that hides ~28 admin-only questions for non-admin operators.
 
 ### Conditional Branching Model
 
@@ -263,7 +263,7 @@ FIN_002 (model routing?)
 
 `QuestionBank` wraps the static registry and provides query methods:
 
-- `getAll()` — All 91 questions
+- `getAll()` — All 95 questions
 - `getById(id)` — Lookup by question ID
 - `getByDimension(dim)` — All questions in a dimension, sorted by order
 - `getVisibleQuestions(dim, answers)` — Questions whose conditions are satisfied; also applies option-level `relevantFor` filtering (e.g., Python-only project sees Python-relevant test frameworks only)
@@ -749,7 +749,7 @@ User Input
     ▼
 ┌───────────────┐    ┌──────────────────┐
 │ QuestionBank  │───▶│ BranchEvaluator  │
-│ (91 questions)│    │ (10 operators)   │
+│ (95 questions)│    │ (10 operators)   │
 └───────┬───────┘    └────────┬─────────┘
         │                     │
         ▼                     ▼

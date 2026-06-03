@@ -122,6 +122,14 @@ export interface DevOpsProfile {
   cloudTarget?: string;
   /** Free-text cloud target when cloudTarget === 'other' (TECH_022_other). Empty otherwise. */
   cloudTargetOther?: string;
+  /**
+   * Coding-agent isolation posture (TECH_023): managed_endpoint | dev_container |
+   * vdi | ephemeral_cloud | ci_only | none | other | '' / undefined when unanswered.
+   * Drives the OS-sandbox enforcement layer (managed-settings.json, .devcontainer).
+   */
+  isolationModel?: string;
+  /** Free-text isolation posture when isolationModel === 'other' (TECH_023_other). Empty otherwise. */
+  isolationModelOther?: string;
 }
 
 export interface Priority {
@@ -239,6 +247,7 @@ export function createEmptyProfile(): UserProfile {
       monitoring: [],
       containerization: [],
       cloudTarget: '',
+      isolationModel: '',
     },
     complianceFrameworks: [],
     budgetTier: 'moderate',

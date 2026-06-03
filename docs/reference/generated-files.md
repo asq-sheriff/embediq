@@ -46,6 +46,11 @@ root.
 | `.mcp.json.template` | `mcp-json` | MCP server registry template. Copy to `.mcp.json` and fill secrets. | Technical roles. |
 | `.claude/association_map.yaml` | `association-map` | Codebase-entity → agent/skill mapping. | Technical roles. |
 | `.claude/document_state.yaml` | `document-state` | Persisted wizard state pointer. | Always. |
+| `azure-pipelines.yml` | `ci-pipeline` | Azure DevOps CI pipeline (stack-matched build/test + a compliance security stage). | CI/CD = Azure DevOps. |
+| `.editorconfig` | `editorconfig` | Visual Studio code style + Roslyn analyzer severities. | `visual_studio` in IDEs. |
+| `.junie/guidelines.md` + `.aiignore` | `jetbrains` | JetBrains (Junie) guidelines + AI ignore list. | `jetbrains` in IDEs. |
+| `deploy/claude-code/managed-settings.json` + `README.md` | `managed-settings` | Enterprise managed settings the admin delivers via Intune/Jamf/MDM — requires Claude Code's native OS sandbox fleet-wide (`"sandbox": {"enabled": true}`) and pins a non-wideable deny floor matched to the security tier. Not a project setting. | Isolation posture (`TECH_023`) = managed endpoint / dev container / VDI / ephemeral cloud. |
+| `.devcontainer/devcontainer.json` + `README.md` | `devcontainer` | Language-matched dev container that isolates the agent + toolchain + project; the boundary where `--dangerously-skip-permissions` is safe. | Isolation posture (`TECH_023`) = dev container. |
 | `SETUP.md` | `setup-instructions` | Per-agent install + activation + verification + troubleshooting guide at the repo root. Content adapts to whichever agents the user picked (Claude, Cursor, Copilot, Gemini, Windsurf, AGENTS.md). Emits whenever any of the six hosted-agent targets is selected — NOT tied to the Claude target specifically. | Any hosted-agent target selected. |
 
 Non-technical roles (Business Analyst / Product Manager / Executive):

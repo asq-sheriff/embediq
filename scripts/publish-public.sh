@@ -111,10 +111,24 @@ git clone --branch "$PUBLIC_BRANCH" --single-branch "$PUBLIC_REMOTE" "$CLONE_DIR
 
 # ─── Stage 3 — overlay ────────────────────────────────────────────────────
 
-echo "▶ Overlaying sanitized tree (rsync --delete-after, excluding .git)"
+# Files the PUBLIC repo maintains its own customer-neutral copy of. The
+# sanitizer and its integration test both embed the private leak markers
+# (including the customer name) by necessity, so they are excluded from the
+# sanitized staging tree — and must ALSO be excluded from the rsync, or
+# --delete-after would remove the public copies (the script) or overwrite a
+# genericized file with the private one (the test). Excluding a path makes
+# rsync neither copy it from staging nor delete it from the clone, leaving
+# the public copy untouched.
+PRESERVE_ON_PUBLIC=(
+  '/scripts/sanitize-for-public.ts'
+  '/tests/integration/sanitize-for-public.test.ts'
+)
+RSYNC_EXCLUDES=( --exclude='/.git' )   # preserve the clone's git metadata
+for p in "${PRESERVE_ON_PUBLIC[@]}"; do RSYNC_EXCLUDES+=( --exclude="$p" ); done
+
+echo "▶ Overlaying sanitized tree (rsync --delete-after, preserving ${#PRESERVE_ON_PUBLIC[@]} public-maintained files)"
 # Trailing slashes on both sides are intentional (copy contents, not directory).
-# --exclude='/.git' preserves the clone's git metadata.
-rsync -a --delete-after --exclude='/.git' "$STAGING_DIR/" "$CLONE_DIR/"
+rsync -a --delete-after "${RSYNC_EXCLUDES[@]}" "$STAGING_DIR/" "$CLONE_DIR/"
 
 cd "$CLONE_DIR"
 
