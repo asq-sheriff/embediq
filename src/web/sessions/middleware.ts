@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import { getRequestContext } from '../../context/request-context.js';
 import type { SessionBackend } from './session-backend.js';
+import type { WizardSession } from './types.js';
 import { RequestSessionStore } from './session-store.js';
 import {
   OWNER_COOKIE_NAME,
@@ -51,7 +52,15 @@ export function sessionMiddleware(backend: SessionBackend) {
     if (sessionId) {
       const session = await backend.get(sessionId);
       if (session) {
-        if (ctx.userId && session.userId) {
+        // A non-owner is permitted only as an invited delegate: they present a
+        // `?role=` matching an assignment the owner created. The session id +
+        // role + an existing assignment is the bearer capability; their role is
+        // recorded so writes can be restricted to that slice.
+        const delegateRole = delegatedAccess(req, session);
+
+        if (delegateRole) {
+          ctx.delegateRole = delegateRole;
+        } else if (ctx.userId && session.userId) {
           if (session.userId !== ctx.userId) {
             res.status(403).json({ error: 'Session belongs to a different user' });
             return;
@@ -90,6 +99,18 @@ function readOwnerCookieToken(req: Request): string | null {
   const signed = cookies[OWNER_COOKIE_NAME];
   if (!signed) return null;
   return verifyOwnerToken(signed, getCookieSecrets());
+}
+
+/**
+ * Returns the delegate role when this request is a valid delegated access:
+ * a `?role=lead|individual` that matches an assignment the owner created on
+ * this session. Returns undefined otherwise (falls through to owner checks).
+ */
+function delegatedAccess(req: Request, session: WizardSession): 'lead' | 'individual' | undefined {
+  const role = req.query.role;
+  if (role !== 'lead' && role !== 'individual') return undefined;
+  const hasAssignment = (session.assignments ?? []).some((a) => a.role === role);
+  return hasAssignment ? role : undefined;
 }
 
 /** Matches /api/sessions/<id>[/anything], excluding the `dumps` sub-path. */

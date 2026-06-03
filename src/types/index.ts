@@ -86,6 +86,17 @@ export interface Question {
    * identified as a Coding Agent Admin (STRAT_000b === 'admin').
    */
   purposeText?: string;
+  /**
+   * Who is best positioned to answer this question — drives the three-role
+   * delegation model (Admin / Team Lead / Individual):
+   *   - `admin`      — central policy / governance / infra standards
+   *   - `lead`       — team lived-experience (pain points, real stack, ops reality, data flows)
+   *   - `individual` — per-seat preference (IDE, local-model hardware, concurrent sessions)
+   *   - `any`        — shown to every role (the default when omitted)
+   * Orthogonal to `showConditions` (which gates *visibility*); this gates
+   * *ownership* for role-scoped delegation. Absent ⇒ treated as `any`.
+   */
+  respondent?: Respondent;
   type: QuestionType;
   options?: AnswerOption[];
   required: boolean;
@@ -118,6 +129,9 @@ export interface Priority {
   confidence: number;
   derivedFrom: string[];
 }
+
+/** Three-role delegation respondent (plus `any` for shared questions). */
+export type Respondent = 'admin' | 'lead' | 'individual' | 'any';
 
 export type TeamSize = 'solo' | 'small' | 'medium' | 'large';
 export type BudgetTier = 'minimal' | 'moderate' | 'enterprise';

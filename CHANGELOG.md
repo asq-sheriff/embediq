@@ -9,6 +9,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.2] — 2026-06-03 — Three-role respondent model + delegation workflow
+
+The wizard previously asked a single "Coding Agent Admin" nearly every question.
+An audit of all 93 questions showed they split three ways by *who is actually
+positioned to answer* — so a central admin answering alone produces a
+confidently-wrong harness, worst in Problem Definition (pain points feed the
+priority analyzer → CLAUDE.md priorities). This adds a three-role model and a
+delegation workflow built on the existing session + `contributedBy` rails.
+
+### Added — three-role classification
+
+- **`Question.respondent`** (`admin` / `lead` / `individual` / `any`) + an auditable `RESPONDENT_BY_ID` map and `respondentOf()` resolver in `src/bank/question-registry.ts`. The Admin owns only the setup-identity questions (role / proficiency / operator) plus the **Compliance policy switches** and **Financial** — 18 questions. The **Team Lead** is the primary driver and owns the project, problem definition, operational reality, all of Technology (stack + infra), Innovation, and the actual-data-flow compliance facts — ~40 questions. The **Individual** owns per-seat preferences (IDE, local-model hardware/model, concurrent sessions).
+- **Role-scoped visibility** — `QuestionBank.getVisibleQuestions(dimension, answers, role?)` filters by respondent and stamps the resolved respondent on served questions. Omitting `role` returns the full set, so single-pass generation and goldens are byte-identical.
+
+### Added — delegation workflow
+
+- **Operator-aware proxy framing** — when someone answers a question owned by a different role, the wizard shows a marker ("👥 Best answered by your Team Lead" / "🧑 Personal preference") and pairs it with the existing skip→infer affordance so a proxy can defer rather than guess.
+- **`DelegationAssignment`** on `WizardSession` + endpoints: `POST /api/sessions/:id/assignments` mints a `?session=…&role=…` link; `GET` returns live per-role completion (answered/visible/status/contributors).
+- **Delegated access** — the session middleware grants a non-owner access when their `?role=` matches an assignment the owner created (the link is the bearer capability); `PATCH` restricts a delegate's writes to their own role's slice (defense in depth — admin-owned answers in a lead's payload are dropped).
+- **Web UI** — `?role=` scopes the wizard to the delegate's slice with a context banner; an "Assign & delegate" panel + per-role dashboard on the generate screen lets the admin create assignments, copy links, and watch progress. Reminders are re-copyable links (no SMTP in the stack).
+- **Per-role audit attribution** — the profile report gains a "Contributions by role" section (counts via `respondentOf`) and tags each answer-log entry with its owning role + contributor; the JSON report adds an `attribution` block. Generation tolerates partial answers (inference + skip), so the admin can generate before delegates finish.
+
+### Tests
+
+- Test count **1285 → 1339**: role-filtered visibility, `roleCompletion`, report attribution, and a delegation integration suite (assignment creation, non-owner deny `403`, delegate grant, slice-restricted writes, dashboard completion). Browser-driven verification of the proxy framing and SPA init via headless Playwright. Evaluator stays at 100% (goldens byte-identical).
+
 ## [4.0.1] — 2026-05-31 — Azure / Microsoft stack + wizard quality
 
 Layered on top of v4.0: a wizard-UX overhaul, the Azure / Microsoft stack

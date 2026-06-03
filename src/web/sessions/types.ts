@@ -74,6 +74,25 @@ export interface SerializedProfileSnapshot {
 }
 
 /**
+ * A delegation of one role's question slice to a person. Created by the admin
+ * after the policy pass; the `link` (`?session=<id>&role=<role>`) is shared
+ * with the assignee, whose answers are attributed via the existing
+ * server-stamped `contributedBy`. `status` is recomputed from answered-vs-
+ * visible on read; never client-supplied beyond the assignee label.
+ */
+export interface DelegationAssignment {
+  role: 'lead' | 'individual';
+  /** Display-only label for the assignee (email/name) — not used for auth. */
+  assigneeLabel?: string;
+  /** userId of the admin who created the assignment (server-stamped). */
+  assignedBy?: string;
+  assignedAt: string;
+  status: 'pending' | 'in_progress' | 'complete';
+  /** Resume link scoped to the role: `/?session=<id>&role=<role>`. */
+  link: string;
+}
+
+/**
  * Canonical server-side record for a wizard session. Backends store this
  * shape verbatim. Fields marked optional reflect progression through the
  * wizard — `profile` exists only after the profile is built, etc.
@@ -93,6 +112,8 @@ export interface WizardSession {
   generationHistory: GenerationHistoryEntry[];
   /** Versioned, audit-retained profile snapshots — one appended per generation. */
   profileHistory?: SerializedProfileSnapshot[];
+  /** Role delegations the admin created (Team Lead / Individual slices). */
+  assignments?: DelegationAssignment[];
   createdAt: string;
   updatedAt: string;
   expiresAt: string;

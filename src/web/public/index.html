@@ -59,6 +59,7 @@
 
     <!-- Phase 1: Q&A -->
     <section id="phase-qa" class="phase">
+      <div id="scope-banner" class="scope-banner" style="display:none"></div>
       <div class="qa-container">
         <div class="dimension-sidebar">
           <div id="dimension-list"></div>
@@ -120,6 +121,9 @@
           </div>
           <button class="btn-secondary" id="btn-download-profile" onclick="downloadProfileReport('md')">Download profile report</button>
         </div>
+        <!-- Assign & delegate (admin): hand the Team-Lead / Individual slices
+             to the right people; populated by renderDelegationPanel(). -->
+        <div id="delegation-panel" class="delegation-panel" style="display:none"></div>
         <div id="file-preview" class="file-preview hidden"></div>
         <div id="live-progress" class="live-progress hidden"></div>
         <div id="generation-results" class="hidden">

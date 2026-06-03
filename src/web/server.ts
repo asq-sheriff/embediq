@@ -434,6 +434,7 @@ export async function createApp(opts: CreateAppOptions = {}) {
       warnings: validateAnswers(answers),
       version,
       generatedAt: new Date().toISOString(),
+      contributedBy: contributedByFromSession(getRequestContext()?.sessionStore?.current()),
     });
 
     const format = (req.query.format as string) || 'md';
@@ -517,6 +518,7 @@ export async function createApp(opts: CreateAppOptions = {}) {
         warnings: validateAnswers(answers),
         version: snapshotVersion,
         generatedAt,
+        contributedBy: contributedByFromSession(loadedSession),
       });
       const profileHash = hashEntry(report.json);
       const answersHash = hashEntry(
@@ -933,6 +935,16 @@ function mergeSessionAnswers(
     }
   }
   return merged;
+}
+
+/** Build a questionId → contributor map from a session's per-answer attribution. */
+function contributedByFromSession(session: WizardSession | null | undefined): Record<string, string> | undefined {
+  if (!session) return undefined;
+  const out: Record<string, string> = {};
+  for (const [id, a] of Object.entries(session.answers)) {
+    if (a.contributedBy) out[id] = a.contributedBy;
+  }
+  return Object.keys(out).length ? out : undefined;
 }
 
 function hydrateAnswers(raw: Record<string, { value: unknown; timestamp: string }>): Map<string, Answer> {

@@ -1,6 +1,6 @@
-import type { Question, Dimension, Answer } from '../types/index.js';
+import type { Question, Dimension, Answer, Respondent } from '../types/index.js';
 import { DIMENSION_ORDER } from '../types/index.js';
-import { questions } from './question-registry.js';
+import { questions, respondentOf } from './question-registry.js';
 import { BranchEvaluator } from '../engine/branch-evaluator.js';
 import type { DomainPack } from '../domain-packs/index.js';
 
@@ -55,10 +55,27 @@ export class QuestionBank {
       .sort((a, b) => a.order - b.order);
   }
 
-  getVisibleQuestions(dimension: Dimension, answers: Map<string, Answer>): Question[] {
+  /**
+   * Visible questions for a dimension. When `role` is supplied (delegation /
+   * role-scoped view), additionally keep only questions owned by that role
+   * (`respondentOf(q) === role`) or shared (`'any'`). Omitting `role`
+   * preserves the original behavior — every visible question — so the default
+   * single-pass wizard and golden generation are unchanged.
+   */
+  getVisibleQuestions(dimension: Dimension, answers: Map<string, Answer>, role?: Respondent): Question[] {
     return this.getByDimension(dimension)
       .filter(q => this.evaluator.shouldShow(q.showConditions, answers))
-      .map(q => this.applyOptionRelevance(q, answers));
+      .filter(q => this.matchesRole(q, role))
+      // Stamp the resolved respondent so clients can render proxy framing
+      // ("best answered by your Team Lead") without re-deriving the map.
+      .map(q => ({ ...this.applyOptionRelevance(q, answers), respondent: respondentOf(q) }));
+  }
+
+  /** True when no role filter is active, the question is shared, or it is owned by `role`. */
+  private matchesRole(q: Question, role?: Respondent): boolean {
+    if (!role || role === 'any') return true;
+    const owner = respondentOf(q);
+    return owner === 'any' || owner === role;
   }
 
   /**

@@ -1,6 +1,7 @@
 import type { UserProfile } from '../types/index.js';
 import type { AnswerWarning } from './answer-validator.js';
 import { MarkdownBuilder } from '../util/markdown-builder.js';
+import { questions, respondentOf } from '../bank/question-registry.js';
 
 export interface ProfileReportOptions {
   /** Output targets selected for generation (e.g. claude, copilot). */
@@ -13,7 +14,18 @@ export interface ProfileReportOptions {
   version?: number;
   /** ISO timestamp the report was generated. */
   generatedAt: string;
+  /**
+   * Per-question contributor attribution (questionId → userId), from the
+   * session's `contributedBy`. Lets the report show *who* answered each role's
+   * slice. Omitted in stateless / CLI mode (role attribution still works).
+   */
+  contributedBy?: Record<string, string>;
 }
+
+const RESPONDENT_LABEL: Record<string, string> = {
+  admin: 'Admin (policy)', lead: 'Team Lead', individual: 'Individual', any: 'Shared',
+};
+const QUESTION_BY_ID = new Map(questions.map((q) => [q.id, q]));
 
 export interface ProfileReport {
   markdown: string;
@@ -104,10 +116,31 @@ export function buildProfileReport(profile: UserProfile, opts: ProfileReportOpti
     }
   }
 
+  // Per-role attribution: which role's slice each answered question belongs to,
+  // and (when the session supplied it) who answered it. Strengthens the audit
+  // trail for the three-role delegation model.
+  const roleOf = (id: string): string => {
+    const q = QUESTION_BY_ID.get(id);
+    return q ? respondentOf(q) : 'any';
+  };
+  const byRole: Record<string, number> = {};
+  for (const id of profile.answers.keys()) byRole[roleOf(id)] = (byRole[roleOf(id)] ?? 0) + 1;
+  md.h2('Contributions by role');
+  for (const r of ['admin', 'lead', 'individual', 'any']) {
+    if (byRole[r]) md.bullet(`${RESPONDENT_LABEL[r]}: ${byRole[r]} answer${byRole[r] === 1 ? '' : 's'}`);
+  }
+  if (opts.contributedBy && Object.keys(opts.contributedBy).length) {
+    const people = [...new Set(Object.values(opts.contributedBy))];
+    md.bullet(`Contributors: ${people.join(', ')}`);
+  }
+  md.blank();
+
   md.h2('Answer log');
   for (const [id, ans] of profile.answers) {
     const v = Array.isArray(ans.value) ? ans.value.join(', ') : String(ans.value);
-    md.bullet(`\`${id}\`: ${v}`);
+    const who = opts.contributedBy?.[id];
+    const tag = `${RESPONDENT_LABEL[roleOf(id)]}${who ? ` · ${who}` : ''}`;
+    md.bullet(`\`${id}\`: ${v}  _(${tag})_`);
   }
   md.blank();
 
@@ -130,6 +163,10 @@ export function buildProfileReport(profile: UserProfile, opts: ProfileReportOpti
       domainPack: opts.domainPackName ?? null,
       targets: opts.targets ?? [],
       inferredDefaults: inferred,
+    },
+    attribution: {
+      byRole,
+      contributedBy: opts.contributedBy ?? {},
     },
     warnings: opts.warnings ?? [],
     answers: Object.fromEntries(

@@ -40,6 +40,7 @@ is reproducible and provable, not best-effort.
 **One interview, every agent**
 - Claude Code, Cursor, GitHub Copilot, Gemini, Windsurf, and `AGENTS.md` from one answer set.
 - Role-adaptive: developers get a full harness (rules, hooks, settings); business analysts, product managers, and executives get a research-and-analysis "coworker" setup instead of code config.
+- **Three-role delegation**: each question is owned by the Admin (policy), the Team Lead (the project + lived experience), or the Individual (per-seat preferences) — the admin sets policy and delegates the rest via a shareable link, with per-answer attribution. [→](docs/user-guide/13-three-role-delegation.md)
 - Optional local-AI stack — Continue.dev, Aider, Zed AI, Ollama — plus a runnable RAG scaffold (FHIR-aware for healthcare, plain-text otherwise).
 
 **Governance & compliance**
@@ -187,6 +188,7 @@ to *use*; output for other agents has no runtime dependency beyond the agent.
 | Generate for Cursor / Copilot / Gemini / Windsurf | [`docs/user-guide/05-multi-agent-targets.md`](docs/user-guide/05-multi-agent-targets.md) |
 | Score output + schedule drift scans | [`docs/user-guide/06-evaluation-and-drift.md`](docs/user-guide/06-evaluation-and-drift.md) |
 | Open a PR instead of writing to disk | [`docs/user-guide/09-git-pr-integration.md`](docs/user-guide/09-git-pr-integration.md) |
+| Delegate questions to the right people | [`docs/user-guide/13-three-role-delegation.md`](docs/user-guide/13-three-role-delegation.md) |
 | Export OSCAL / CycloneDX / provenance | [`docs/extension-guide/`](docs/extension-guide/) |
 | Deploy to Docker or Kubernetes | [`docs/operator-guide/deployment.md`](docs/operator-guide/deployment.md) |
 | Run multiple engagements from one checkout | [`docs/CONSULTING-FIRM-DEPLOYMENT.md`](docs/CONSULTING-FIRM-DEPLOYMENT.md) |

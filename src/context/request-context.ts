@@ -18,6 +18,12 @@ export interface RequestContext {
   sessionId?: string;
   /** Per-request handle for the active server-side session (undefined when backend=none) */
   sessionStore?: SessionStore;
+  /**
+   * Set when access to a session was granted by a delegation (a non-owner
+   * opening a `?role=…` link that matches an existing assignment). Records the
+   * delegate's role so writes can be restricted to that role's slice.
+   */
+  delegateRole?: 'lead' | 'individual';
   /** Engagement identifier from EMBEDIQ_ENGAGEMENT_ID — undefined when unset */
   engagementId?: string;
   /**

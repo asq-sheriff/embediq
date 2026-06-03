@@ -59,8 +59,10 @@ curl http://localhost:3000/api/domain-packs
 
 | Method | Path | Auth | Purpose |
 |---|---|---|---|
-| POST | `/api/questions` | any | Given `{ dimension, answers }`, return the visible questions for that dimension. |
+| POST | `/api/questions` | any | Given `{ dimension, answers }`, return the visible questions for that dimension. Each returned question carries a `respondent` (`admin` / `lead` / `individual` / `any`) for the three-role delegation model. |
 | POST | `/api/profile` | any | Given `{ answers }`, return the built `UserProfile` + computed priorities. |
+| POST | `/api/validate` | any | Given `{ answers }`, return non-blocking cross-answer consistency `warnings` (framework↔language mismatch, serverless-without-cloud, duplicate "Other" entries, invalid DLP regex, purpose↔industry) — each with a suggested fix. |
+| POST | `/api/profile/report` | any | Given `{ answers, targets?, version? }`, return a human-readable profile report. `?format=md` (default) returns stamped Markdown; `?format=json` returns the structured report (determinations, inferred defaults, per-role attribution, warnings, answer log). |
 
 ### Example — next visible question
 
@@ -123,7 +125,11 @@ Response (generate):
 
 All session endpoints require the cookie `embediq_session_owner` (when
 auth is off) or a matching authenticated user (when auth is on).
-Configure persistence via `EMBEDIQ_SESSION_BACKEND` — see
+**Delegation exception:** a non-owner is granted access when they present a
+`?role=lead|individual` that matches an assignment the owner created — the
+delegation link is the bearer capability, and that delegate's writes are
+restricted to their role's question slice. Configure persistence via
+`EMBEDIQ_SESSION_BACKEND` — see
 [operator-guide/session-backends.md](../operator-guide/session-backends.md).
 
 | Method | Path | Auth | Purpose |
@@ -131,9 +137,12 @@ Configure persistence via `EMBEDIQ_SESSION_BACKEND` — see
 | GET | `/api/sessions/config` | any | Feature discovery — returns `{ enabled, backend }`. |
 | POST | `/api/sessions` | any | Mint a new session. Sets the owner cookie. Body: `{ templateId?, domainPackId? }`. |
 | GET | `/api/sessions/:id` | owner | Full session record. |
-| GET | `/api/sessions/:id/resume` | owner | Resume coordinates + partial profile + contributors map. |
-| PATCH | `/api/sessions/:id` | owner | Merge answers / currentDimension / phase. Server stamps `contributedBy`. |
+| GET | `/api/sessions/:id/resume` | owner | Resume coordinates + partial profile + contributors map. `?role=lead\|individual` scopes the cursor + totals to that delegation slice. |
+| PATCH | `/api/sessions/:id` | owner | Merge answers / currentDimension / phase. Server stamps `contributedBy`. With `?role=` (a delegation link), writes are restricted to that role's question slice. |
 | DELETE | `/api/sessions/:id` | owner | Delete the session (irreversible). |
+| GET | `/api/sessions/:id/profile-history` | owner | Versioned, audit-retained profile snapshots — one per generation, each with profile/answers hashes (mirrored into the tamper-evident audit chain) and the report as it stood. |
+| POST | `/api/sessions/:id/assignments` | owner | Create a delegation for `{ role: "lead"\|"individual", assigneeLabel? }`; returns the `?session=…&role=…` link to share. |
+| GET | `/api/sessions/:id/assignments` | owner | The session's assignments + live per-role completion (answered/visible/status/contributors). |
 | GET | `/api/sessions` | `wizard-admin` | Paginated session list. Filters: `userId`, `updatedAfter`, `cursor`, `limit`. |
 | POST | `/api/sessions/:id/dump` | `wizard-admin` | Enqueue an async tarball export. |
 | GET | `/api/sessions/dumps/:dumpId` | `wizard-admin` | Job status (`pending`/`ready`/`failed`/`expired`). |

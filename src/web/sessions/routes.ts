@@ -4,10 +4,11 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import { getRequestContext } from '../../context/request-context.js';
 import { requireRole } from '../middleware/rbac.js';
 import { QuestionBank } from '../../bank/question-bank.js';
+import { respondentOf } from '../../bank/question-registry.js';
 import { ProfileBuilder } from '../../engine/profile-builder.js';
 import { PriorityAnalyzer } from '../../engine/priority-analyzer.js';
 import { domainPackRegistry } from '../../domain-packs/registry.js';
-import { DIMENSION_ORDER, type Answer } from '../../types/index.js';
+import { DIMENSION_ORDER, type Answer, type Respondent } from '../../types/index.js';
 import { InMemoryEventBus } from '../../events/bus.js';
 import {
   OWNER_COOKIE_NAME,
@@ -20,6 +21,7 @@ import type {
   SerializedAnswer,
   SessionListFilter,
   WizardSession,
+  DelegationAssignment,
 } from './types.js';
 import { summarize } from './types.js';
 
@@ -236,7 +238,8 @@ export function createSessionRoutes(
       res.status(404).json({ error: 'Session not found' });
       return;
     }
-    res.json(buildResumeView(session));
+    // Optional ?role= scopes the resume to a delegation slice (lead/individual).
+    res.json(buildResumeView(session, parseRole(req.query.role)));
   });
 
   // Versioned profile audit trail — one immutable snapshot per generation,
@@ -250,6 +253,59 @@ export function createSessionRoutes(
       return;
     }
     res.json({ sessionId: session.sessionId, version: session.version, snapshots: session.profileHistory ?? [] });
+  });
+
+  // ── Delegation: the admin assigns a role's question slice to a person and
+  //    shares the returned `?session=…&role=…` link. Completion status is
+  //    derived from answered-vs-visible, so the dashboard is always live.
+
+  // Create / update an assignment for a role → returns the delegation link.
+  router.post('/:id/assignments', updateLimiter, (req: Request, res: Response) => {
+    const ctx = getRequestContext();
+    const store = ctx?.sessionStore;
+    const session = store?.current();
+    if (!store || !session || session.sessionId !== req.params.id) {
+      res.status(404).json({ error: 'Session not found' });
+      return;
+    }
+    const body = (req.body ?? {}) as { role?: unknown; assigneeLabel?: unknown };
+    const role = body.role === 'lead' || body.role === 'individual' ? body.role : undefined;
+    if (!role) {
+      res.status(400).json({ error: 'role must be "lead" or "individual"' });
+      return;
+    }
+    const link = `/?session=${encodeURIComponent(session.sessionId)}&role=${role}`;
+    const assignment: DelegationAssignment = {
+      role,
+      assigneeLabel: typeof body.assigneeLabel === 'string' ? body.assigneeLabel : undefined,
+      assignedBy: ctx?.userId,
+      assignedAt: new Date().toISOString(),
+      status: roleCompletion(session, role).status,
+      link,
+    };
+    store.mutate((s) => {
+      s.assignments = [...(s.assignments ?? []).filter((a) => a.role !== role), assignment];
+      s.updatedAt = new Date().toISOString();
+    });
+    res.status(201).json(assignment);
+  });
+
+  // Dashboard: every assignment + live per-role completion (answered/visible,
+  // status, contributors). Computed fresh so it reflects delegate progress.
+  router.get('/:id/assignments', readLimiter, (req: Request, res: Response) => {
+    const ctx = getRequestContext();
+    const session = ctx?.sessionStore?.current();
+    if (!session || session.sessionId !== req.params.id) {
+      res.status(404).json({ error: 'Session not found' });
+      return;
+    }
+    const roles: Array<'admin' | 'lead' | 'individual'> = ['admin', 'lead', 'individual'];
+    const completion = roles.map((role) => ({ role, ...roleCompletion(session, role) }));
+    const assignments = (session.assignments ?? []).map((a) => ({
+      ...a,
+      status: roleCompletion(session, a.role).status,
+    }));
+    res.json({ sessionId: session.sessionId, assignments, completion });
   });
 
   router.patch('/:id', updateLimiter, (req: Request, res: Response) => {
@@ -268,10 +324,22 @@ export function createSessionRoutes(
     // is stripped and replaced with the request context's userId (or
     // dropped entirely when there is no authenticated user).
     const contributor = ctx?.userId;
+    // A delegate may only write answers to their own role's slice — defense
+    // in depth on top of the client-side role scoping.
+    const delegateRole = ctx?.delegateRole;
+    const bankForPatch = delegateRole ? new QuestionBank() : null;
+    const ownsQuestion = (id: string): boolean => {
+      if (!delegateRole || !bankForPatch) return true;
+      const q = bankForPatch.getById(id);
+      if (!q) return false;
+      const owner = respondentOf(q);
+      return owner === 'any' || owner === delegateRole;
+    };
     store.mutate((s) => {
       if (body.answers) {
         const stamped: Record<string, SerializedAnswer> = {};
         for (const [id, answer] of Object.entries(body.answers)) {
+          if (!ownsQuestion(id)) continue;
           const { contributedBy: _ignored, ...rest } = answer;
           stamped[id] = contributor
             ? { ...rest, contributedBy: contributor }
@@ -332,7 +400,45 @@ interface ResumeView {
  * no state mutation. Designed to be called from the resume route and
  * also reused by tests.
  */
-export function buildResumeView(session: WizardSession): ResumeView {
+/** Validate a `?role=` query value into a Respondent, or undefined (unscoped). */
+export function parseRole(raw: unknown): Respondent | undefined {
+  return raw === 'admin' || raw === 'lead' || raw === 'individual' ? raw : undefined;
+}
+
+export interface RoleCompletion {
+  answered: number;
+  visible: number;
+  status: 'pending' | 'in_progress' | 'complete';
+  /** Distinct contributors who answered this role's questions. */
+  contributors: string[];
+}
+
+/**
+ * Live completion for one role's slice — answered vs visible (via the
+ * role-scoped resume) plus the distinct contributors on that slice's answers.
+ * Status: nothing-to-do or fully answered ⇒ complete; none answered ⇒ pending;
+ * otherwise in_progress.
+ */
+export function roleCompletion(session: WizardSession, role: Respondent): RoleCompletion {
+  const view = buildResumeView(session, role);
+  const { answered, visible } = view.totals;
+  const status: RoleCompletion['status'] =
+    visible === 0 || answered >= visible ? 'complete' : answered === 0 ? 'pending' : 'in_progress';
+
+  // Which contributors touched this role's questions (by id membership).
+  const answers = hydrateSerializedAnswers(session.answers);
+  const domainPack = resolveDomainPackForAnswers(answers);
+  const bank = new QuestionBank(domainPack);
+  const ids = new Set(DIMENSION_ORDER.flatMap((d) => bank.getVisibleQuestions(d, answers, role).map((q) => q.id)));
+  const contributors = [...new Set(
+    Object.values(session.answers)
+      .filter((a) => ids.has(a.questionId) && a.contributedBy)
+      .map((a) => a.contributedBy as string),
+  )];
+  return { answered, visible, status, contributors };
+}
+
+export function buildResumeView(session: WizardSession, role?: Respondent): ResumeView {
   const answers = hydrateSerializedAnswers(session.answers);
   const domainPack = resolveDomainPackForAnswers(answers);
   const bank = new QuestionBank(domainPack);
@@ -342,9 +448,11 @@ export function buildResumeView(session: WizardSession): ResumeView {
   let totalVisible = 0;
   let totalAnswered = 0;
 
+  // When `role` is supplied (a delegation link), the cursor and totals are
+  // scoped to that role's slice; otherwise the full visible set as before.
   for (let i = 0; i < DIMENSION_ORDER.length; i++) {
     const dim = DIMENSION_ORDER[i];
-    const visible = bank.getVisibleQuestions(dim, answers);
+    const visible = bank.getVisibleQuestions(dim, answers, role);
     totalVisible += visible.length;
     for (let j = 0; j < visible.length; j++) {
       const answered = answers.has(visible[j].id);
@@ -364,7 +472,7 @@ export function buildResumeView(session: WizardSession): ResumeView {
     nextDimensionIndex = DIMENSION_ORDER.length - 1;
     nextQuestionIndex = Math.max(
       0,
-      bank.getVisibleQuestions(DIMENSION_ORDER[nextDimensionIndex], answers).length - 1,
+      bank.getVisibleQuestions(DIMENSION_ORDER[nextDimensionIndex], answers, role).length - 1,
     );
   }
 

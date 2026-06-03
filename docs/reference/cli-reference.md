@@ -271,9 +271,9 @@ npm run sanitize-public -- --out /tmp/embediq-public --no-color
 npm run sanitize-public -- --strict --no-color
 ```
 
-The full release-overlay flow lives in
-[`docs/internal/contributor-handbook.md`](../internal/contributor-handbook.md)
-(private repo). The script is the engine that flow drives.
+The full release-overlay flow lives in the maintainers' contributor handbook
+(`docs/internal/contributor-handbook.md`, private repo). The script is the
+engine that flow drives.
 
 ---
 

@@ -12,7 +12,32 @@ const state = {
   eventWs: null,
   filesStreamed: new Set(),
   serverBackend: null, // null = unknown, false = disabled, true = enabled
+  // Active fill-role for the three-role delegation model. 'admin' for the
+  // session creator / single-pass operator; 'lead' or 'individual' when the
+  // page is opened from a delegation link (?role=…). Drives proxy framing and
+  // (in delegate views) role-scoped question fetching.
+  activeRole: 'admin',
+  // True only when ?role= was explicitly present (a delegation link). When
+  // scoped, the wizard shows only that role's question slice. The default
+  // (no ?role=) stays unscoped so a solo operator still sees everything.
+  scoped: false,
 };
+
+// In a delegation (scoped) view, keep only the questions this role owns
+// (respondent matches) or shared (`any`). Unscoped views are untouched.
+function scopeQuestions(qs) {
+  if (!state.scoped) return qs;
+  return qs.filter(q => !q.respondent || q.respondent === 'any' || q.respondent === state.activeRole);
+}
+
+function readRoleFromUrl() {
+  try {
+    const r = new URLSearchParams(window.location.search).get('role');
+    return r === 'lead' || r === 'individual' || r === 'admin' ? r : 'admin';
+  } catch {
+    return 'admin';
+  }
+}
 
 const SESSION_STORAGE_KEY = 'embediq_session_id';
 
@@ -78,9 +103,16 @@ async function mintServerSession() {
   }
 }
 
+// Append the active role to a session API URL in a delegation (scoped) view,
+// so the server grants the delegate access to (and scopes writes to) their slice.
+function withRole(url) {
+  if (!state.scoped) return url;
+  return url + (url.includes('?') ? '&' : '?') + 'role=' + encodeURIComponent(state.activeRole);
+}
+
 async function loadServerSession(sessionId) {
   try {
-    const res = await fetch(`/api/sessions/${encodeURIComponent(sessionId)}`, {
+    const res = await fetch(withRole(`/api/sessions/${encodeURIComponent(sessionId)}`), {
       credentials: 'same-origin',
     });
     if (!res.ok) return null;
@@ -92,7 +124,7 @@ async function loadServerSession(sessionId) {
 
 async function loadResumeView(sessionId) {
   try {
-    const res = await fetch(`/api/sessions/${encodeURIComponent(sessionId)}/resume`, {
+    const res = await fetch(withRole(`/api/sessions/${encodeURIComponent(sessionId)}/resume`), {
       credentials: 'same-origin',
     });
     if (!res.ok) return null;
@@ -104,7 +136,7 @@ async function loadResumeView(sessionId) {
 
 async function patchSession(sessionId, body) {
   try {
-    await fetch(`/api/sessions/${encodeURIComponent(sessionId)}`, {
+    await fetch(withRole(`/api/sessions/${encodeURIComponent(sessionId)}`), {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'same-origin',
@@ -210,6 +242,7 @@ async function startWizard() {
     state.resumeView = null; // consume — only honored on first start after init
   }
 
+  renderScopeBanner();
   showPhase('phase-qa');
 }
 
@@ -247,7 +280,7 @@ async function loadDimension(index) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ dimension: dim.name, answers: state.answers }),
   });
-  state.currentQuestions = await res.json();
+  state.currentQuestions = scopeQuestions(await res.json());
 
   if (state.currentQuestions.length === 0) {
     await advanceDimension();
@@ -299,6 +332,34 @@ function questionHelpText(q) {
   return (isAdminOperator() && q.adminHelpText) || q.helpText || '';
 }
 
+// Show a "best answered by…" marker when the current operator is answering a
+// question owned by a different role (e.g. an admin filling a Team-Lead pain-
+// point question, or a per-seat individual preference). The marker plus the
+// existing skip→infer affordance lets a proxy defer rather than guess.
+const PROXY_COPY = {
+  lead: '👥 Best answered by your <strong>Team Lead</strong> — answer on their behalf, delegate it, or skip.',
+  individual: '🧑 <strong>Personal preference</strong> — sets a team default; individuals can override later.',
+  admin: '🔒 Admin policy question.',
+};
+function renderProxyMarker(q) {
+  let el = document.getElementById('proxy-marker');
+  if (!el) {
+    const anchor = document.getElementById('purpose-text') || document.getElementById('help-text');
+    if (!anchor) return;
+    el = document.createElement('p');
+    el.id = 'proxy-marker';
+    el.className = 'proxy-marker';
+    anchor.parentNode.insertBefore(el, anchor.nextSibling);
+  }
+  const owner = q.respondent || 'any';
+  if (owner !== 'any' && owner !== state.activeRole && PROXY_COPY[owner]) {
+    el.innerHTML = PROXY_COPY[owner];
+    el.style.display = '';
+  } else {
+    el.style.display = 'none';
+  }
+}
+
 function renderQuestion() {
   const q = state.currentQuestions[state.currentQuestionIndex];
   if (!q) return;
@@ -332,6 +393,7 @@ function renderQuestion() {
       purposeEl.style.display = 'none';
     }
   }
+  renderProxyMarker(q);
   const skipBtn = document.getElementById('btn-skip');
   skipBtn.style.display = q.required ? 'none' : '';
   // When the app can infer a default for a skipped optional question, say so
@@ -600,7 +662,7 @@ async function nextQuestion() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ dimension: dim.name, answers: state.answers }),
   });
-  state.currentQuestions = await res.json();
+  state.currentQuestions = scopeQuestions(await res.json());
 
   // If the user was editing from the dimension review, return to the review
   // after their change is recorded rather than auto-advancing.
@@ -918,6 +980,7 @@ function editProfile() {
   state.currentDimIndex = 0;
   renderDimensionSidebar();
   loadDimension(0);
+  renderScopeBanner();
   showPhase('phase-qa');
 }
 
@@ -980,6 +1043,7 @@ async function approveAndGenerate() {
     `;
 
     showPhase('phase-generate');
+    renderDelegationPanel();
   } catch (err) {
     console.error('approveAndGenerate failed', err);
     // Surface the error inline so the user can see what happened instead of
@@ -1153,6 +1217,8 @@ async function generateFiles() {
 // ─── Init ───
 
 async function initWizard() {
+  state.activeRole = readRoleFromUrl();
+  state.scoped = new URLSearchParams(window.location.search).has('role');
   showPhase('phase-welcome');
   await renderIdentityBanner();
   const config = await loadSessionsConfig();
@@ -1394,6 +1460,91 @@ function renderResumeBanner(resume) {
   if (complete) parts.push('— ready to generate');
   banner.innerHTML = parts.join(' ');
   banner.style.display = 'block';
+}
+
+const ROLE_LABEL = { admin: 'Admin (policy)', lead: 'Team Lead', individual: 'Individual' };
+
+// Banner shown in a delegation (scoped) view so the delegate knows they're
+// only being asked their slice. Called when entering the Q&A phase.
+function renderScopeBanner() {
+  const el = document.getElementById('scope-banner');
+  if (!el) return;
+  if (!state.scoped) { el.style.display = 'none'; return; }
+  const r = state.activeRole;
+  el.innerHTML = `<strong>${ROLE_LABEL[r] || r} questions.</strong> `
+    + `You're filling the ${ROLE_LABEL[r] || r} slice of this configuration — `
+    + `only the questions you're positioned to answer are shown. Your answers are attributed to you.`;
+  el.style.display = '';
+}
+
+// Admin "Assign & delegate" panel + live per-role dashboard on the generate
+// screen. Hidden in scoped (delegate) views and when sessions are off.
+async function renderDelegationPanel() {
+  const panel = document.getElementById('delegation-panel');
+  if (!panel) return;
+  if (state.scoped || !state.serverBackend || !state.sessionId) { panel.style.display = 'none'; return; }
+  let data;
+  try {
+    const res = await fetch(`/api/sessions/${encodeURIComponent(state.sessionId)}/assignments`);
+    if (!res.ok) { panel.style.display = 'none'; return; }
+    data = await res.json();
+  } catch { panel.style.display = 'none'; return; }
+
+  const byRole = Object.fromEntries((data.completion || []).map(c => [c.role, c]));
+  const assignmentByRole = Object.fromEntries((data.assignments || []).map(a => [a.role, a]));
+  const origin = window.location.origin;
+
+  const row = (role) => {
+    const c = byRole[role] || { answered: 0, visible: 0, status: 'pending', contributors: [] };
+    const a = assignmentByRole[role];
+    const link = a ? origin + a.link : '';
+    const who = c.contributors.length ? ` · by ${c.contributors.map(escapeHtml).join(', ')}` : '';
+    const actions = role === 'admin'
+      ? '<span class="deleg-self">you</span>'
+      : a
+        ? `<button class="btn-secondary btn-xs" onclick="copyDelegationLink('${role}')">Copy link</button>`
+        : `<button class="btn-secondary btn-xs" onclick="createAssignment('${role}')">Assign &amp; get link</button>`;
+    return `
+      <div class="deleg-row">
+        <div class="deleg-role">${ROLE_LABEL[role]}</div>
+        <div class="deleg-prog"><span class="deleg-badge deleg-${c.status}">${c.status.replace('_',' ')}</span>
+          ${c.answered}/${c.visible}${who}</div>
+        <div class="deleg-act">${actions}</div>
+        ${a && link ? `<input class="deleg-link" readonly value="${escapeHtml(link)}" onclick="this.select()">` : ''}
+      </div>`;
+  };
+
+  panel.innerHTML = `
+    <h3>Delegate the rest</h3>
+    <p class="deleg-help">You answered the policy slice. The project, problem, tech and innovation questions are best answered by your <strong>Team Lead</strong>; per-seat preferences by an <strong>Individual</strong>. Assign each to generate a link they open to fill only their part.</p>
+    ${['admin','lead','individual'].map(row).join('')}`;
+  panel.style.display = '';
+}
+
+async function createAssignment(role) {
+  if (!state.sessionId) return;
+  const assigneeLabel = prompt(`Email or name for the ${ROLE_LABEL[role]} (optional):`) || undefined;
+  try {
+    const res = await fetch(`/api/sessions/${encodeURIComponent(state.sessionId)}/assignments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role, assigneeLabel }),
+    });
+    if (res.ok) await renderDelegationPanel();
+  } catch (err) { console.warn('assign failed', err); }
+}
+
+async function copyDelegationLink(role) {
+  try {
+    const res = await fetch(`/api/sessions/${encodeURIComponent(state.sessionId)}/assignments`);
+    const data = await res.json();
+    const a = (data.assignments || []).find(x => x.role === role);
+    if (!a) return;
+    const link = window.location.origin + a.link;
+    await navigator.clipboard.writeText(link);
+    // brief visual confirmation
+    await renderDelegationPanel();
+  } catch (err) { console.warn('copy failed', err); }
 }
 
 function escapeHtml(s) {

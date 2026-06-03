@@ -667,6 +667,63 @@ body {
   margin-right: 6px;
 }
 
+/* ─── Delegation: scope banner + assign panel + dashboard ─── */
+
+.scope-banner {
+  background: rgba(99, 102, 241, 0.10);
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  margin: 0 0 16px 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+.scope-banner strong { color: var(--text-primary); }
+
+.delegation-panel {
+  margin-top: 24px;
+  padding: 18px;
+  background: var(--surface, rgba(255,255,255,0.02));
+  border: 1px solid var(--border, rgba(255,255,255,0.08));
+  border-radius: var(--radius-md, 10px);
+}
+.delegation-panel h3 { margin: 0 0 6px; font-size: 15px; }
+.delegation-panel .deleg-help { font-size: 13px; color: var(--text-secondary); margin: 0 0 14px; line-height: 1.5; }
+.deleg-row {
+  display: grid;
+  grid-template-columns: 130px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-top: 1px solid var(--border, rgba(255,255,255,0.06));
+}
+.deleg-row .deleg-role { font-weight: 600; font-size: 13px; }
+.deleg-row .deleg-prog { font-size: 12.5px; color: var(--text-secondary); }
+.deleg-row .deleg-link { grid-column: 1 / -1; width: 100%; font-size: 12px; padding: 6px 8px; margin-top: 4px;
+  background: rgba(0,0,0,0.2); border: 1px solid var(--border, rgba(255,255,255,0.08)); border-radius: 6px; color: var(--text-secondary); }
+.deleg-self { font-size: 12px; color: var(--text-secondary); font-style: italic; }
+.btn-xs { font-size: 12px; padding: 4px 10px; }
+.deleg-badge { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+  padding: 2px 7px; border-radius: 999px; margin-right: 6px; }
+.deleg-pending { background: rgba(148,163,184,0.2); color: #94a3b8; }
+.deleg-in_progress { background: rgba(217,119,6,0.18); color: #d97706; }
+.deleg-complete { background: rgba(16,185,129,0.18); color: #10b981; }
+
+/* ─── Proxy / delegation marker (three-role model) ─── */
+
+.proxy-marker {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  background: rgba(99, 102, 241, 0.07);
+  border-left: 3px solid #6366f1;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  padding: 8px 12px;
+  margin: 0 0 24px 0;
+  line-height: 1.45;
+}
+.proxy-marker strong { color: var(--text-primary); }
+
 /* ─── Cross-answer warnings (dimension review) ─── */
 
 .dim-review-warnings {

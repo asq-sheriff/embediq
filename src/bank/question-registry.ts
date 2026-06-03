@@ -1,4 +1,4 @@
-import { Dimension, QuestionType, ConditionOperator, type Question } from '../types/index.js';
+import { Dimension, QuestionType, ConditionOperator, type Question, type Respondent } from '../types/index.js';
 
 export const questions: Question[] = [
   // ═══════════════════════════════════════════════════════════════
@@ -1707,3 +1707,77 @@ export const questions: Question[] = [
     tags: ['agents', 'automation', 'specialization'],
   },
 ];
+
+/**
+ * Respondent ownership for the three-role delegation model — which role is
+ * best positioned to answer each question (see `Question.respondent`).
+ *
+ * The Admin is a central governance / security / finance owner who provisions
+ * the harness and sets policy — they do NOT know the project, the team's
+ * lived experience, the stack, operations, or future-proofing. Their genuine
+ * slice is narrow:
+ *   - `admin`      — the harness-setup identity questions (role / proficiency /
+ *                    operator type) needed to start, plus the Compliance
+ *                    *policy switches* (frameworks, security tier, DLP, audit,
+ *                    secret scanning, permission tier, ZDR, egress, …) and all
+ *                    Financial / cost policy.
+ *   - `lead`       — the Team Lead, the primary driver of the wizard: the whole
+ *                    project (purpose, industry, criticality, lifespan, agent
+ *                    targets, outcomes), all Problem Definition, all
+ *                    Operational Reality, all Technology (stack AND infra), all
+ *                    Innovation, and the *actual-data-flow* compliance facts
+ *                    (does the code handle PHI, which paths, custom identifiers).
+ *   - `individual` — per-seat preference: IDE, local-model hardware/model,
+ *                    concurrent sessions.
+ *
+ * Default flow is admin-first-then-delegate: the admin answers the setup +
+ * policy slice, then delegates the rest to the Team Lead (and per-seat
+ * questions to individuals). One auditable table; a per-question `respondent`
+ * field overrides it; anything unlisted resolves to `any`.
+ */
+export const RESPONDENT_BY_ID: Readonly<Record<string, Respondent>> = {
+  // ── Strategic Intent — setup identity = admin; everything project = lead ──
+  STRAT_000: 'admin', STRAT_000a: 'admin', STRAT_000b: 'admin',
+  STRAT_TARGETS: 'lead', STRAT_001: 'lead', STRAT_002: 'lead', STRAT_003: 'lead',
+  STRAT_004: 'lead', STRAT_005: 'lead', STRAT_006: 'lead', STRAT_007: 'lead',
+
+  // ── Problem Definition — all the Team Lead's call (lived experience + practice) ──
+  PROB_001: 'lead', PROB_002: 'lead', PROB_003: 'lead', PROB_003_other: 'lead',
+  PROB_005: 'lead', PROB_006: 'lead', PROB_007: 'lead',
+
+  // ── Operational Reality — all lead; concurrent sessions = individual ──
+  OPS_001: 'lead', OPS_002: 'lead', OPS_003: 'lead', OPS_004: 'lead',
+  OPS_005: 'lead', OPS_006: 'individual',
+
+  // ── Technology — stack AND infra = lead; per-seat = individual ──
+  TECH_001: 'lead', TECH_002: 'lead', TECH_003: 'lead',
+  TECH_004: 'individual', TECH_004_other: 'individual',
+  TECH_005: 'lead', TECH_005_other: 'lead', TECH_006: 'lead', TECH_006_other: 'lead',
+  TECH_007: 'lead', TECH_007_other: 'lead', TECH_008: 'lead',
+  TECH_009: 'lead', TECH_009_other: 'lead', TECH_022: 'lead', TECH_022_other: 'lead',
+  TECH_010: 'lead', TECH_010_other: 'lead', TECH_011: 'lead', TECH_011_other: 'lead',
+  TECH_012: 'lead', TECH_013: 'lead',
+  TECH_014: 'individual', TECH_014_other: 'individual',
+  TECH_015: 'lead', TECH_016: 'individual', TECH_017: 'individual', TECH_018: 'individual',
+  TECH_019: 'lead', TECH_020: 'lead', TECH_021: 'lead',
+
+  // ── Regulatory — policy switches = admin; actual data flows = lead ──
+  REG_001: 'admin', REG_002: 'admin', REG_002_other: 'admin',
+  REG_003: 'lead', REG_003a: 'lead', REG_003b: 'lead', REG_003c: 'admin', REG_003d: 'admin',
+  REG_004: 'lead', REG_005: 'admin', REG_006: 'lead', REG_007: 'admin', REG_008: 'admin',
+  REG_009: 'admin', REG_010: 'lead', REG_011: 'admin', REG_012: 'admin', REG_012a: 'admin',
+  REG_012b: 'lead', REG_013: 'admin', REG_014: 'admin', REG_014a: 'admin', REG_015: 'admin',
+  REG_016: 'admin', REG_017: 'admin', REG_018: 'admin',
+
+  // ── Financial — all admin (budget / cost policy) ──
+  FIN_001: 'admin', FIN_002: 'admin', FIN_003: 'admin', FIN_004: 'admin', FIN_005: 'admin',
+
+  // ── Innovation & Future-Proofing — all the Team Lead's call ──
+  INNOV_001: 'lead', INNOV_002: 'lead', INNOV_003: 'lead', INNOV_004: 'lead',
+  INNOV_005: 'lead', INNOV_006: 'lead', INNOV_007: 'lead',
+};
+
+/** Resolve a question's respondent: explicit field → classification table → `any`. */
+export function respondentOf(question: Question): Respondent {
+  return question.respondent ?? RESPONDENT_BY_ID[question.id] ?? 'any';
+}

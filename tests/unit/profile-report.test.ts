@@ -47,4 +47,21 @@ describe('buildProfileReport', () => {
     expect((json.determinations as Record<string, unknown>).inferredDefaults).toEqual({ Testing: ['pytest'], IDE: ['vscode'] });
     expect((json.answers as Record<string, unknown>).TECH_001).toEqual(['python']);
   });
+
+  it('attributes answers by role and surfaces contributors', () => {
+    // profile() answers STRAT_000b (admin) and TECH_001 (lead).
+    const { markdown, json } = buildProfileReport(profile(), {
+      generatedAt: '2026-05-31T00:00:00.000Z',
+      contributedBy: { STRAT_000b: 'admin@x', TECH_001: 'lead@x' },
+    });
+    expect(markdown).toContain('## Contributions by role');
+    expect(markdown).toMatch(/Admin \(policy\): 1 answer/);
+    expect(markdown).toMatch(/Team Lead: 1 answer/);
+    expect(markdown).toContain('Contributors: admin@x, lead@x');
+    // answer log tags each answer with its owning role + contributor
+    expect(markdown).toMatch(/`TECH_001`:.*_\(Team Lead · lead@x\)_/);
+    const attr = json.attribution as { byRole: Record<string, number> };
+    expect(attr.byRole.admin).toBe(1);
+    expect(attr.byRole.lead).toBe(1);
+  });
 });
