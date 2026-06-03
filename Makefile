@@ -1,4 +1,4 @@
-.PHONY: help install build check test test-watch test-coverage typecheck \
+.PHONY: help install build check test test-watch test-coverage test-snapshots typecheck \
        start start-web dev dev-web \
        docker docker-up docker-down \
        otel-dev evaluate benchmark drift sanitize-public publish-public-dry docs-lint \
@@ -25,6 +25,9 @@ test-watch: ## Run tests in watch mode
 
 test-coverage: ## Run tests with coverage report
 	npm run test:coverage
+
+test-snapshots: ## Update test snapshots (writes — run intentionally)
+	npm run test:snapshots
 
 check: typecheck test ## Type-check + run tests (CI equivalent)
 
