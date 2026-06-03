@@ -122,7 +122,7 @@ upside of AI doesn't come with new compliance risk.
 
 **Enterprise integration** — *fits the tools and controls a large organization already runs on.*
 - Microsoft / Azure stack: Azure Repos pull requests, a matching `azure-pipelines.yml` build file, and Visual Studio + JetBrains editor settings.
-- **Agent isolation, enforced**: the admin picks where the coding agent runs (managed device, dev container, AVD/VDI, ephemeral cloud) and EmbedIQ emits the enforcement — a fleet `managed-settings.json` that *requires* Claude Code's native OS sandbox (deliver via Intune) and an optional dev container. [→](docs/evaluators/isolation-decision-guide.md)
+- **Agent isolation, centrally enforced**: the admin sets where the coding agent runs once (managed device, dev container, AVD/VDI, ephemeral cloud); EmbedIQ emits a fleet `managed-settings.json` — pushed via Intune to an OS path a developer can't override — that *requires* Claude Code's native OS sandbox, plus an optional dev container. It's a control that can't be switched off one laptop at a time, so a leak is bounded to *couldn't happen* rather than *we hope it didn't*. [→](docs/evaluators/isolation-decision-guide.md)
 - Plugs into your existing login (HTTP Basic, OIDC single-sign-on, or reverse-proxy headers), with three permission tiers covering who can view, run, and administer.
 - Run many client engagements from one install; deploy with Docker or Kubernetes; optional OpenTelemetry monitoring.
 

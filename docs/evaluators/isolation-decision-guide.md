@@ -81,6 +81,42 @@ If you want a VM's benefits without VDI's weight, prefer **ephemeral cloud dev
 environments** over persistent VDI — unless you already run AVD for other reasons,
 in which case run the agent inside it.
 
+## Why enterprises *enforce* isolation, not just enable it
+
+For a solo developer, turning the sandbox on is a personal choice. For an
+enterprise it's a control — and a control one developer can switch off isn't a
+control at all. Three things change at scale:
+
+- **The stakes are compliance, not convenience.** In regulated industries
+  (healthcare, finance, government) an agent that pastes PHI into a log, exfiltrates
+  source, or leaks a credential isn't a bug — it's a reportable breach: fines, a
+  failed audit, a lost contract. Isolation is what bounds that to *couldn't happen*,
+  not *we hope it didn't*.
+- **You can't trust per-developer config.** Across N engineers the sandbox is only
+  as strong as the *least* carefully configured laptop — one person who turned it
+  off is the breach. Consistency has to be enforced centrally, not left opt-in.
+- **Automation removes the human gate.** The moment a run is unattended, the
+  permission prompt that protects an interactive developer is gone; the boundary is
+  the only thing left.
+
+## How enforcement works — why a developer can't bypass it
+
+"Enabled fleet-wide" means *unbypassable*, not *recommended*. The chain:
+
+1. Your MDM (Intune / Jamf) pushes `managed-settings.json` to an **OS-level path a
+   developer cannot edit** — `/etc/claude-code/…` (Linux/WSL2),
+   `/Library/Application Support/ClaudeCode/…` (macOS), `C:\ProgramData\ClaudeCode\…`
+   (Windows).
+2. Settings there **take precedence** over any project or user settings: a developer's
+   local `.claude/settings.json` can *tighten* the policy but never *relax* it.
+   `"sandbox": { "enabled": true }` and the deny floor are fixed.
+3. The OS kernel does the actual containment — **bubblewrap** on Linux/WSL2,
+   **Seatbelt** on macOS — so even a compromised or prompt-injected agent is held to
+   the filesystem, network, and process limits the policy declares.
+
+EmbedIQ generates that `managed-settings.json` (plus the per-OS delivery README) from
+the admin's isolation-posture answer; your MDM does the pushing.
+
 ## How EmbedIQ maps to each rung
 
 EmbedIQ generates the agent harness; the **isolation posture** question
