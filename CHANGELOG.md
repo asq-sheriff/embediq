@@ -9,6 +9,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.5] — 2026-06-04 — Role-scoped handoff + landing & demo polish
+
+### Added
+- **Gated three-role handoff** in the web wizard — Admin → Team Lead → Individual
+  unlock in sequence (each role stays locked until the prior slice completes),
+  every slice ends in a summary, and generation runs only after the final
+  (Individual) slice. Completed roles stay reviewable. Single-pass generation and
+  goldens are unchanged.
+- **Landing "Built into every setup" section** — Guardrails, Enforced sandboxing
+  (Claude Code), Tamper-evident audit trail, Audit-ready evidence.
+- **Codex** named across the agent targets (it reads `AGENTS.md`, which EmbedIQ
+  already generates) — in the hero strip and the AGENTS.md target option.
+- **EmbedIQ credit** in every generated file's stamp (homepage · a Praglogic
+  project · MIT) — a courtesy attribution stripped by the evaluator and
+  drift-detector, so goldens stay byte-identical.
+- **"See it in action" README screenshots** — the role-scoped handoff, the scoped
+  interview, a slice-complete summary, and the Ready-to-Generate screen.
+
+### Changed
+- Plainer hero subtitle (drops the "OSCAL" / "tamper-evident" jargon); right-sized
+  headline; the frameworks question (`TECH_003`) is now skippable.
+
+### Fixed
+- Welcome-screen favicon (eliminates the `/favicon.ico` 404 console error);
+  invisible resume-banner text (used a CSS token that does not exist).
+
+### Notes
+- Additive / opt-in throughout — existing goldens regenerate byte-identically
+  (14/14 at 100%); 1367 tests passing.
+
 ## [4.0.4] — 2026-06-04 — Expanded language coverage
 
 ### Added

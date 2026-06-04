@@ -8,7 +8,7 @@
 that make Claude Code, Cursor, Copilot, and other AI coding assistants follow
 your team's rules — consistently, and with an audit trail.*
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) · [Latest release: **v4.0.4**](https://github.com/asq-sheriff/embediq/releases/latest) · Deterministic & offline
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) · [Latest release: **v4.0.5**](https://github.com/asq-sheriff/embediq/releases/latest) · Deterministic & offline
 
 EmbedIQ interviews you once about your project, team, and compliance
 obligations, then generates a complete, governed agent harness — typically
@@ -20,8 +20,6 @@ always produce **byte-identical output** — including under regulatory audit.
 [Full changelog](CHANGELOG.md) ·
 [Security model](SECURITY.md) ·
 [Documentation](docs/getting-started.md)
-
-![The EmbedIQ web wizard interviewing an operator — seven dimensions in the sidebar, role-adaptive questions, and an admin-only "why we ask" panel](docs/assets/wizard.png)
 
 ---
 
