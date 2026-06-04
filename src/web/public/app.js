@@ -1323,7 +1323,7 @@ function renderHeaderProfile(id) {
   document.getElementById('user-profile-name').textContent = name;
   const isAdmin = id.roles && id.roles.includes('wizard-admin');
   document.getElementById('user-profile-role').innerHTML =
-    `<span class="user-profile-role-badge ${isAdmin ? 'admin' : 'user'}">${isAdmin ? 'Coding Agent Admin' : 'Coding Agent User'}</span>${id.authStrategy === 'demo' ? ' <span class="demo-badge">DEMO</span>' : ''}`;
+    `<span class="user-profile-role-badge ${isAdmin ? 'admin' : 'user'}">${isAdmin ? 'Coding Agent Admin' : 'Coding Agent User'}</span>${id.authStrategy === 'demo' ? ' <span class="demo-badge">ACME Corp</span>' : ''}`;
   document.getElementById('user-profile-email').textContent = id.email || id.userId || '';
   document.getElementById('user-profile-switch-icon').innerHTML = ICONS.target;
   document.getElementById('user-profile-signout-icon').innerHTML = ICONS.xCircle;
@@ -1352,10 +1352,9 @@ function renderWelcomeIdentityBanner(id) {
   // Unauthenticated + demo strategy: show the persona picker.
   if (id.authStrategy === 'demo') {
     const userLine = `<div class="identity-user"><span class="identity-icon">${ICONS.shield}</span>
-      <span class="demo-picker-label">Demo Mode — sign in as:</span>
+      <span class="demo-picker-label">ACME Corp — sign in as:</span>
       <button class="demo-pick-btn demo-pick-admin" onclick="signInDemo('admin')">Coding Agent Admin</button>
-      <button class="demo-pick-btn demo-pick-user" onclick="signInDemo('user')">Coding Agent User</button>
-      <span class="demo-badge">DEMO</span></div>`;
+      <button class="demo-pick-btn demo-pick-user" onclick="signInDemo('user')">Coding Agent User</button></div>`;
     banner.innerHTML = userLine + (renderDeviceLine(id) || '');
     banner.style.display = '';
     return;

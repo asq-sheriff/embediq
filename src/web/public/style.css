@@ -281,51 +281,80 @@ body {
   justify-content: center;
   min-height: calc(100vh - 52px);
   text-align: center;
-  padding: 40px 24px;
+  padding: clamp(72px, 11vh, 132px) 24px 80px;
 }
 
 .hero h1 {
-  font-size: 48px;
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  margin-bottom: 12px;
+  font-size: clamp(40px, 5.2vw, 56px);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1.06;
+  margin-bottom: 18px;
   color: var(--text-primary);
 }
 
 .subtitle {
-  font-size: 19px;
+  font-size: 21px;
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
   color: var(--text-secondary);
-  margin-bottom: 40px;
-  max-width: 480px;
+  margin-bottom: 44px;
+  max-width: 600px;
 }
 
 .hero-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 24px 52px;
   justify-content: center;
-  margin-bottom: 36px;
+  align-items: flex-start;
+  order: 3;            /* demote below the call-to-action */
+  margin-top: 64px;
+  margin-bottom: 0;
+  max-width: 860px;
+}
+
+.meta-feature {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  text-align: center;
+}
+
+.meta-feature-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: -0.01em;
+}
+
+.meta-feature-detail {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-tertiary);
+  letter-spacing: -0.005em;
+  max-width: 230px;
 }
 
 .meta-pill {
-  font-size: 12px;
-  font-weight: 500;
-  padding: 4px 12px;
-  background: var(--surface);
-  border: 1px solid var(--border-light);
-  border-radius: 980px;
-  color: var(--text-secondary);
+  font-size: 12.5px;
+  font-weight: 400;
+  padding: 2px 2px;
+  background: transparent;
+  border: none;
+  color: var(--text-tertiary);
   letter-spacing: -0.005em;
   cursor: help;
-  transition: all var(--transition);
+  transition: color var(--transition);
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
 }
 
 .meta-pill:hover {
-  border-color: var(--accent);
-  color: var(--text-primary);
+  color: var(--text-secondary);
 }
 
 .meta-pill-info {
@@ -347,14 +376,105 @@ body {
   color: white;
 }
 
-.identity-banner {
-  margin: 16px auto 16px;
-  max-width: 560px;
-  padding: 12px 16px;
+/* Custom hover/focus tooltip for the hero pills — replaces the native
+   `title` (slow, plain, easy to miss). Shows on hover AND keyboard focus. */
+.meta-pill[data-tip] {
+  position: relative;
+  outline: none;
+}
+
+.meta-pill[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%) translateY(-4px);
+  width: min(340px, 86vw);
+  white-space: normal;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: 0;
+  color: var(--text-primary);
   background: var(--surface);
   border: 1px solid var(--border-light);
-  border-radius: var(--radius-sm);
-  font-size: 13px;
+  border-radius: 10px;
+  padding: 10px 12px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16);
+  z-index: 50;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition), transform var(--transition);
+}
+
+.meta-pill[data-tip]::before {
+  content: "";
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-bottom-color: var(--border-light);
+  z-index: 51;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition);
+}
+
+.meta-pill[data-tip]:hover::after,
+.meta-pill[data-tip]:focus-visible::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.meta-pill[data-tip]:hover::before,
+.meta-pill[data-tip]:focus-visible::before {
+  opacity: 1;
+}
+
+/* ─── Welcome screen — Apple refinement: ordering + reveal ─── */
+.hero .btn-primary {
+  order: 2;
+  margin-top: 24px;
+  padding: 13px 32px;
+  font-size: 17px;
+  letter-spacing: -0.01em;
+}
+
+#resume-banner { order: 1; }
+
+/* Hide the dev device line on the welcome screen — keeps the hero clean.
+   ID selector to win over the base `.identity-banner .identity-device` rule. */
+#identity-banner .identity-device { display: none; }
+
+/* Staggered fade-up on load — subtle, Apple-style. */
+.hero > * {
+  animation: heroReveal 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.hero h1 { animation-delay: 0.02s; }
+.hero .subtitle { animation-delay: 0.08s; }
+.hero #identity-banner { animation-delay: 0.14s; }
+.hero .btn-primary { animation-delay: 0.18s; }
+.hero .hero-meta { animation-delay: 0.26s; }
+
+@keyframes heroReveal {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero > * { animation: none; }
+}
+
+.identity-banner {
+  order: 1;            /* sign-in sits between the subhead and the CTA */
+  margin: 0 auto;
+  max-width: 560px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  font-size: 14px;
   color: var(--text-secondary);
   text-align: left;
 }
@@ -494,10 +614,10 @@ body {
   font-size: 9px;
   font-weight: 700;
   padding: 2px 8px;
-  background: var(--warning);
+  background: var(--accent);
   color: white;
   border-radius: 980px;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.02em;
   margin-left: 6px;
   vertical-align: middle;
 }

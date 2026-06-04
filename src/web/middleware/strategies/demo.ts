@@ -30,9 +30,9 @@ export class DemoAuthStrategy implements AuthStrategy {
     if (persona === 'admin') {
       return {
         authenticated: true,
-        userId: 'demo-admin@example.com',
-        displayName: 'Demo Admin (Coding Agent Admin)',
-        email: 'demo-admin@example.com',
+        userId: 'admin@acmecorp.com',
+        displayName: 'ACME Admin',
+        email: 'admin@acmecorp.com',
         roles: ['wizard-admin'],
         groups: ['wizard-admin'],
         source: 'demo',
@@ -42,9 +42,9 @@ export class DemoAuthStrategy implements AuthStrategy {
     if (persona === 'user') {
       return {
         authenticated: true,
-        userId: 'demo-user@example.com',
-        displayName: 'Demo User (Coding Agent User)',
-        email: 'demo-user@example.com',
+        userId: 'user@acmecorp.com',
+        displayName: 'ACME User',
+        email: 'user@acmecorp.com',
         roles: ['wizard-user'],
         groups: ['wizard-user'],
         source: 'demo',
