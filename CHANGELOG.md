@@ -9,6 +9,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.6] — 2026-06-04 — Landing redesign + isolation transparency + wizard polish
+
+### Added
+- **Landing "How agent isolation & sandboxing actually works" section** — the
+  four-step enforcement handoff (choose deployment environment + posture →
+  EmbedIQ generates `managed-settings.json` + `.devcontainer` → Intune/Jamf
+  delivers & locks it to an OS path devs can't edit → the OS + Claude Code
+  native sandbox confines at runtime), each step attributed to who owns it, with
+  an honest "what it does / what it doesn't" split. EmbedIQ produces the config;
+  it is **not** itself the sandbox or the MDM.
+
+### Changed
+- **Apple-style landing redesign** — the welcome screen is now a cohesive
+  scrolling landing: an eyebrow + soft-glow hero with the gated handoff stepper
+  and a 3-up glance strip, a tinted "Everything a regulated team needs" band with
+  four icon cards, the isolation handoff as its own section, and a closing CTA —
+  on a unified type / spacing / card system.
+- **Wizard screens matched to the landing** — accent-tinted scope banner (was
+  indigo), the "why we ask" panel as a soft rounded accent card, lighter heading
+  weights, the landing's softer card/input radii, and the same accent tints +
+  subtle hover lift across the Q&A, review, and generate screens.
+
+### Notes
+- Visual / UX only — no generator or schema changes; existing goldens regenerate
+  byte-identically (14/14 at 100%); 1367 tests passing.
+
 ## [4.0.5] — 2026-06-04 — Role-scoped handoff + landing & demo polish
 
 ### Added

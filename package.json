@@ -1,6 +1,6 @@
 {
   "name": "embediq",
-  "version": "4.0.5",
+  "version": "4.0.6",
   "description": "EmbedIQ by Praglogic — Adaptive wizard that generates production-ready AI coding agent configurations across Claude Code, Cursor, GitHub Copilot, Gemini, Windsurf, and AGENTS.md from a single interview.",
   "type": "module",
   "main": "dist/index.js",
