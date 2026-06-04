@@ -21,13 +21,60 @@ const state = {
   // scoped, the wizard shows only that role's question slice. The default
   // (no ?role=) stays unscoped so a solo operator still sees everything.
   scoped: false,
+  // The demo's three-role handoff (Admin → Team Lead → Individual). Unlike a
+  // real delegation link (`scoped`), this is a single owner identity acting as
+  // each role in turn — it scopes the visible slice client-side only, so the
+  // shared session and its API calls are never role-restricted (no 403s).
+  // null = the three-role handoff is not active.
+  demoRole: null,
 };
 
-// In a delegation (scoped) view, keep only the questions this role owns
-// (respondent matches) or shared (`any`). Unscoped views are untouched.
+// Keep only the questions the active fill-role owns (respondent matches) or
+// shared (`any`). Active in both a delegation view (`scoped`) and the demo's
+// three-role handoff (`demoRole`); a solo unscoped operator sees everything.
 function scopeQuestions(qs) {
-  if (!state.scoped) return qs;
+  if (!state.scoped && !state.demoRole) return qs;
   return qs.filter(q => !q.respondent || q.respondent === 'any' || q.respondent === state.activeRole);
+}
+
+const DEMO_ROLE_KEY = 'embediq_fill_role';
+function readDemoRole() {
+  try {
+    const r = sessionStorage.getItem(DEMO_ROLE_KEY);
+    return r === 'admin' || r === 'lead' || r === 'individual' ? r : null;
+  } catch { return null; }
+}
+
+// ─── Gated three-role handoff (Admin → Team Lead → Individual) ───
+// The slices have a dependency order: the Lead's questions branch off the
+// Admin's setup, and generation consumes all three. So roles unlock in
+// sequence — a role is available only once its predecessor is complete —
+// and generation happens only after the final (Individual) slice.
+const ROLE_ORDER = ['admin', 'lead', 'individual'];
+const DONE_ROLES_KEY = 'embediq_done_roles';
+
+function nextRoleAfter(role) {
+  const i = ROLE_ORDER.indexOf(role);
+  return i >= 0 && i < ROLE_ORDER.length - 1 ? ROLE_ORDER[i + 1] : null;
+}
+function doneRoles() {
+  try { const d = JSON.parse(sessionStorage.getItem(DONE_ROLES_KEY) || '[]'); return Array.isArray(d) ? d : []; }
+  catch { return []; }
+}
+function markRoleDone(role) {
+  const d = doneRoles();
+  if (role && !d.includes(role)) { d.push(role); try { sessionStorage.setItem(DONE_ROLES_KEY, JSON.stringify(d)); } catch {} }
+}
+function clearHandoffProgress() {
+  try { sessionStorage.removeItem(DONE_ROLES_KEY); sessionStorage.removeItem(DEMO_ROLE_KEY); } catch {}
+}
+// A role is reachable if it's first, already completed (reviewable), or its
+// immediate predecessor is done.
+function roleUnlocked(role) {
+  const i = ROLE_ORDER.indexOf(role);
+  if (i <= 0) return true;
+  const done = doneRoles();
+  return done.includes(role) || done.includes(ROLE_ORDER[i - 1]);
 }
 
 function readRoleFromUrl() {
@@ -208,6 +255,13 @@ function showPhase(id) {
 // ─── Phase 0: Welcome ───
 
 async function startWizard() {
+  // Gated handoff entry: the run must begin as the Admin (the Team Lead and
+  // Individual slices branch off the Admin's setup). If a demo operator clicks
+  // Get Started without choosing a role, start them as the Admin.
+  if (state.identity && state.identity.authStrategy === 'demo' && !state.demoRole) {
+    selectDemoRole('admin');
+    return;
+  }
   if (state.serverBackend && !state.sessionId) {
     const sessionId = await mintServerSession();
     if (sessionId) {
@@ -875,6 +929,14 @@ async function buildProfile() {
   });
   state.profile = await res.json();
   renderPlayback();
+  // In the gated handoff, the playback doubles as each slice's summary: show
+  // the progress stepper and a hand-off / generate CTA appropriate to the role.
+  if (state.demoRole) {
+    const summaryEl = document.getElementById('profile-summary');
+    if (summaryEl) summaryEl.insertAdjacentHTML('afterbegin',
+      `<div class="playback-handoff">${renderHandoffStepper(state.demoRole)}</div>`);
+  }
+  configureHandoffCta();
   showPhase('phase-playback');
 }
 
@@ -982,6 +1044,50 @@ function editProfile() {
   loadDimension(0);
   renderScopeBanner();
   showPhase('phase-qa');
+}
+
+function stepLabel(role) {
+  const s = HANDOFF_STEPS.find(x => x.role === role);
+  return s ? s.label : role;
+}
+
+// End-of-slice handoff: mark the current role done, advance to the next role's
+// slice, and start its Q&A from the top (answered questions are skipped). The
+// shared session carries every prior answer forward, so the next role branches
+// off them. When there is no next role, fall through to generation.
+function advanceToNextRole() {
+  markRoleDone(state.demoRole);
+  const next = nextRoleAfter(state.demoRole);
+  if (!next) { approveAndGenerate(); return; }
+  state.demoRole = next;
+  state.activeRole = next;
+  try { sessionStorage.setItem(DEMO_ROLE_KEY, next); } catch {}
+  seedDemoBootstrap();
+  state.currentDimIndex = 0;
+  startWizard();
+}
+
+// On the playback (per-slice summary), swap the primary action: a non-final
+// role hands off to the next; the final role (or an unscoped run) generates.
+function configureHandoffCta() {
+  const actions = document.querySelector('#phase-playback .playback-actions');
+  if (!actions) return;
+  const heading = document.querySelector('#phase-playback h1');
+  const sub = document.querySelector('#phase-playback .subtitle');
+  const next = state.demoRole ? nextRoleAfter(state.demoRole) : null;
+  const editBtn = '<button class="btn-secondary" onclick="editProfile()">Make Changes</button>';
+  if (next) {
+    const nextLabel = stepLabel(next);
+    if (heading) heading.textContent = `${stepLabel(state.demoRole)} slice complete`;
+    if (sub) sub.textContent = `Review the configuration so far, then hand off to the ${nextLabel}.`;
+    actions.innerHTML = editBtn
+      + `<button class="btn-primary" onclick="advanceToNextRole()">Continue as ${escapeHtml(nextLabel)} →</button>`;
+  } else {
+    if (heading) heading.textContent = state.demoRole ? 'Everything’s configured' : "Here's what we understand";
+    if (sub) sub.textContent = 'Review and adjust before we generate your setup.';
+    actions.innerHTML = editBtn
+      + '<button class="btn-primary" onclick="approveAndGenerate()">Looks Good — Generate</button>';
+  }
 }
 
 async function approveAndGenerate() {
@@ -1216,9 +1322,28 @@ async function generateFiles() {
 
 // ─── Init ───
 
+// Seed the admin-owned bootstrap (role + proficiency) for a Team Lead /
+// Individual fill-role so their slice branches correctly even when they're the
+// first to open the wizard. No-op for the admin role (they answer it) and never
+// overwrites an answer already present (e.g. carried in from the admin's turn).
+function seedDemoBootstrap() {
+  if (!state.demoRole || state.demoRole === 'admin') return;
+  const seed = (id, value) => {
+    if (!state.answers[id]) state.answers[id] = { value, timestamp: new Date().toISOString() };
+  };
+  seed('STRAT_000', 'developer');
+  seed('STRAT_000a', 'advanced');
+}
+
 async function initWizard() {
   state.activeRole = readRoleFromUrl();
   state.scoped = new URLSearchParams(window.location.search).has('role');
+  // Demo three-role handoff: a persisted fill-role scopes the slice without a
+  // delegation link, under one constant owner identity so the shared session
+  // carries answers from one role to the next.
+  state.demoRole = readDemoRole();
+  if (state.demoRole) state.activeRole = state.demoRole;
+  seedDemoBootstrap();
   showPhase('phase-welcome');
   await renderIdentityBanner();
   const config = await loadSessionsConfig();
@@ -1240,6 +1365,7 @@ async function initWizard() {
 
   state.sessionId = resume.session.sessionId;
   state.answers = resume.session.answers || {};
+  seedDemoBootstrap(); // re-seed: the resume may have replaced the answers map
   storeSessionId(state.sessionId);
   writeSessionToUrl(state.sessionId);
   state.resumeView = resume;
@@ -1258,6 +1384,18 @@ function signInDemo(persona) {
   if (persona === 'admin' || persona === 'user') {
     state.answers['STRAT_000b'] = { value: persona, timestamp: new Date().toISOString() };
   }
+  window.location.reload();
+}
+
+/**
+ * Pick a fill-role for the three-role handoff (Admin → Team Lead → Individual).
+ * One constant owner identity (admin) carries the shared session through every
+ * role; the chosen role only scopes which question slice is shown. Persisted
+ * across the reload that establishes the demo identity cookie.
+ */
+function selectDemoRole(role) {
+  document.cookie = `embediq_demo_user=admin; path=/; max-age=86400; samesite=lax`;
+  try { sessionStorage.setItem(DEMO_ROLE_KEY, role); } catch {}
   window.location.reload();
 }
 
@@ -1337,7 +1475,18 @@ function renderWelcomeIdentityBanner(id) {
   const banner = document.getElementById('identity-banner');
   if (!banner) return;
 
-  // Authenticated: just surface the device line (header profile carries identity).
+  // Demo strategy: the explicit three-role handoff stepper (Admin → Team Lead →
+  // Individual). It doubles as the role switcher; the active step is the
+  // current fill-role. Shown whether or not a role has been picked yet.
+  if (id.authStrategy === 'demo') {
+    banner.innerHTML = renderHandoffStepper(state.demoRole)
+      + (id.authenticated ? (renderDeviceLine(id) || '') : '');
+    banner.style.display = '';
+    return;
+  }
+
+  // Authenticated (non-demo): just surface the device line (header profile
+  // carries identity).
   if (id.authenticated) {
     const deviceLine = renderDeviceLine(id);
     if (deviceLine) {
@@ -1349,17 +1498,6 @@ function renderWelcomeIdentityBanner(id) {
     return;
   }
 
-  // Unauthenticated + demo strategy: show the persona picker.
-  if (id.authStrategy === 'demo') {
-    const userLine = `<div class="identity-user"><span class="identity-icon">${ICONS.shield}</span>
-      <span class="demo-picker-label">ACME Corp — sign in as:</span>
-      <button class="demo-pick-btn demo-pick-admin" onclick="signInDemo('admin')">Coding Agent Admin</button>
-      <button class="demo-pick-btn demo-pick-user" onclick="signInDemo('user')">Coding Agent User</button></div>`;
-    banner.innerHTML = userLine + (renderDeviceLine(id) || '');
-    banner.style.display = '';
-    return;
-  }
-
   // Unauthenticated + no auth strategy configured: explain why.
   const userLine = `<div class="identity-user"><span class="identity-icon">${ICONS.shield}</span>
     <span>No enterprise sign-in active
@@ -1367,6 +1505,45 @@ function renderWelcomeIdentityBanner(id) {
     </span></div>`;
   banner.innerHTML = userLine + (renderDeviceLine(id) || '');
   banner.style.display = '';
+}
+
+// The three-role handoff: Admin sets policy, hands to the Team Lead for the
+// project/tech, then to the Individual for per-seat preferences. One owner
+// identity fills each slice in turn; clicking a step switches the fill-role.
+const HANDOFF_STEPS = [
+  { role: 'admin', label: 'Admin', desc: 'Security & policy' },
+  { role: 'lead', label: 'Team Lead', desc: 'Project & tech' },
+  { role: 'individual', label: 'Individual', desc: 'Your preferences' },
+];
+
+function renderHandoffStepper(active) {
+  const done = doneRoles();
+  const steps = HANDOFF_STEPS
+    .map((s, i) => {
+      const isDone = done.includes(s.role);
+      const isActive = s.role === active;
+      const unlocked = roleUnlocked(s.role);
+      const cls = ['handoff-step'];
+      if (isActive) cls.push('active');
+      if (isDone) cls.push('done');
+      if (!unlocked) cls.push('locked');
+      const num = isDone ? '✓' : (i + 1);
+      const prevLabel = i > 0 ? HANDOFF_STEPS[i - 1].label : '';
+      const attrs = unlocked
+        ? `onclick="selectDemoRole('${s.role}')"`
+        : `disabled aria-disabled="true" title="Complete the ${prevLabel} step first"`;
+      return `<button type="button" class="${cls.join(' ')}" ${attrs} aria-current="${isActive}">`
+        + `<span class="handoff-num">${num}</span>`
+        + `<span class="handoff-label">${s.label}</span>`
+        + `<span class="handoff-desc">${s.desc}</span></button>`;
+    })
+    .join('<span class="handoff-arrow" aria-hidden="true">→</span>');
+  const activeStep = HANDOFF_STEPS.find(s => s.role === active);
+  const caption = activeStep
+    ? `Filling as <strong>${activeStep.label}</strong> — finish this slice to unlock the next`
+    : 'Roles unlock in order — start as the Admin, then hand off to the Team Lead and Individual';
+  return `<div class="handoff"><div class="handoff-caption">${caption}</div>`
+    + `<div class="handoff-stepper">${steps}</div></div>`;
 }
 
 function renderDeviceLine(id) {
@@ -1417,8 +1594,9 @@ function toggleProfileMenu() {
 }
 
 function switchAccount() {
-  // Re-show the demo-mode persona picker: clear the cookie and reload.
+  // Re-show the demo-mode handoff picker: clear the cookie + handoff progress and reload.
   document.cookie = 'embediq_demo_user=; path=/; max-age=0; samesite=lax';
+  clearHandoffProgress();
   // Also clear the auto-set STRAT_000b so the wizard re-asks (or re-derives) after a fresh signin.
   if (state.answers['STRAT_000b'] && state.answers['STRAT_000b'].source === 'auth') {
     delete state.answers['STRAT_000b'];
@@ -1428,6 +1606,7 @@ function switchAccount() {
 
 function signOut() {
   document.cookie = 'embediq_demo_user=; path=/; max-age=0; samesite=lax';
+  clearHandoffProgress();
   storeSessionId(null);
   writeSessionToUrl(null);
   window.location.reload();
@@ -1468,7 +1647,7 @@ const ROLE_LABEL = { admin: 'Admin (policy)', lead: 'Team Lead', individual: 'In
 function renderScopeBanner() {
   const el = document.getElementById('scope-banner');
   if (!el) return;
-  if (!state.scoped) { el.style.display = 'none'; return; }
+  if (!state.scoped && !state.demoRole) { el.style.display = 'none'; return; }
   const r = state.activeRole;
   el.innerHTML = `<strong>${ROLE_LABEL[r] || r} questions.</strong> `
     + `You're filling the ${ROLE_LABEL[r] || r} slice of this configuration — `
@@ -1481,7 +1660,9 @@ function renderScopeBanner() {
 async function renderDelegationPanel() {
   const panel = document.getElementById('delegation-panel');
   if (!panel) return;
-  if (state.scoped || !state.serverBackend || !state.sessionId) { panel.style.display = 'none'; return; }
+  // Only the Admin assigns/delegates; hide for the Team Lead / Individual slices.
+  if (state.scoped || (state.demoRole && state.demoRole !== 'admin')
+      || !state.serverBackend || !state.sessionId) { panel.style.display = 'none'; return; }
   let data;
   try {
     const res = await fetch(`/api/sessions/${encodeURIComponent(state.sessionId)}/assignments`);

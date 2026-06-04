@@ -51,6 +51,28 @@ guesswork in the middle.
 
 ---
 
+## See it in action
+
+One interview, four steps — from a role-scoped handoff to a folder of ready-to-commit files.
+
+**1. Start the role-scoped handoff.** Roles unlock in order — the Admin sets security & policy, then hands off to the Team Lead (project & tech) and the Individual (per-seat preferences). The Team Lead and Individual stay locked until the prior slice is done.
+
+![EmbedIQ welcome screen with the Admin → Team Lead → Individual handoff: the Admin step active, Team Lead and Individual locked](docs/assets/flow-welcome.png)
+
+**2. Answer only your slice.** Each role is asked just the questions it owns — seven dimensions in the sidebar, role-adaptive wording, and an admin-only "why we ask" panel.
+
+![The EmbedIQ interview scoped to the Admin slice — dimensions sidebar, a role question with help text and the "why we ask" panel](docs/assets/wizard.png)
+
+**3. Review and hand off.** Each slice ends in a summary of what's configured so far, then passes the baton to the next role.
+
+![The "Admin slice complete" summary with the handoff stepper and a profile/priorities recap, ready to continue as the Team Lead](docs/assets/flow-handoff.png)
+
+**4. Files ready — pick a location and generate.** After the final slice, EmbedIQ shows every file it will write and asks where to put them.
+
+![The "Ready to Generate" screen: a target-directory input and the full list of files to generate](docs/assets/flow-generate.png)
+
+---
+
 ## Why it matters
 
 Most teams use four to six AI coding tools at once, and each one wants its rules

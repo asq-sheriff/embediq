@@ -278,18 +278,20 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  min-height: calc(100vh - 52px);
+  justify-content: flex-start;
+  /* Content-sized (not a forced full-screen hero) so the "Built into every
+     setup" cards sit just under the CTA and are visible without hunting. */
+  min-height: auto;
   text-align: center;
-  padding: clamp(72px, 11vh, 132px) 24px 80px;
+  padding: clamp(44px, 6vh, 84px) 24px 36px;
 }
 
 .hero h1 {
-  font-size: clamp(40px, 5.2vw, 56px);
+  font-size: clamp(30px, 3.6vw, 42px);
   font-weight: 600;
-  letter-spacing: -0.035em;
-  line-height: 1.06;
-  margin-bottom: 18px;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+  margin-bottom: 16px;
   color: var(--text-primary);
 }
 
@@ -607,6 +609,178 @@ body {
   background: var(--text-secondary);
   color: white;
   border-color: var(--text-secondary);
+}
+
+/* ─── Three-role handoff stepper (Admin → Team Lead → Individual) ─── */
+.handoff {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin: 0 auto;
+}
+
+.handoff-caption {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.handoff-stepper {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.handoff-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 116px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  cursor: pointer;
+  font-family: var(--font);
+  color: var(--text-secondary);
+  transition: all var(--transition);
+}
+
+.handoff-step:hover {
+  border-color: var(--accent);
+  color: var(--text-primary);
+  transform: translateY(-1px);
+}
+
+.handoff-step.active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  color: var(--text-primary);
+  box-shadow: 0 0 0 1px var(--accent) inset;
+}
+
+.handoff-num {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--border);
+  color: var(--text-secondary);
+}
+
+.handoff-step.active .handoff-num {
+  background: var(--accent);
+  color: #fff;
+}
+
+.handoff-label {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.handoff-desc {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.handoff-arrow {
+  display: flex;
+  align-items: center;
+  color: var(--text-tertiary);
+  font-size: 15px;
+}
+
+.handoff-step.done {
+  border-color: color-mix(in srgb, var(--success) 45%, var(--border));
+}
+.handoff-step.done .handoff-num {
+  background: var(--success);
+  color: #fff;
+}
+
+.handoff-step.locked {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(0.4);
+}
+.handoff-step.locked:hover {
+  border-color: var(--border);
+  color: var(--text-secondary);
+  transform: none;
+}
+.handoff-step:disabled { pointer-events: none; }
+
+.playback-handoff {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+/* ─── "Built into every setup" — landing depth, below the hero ─── */
+.built-in {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 40px 24px 88px;
+  text-align: center;
+}
+.built-in-title {
+  font-size: clamp(27px, 3.4vw, 37px);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.built-in-sub {
+  font-size: 17px;
+  color: var(--text-secondary);
+  max-width: 600px;
+  margin: 0 auto 48px;
+}
+.built-in-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(224px, 1fr));
+  gap: 18px;
+  text-align: left;
+}
+.built-in-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 24px 22px;
+  transition: border-color var(--transition), transform var(--transition);
+}
+.built-in-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  transform: translateY(-2px);
+}
+.built-in-card h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 8px;
+}
+.built-in-card p {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  margin: 0;
+}
+.built-in-note {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+  border-radius: 980px;
+  padding: 1px 9px;
 }
 
 .demo-badge {

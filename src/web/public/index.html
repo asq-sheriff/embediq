@@ -45,11 +45,11 @@
     <section id="phase-welcome" class="phase active">
       <div class="hero">
         <h1>Configure your AI coding agents</h1>
-        <p class="subtitle">Claude Code, Cursor, Copilot, Gemini, Windsurf — generated from one interview, with compliance rules, OSCAL evidence, and a tamper-evident audit trail built in.</p>
+        <p class="subtitle">Set up every AI coding agent from one interview — with guardrails that block secrets and PHI, an unalterable record of every decision, and audit-ready compliance evidence.</p>
         <div class="hero-meta">
           <div class="meta-feature">
             <span class="meta-feature-title">Sets up every AI coding agent</span>
-            <span class="meta-feature-detail">Claude Code · Cursor · Copilot · Gemini · Windsurf · AGENTS.md</span>
+            <span class="meta-feature-detail">Claude Code · Cursor · Copilot · Gemini · Codex · Windsurf</span>
           </div>
           <div class="meta-feature">
             <span class="meta-feature-title">Writes your whole setup for you</span>
@@ -64,6 +64,29 @@
         <div id="resume-banner" class="resume-banner" style="display: none"></div>
         <button class="btn-primary" onclick="startWizard()">Get Started</button>
       </div>
+
+      <section class="built-in" aria-label="What's built into every setup">
+        <h2 class="built-in-title">Built into every setup</h2>
+        <p class="built-in-sub">Every generated harness ships with the controls a regulated team needs — not bolted on later.</p>
+        <div class="built-in-grid">
+          <article class="built-in-card">
+            <h3>Guardrails</h3>
+            <p>Blocks the agent from leaking secrets, PHI &amp; PII, running risky shell commands, or reaching the open internet — enforced automatically, not left to each developer to remember on every prompt.</p>
+          </article>
+          <article class="built-in-card">
+            <h3>Enforced sandboxing</h3>
+            <p>Optionally locks the agent into the OS's native sandbox, delivered fleet-wide via MDM so it can't be switched off locally — plus dev-container and VDI options for stricter isolation. <span class="built-in-note">Claude Code</span></p>
+          </article>
+          <article class="built-in-card">
+            <h3>Tamper-evident audit trail</h3>
+            <p>Every decision is written to a hash-chained log. Alter or delete a past entry and the chain breaks — a verifier flags it — so the configuration history can't be quietly rewritten.</p>
+          </article>
+          <article class="built-in-card">
+            <h3>Audit-ready evidence</h3>
+            <p>Generates machine-readable compliance evidence (NIST OSCAL, AI bill-of-materials) that your security team's and auditors' tools can consume directly — turning “we have rules” into proof.</p>
+          </article>
+        </div>
+      </section>
     </section>
 
     <!-- Phase 1: Q&A -->
