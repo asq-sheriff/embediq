@@ -86,6 +86,37 @@
             <p>Generates machine-readable compliance evidence (NIST OSCAL, AI bill-of-materials) that your security team's and auditors' tools can consume directly — turning “we have rules” into proof.</p>
           </article>
         </div>
+
+        <div class="iso-detail">
+          <h3 class="iso-detail-title">How agent isolation &amp; sandboxing actually works</h3>
+          <p class="iso-detail-lead">It's a handoff: <strong>EmbedIQ generates</strong> the enforcement config; your <strong>deployment environment</strong> and <strong>MDM</strong> enforce it. EmbedIQ is not itself a sandbox.</p>
+          <ol class="iso-steps">
+            <li><strong>You choose the deployment environment + posture</strong> <span class="iso-who">admin, once</span><br>Where the agent runs — a managed laptop, a dev container, a virtual desktop (Azure Virtual Desktop / Windows 365), or an ephemeral cloud dev box. That choice <em>is</em> the isolation boundary.</li>
+            <li><strong>EmbedIQ generates the config</strong> <span class="iso-who">EmbedIQ</span><br><code>deploy/claude-code/managed-settings.json</code> with <code>"sandbox": { "enabled": true }</code> and a non-wideable deny list (no PHI/PII path reads, no raw egress), plus a <code>.devcontainer</code> for the container posture.</li>
+            <li><strong>Microsoft Intune (or Jamf) delivers &amp; locks it</strong> <span class="iso-who">your MDM</span><br>Intune pushes the file to an OS path the developer can't edit, so the sandbox is <em>required</em>, not optional, and can't be switched off locally. This is the step that turns a config file into enforcement.</li>
+            <li><strong>The OS sandbox confines the agent at runtime</strong> <span class="iso-who">the OS + Claude Code</span><br>Claude Code's native sandbox — Seatbelt (macOS) or bubblewrap (Linux &amp; WSL2, including inside AVD) — restricts the filesystem and network at the kernel level.</li>
+          </ol>
+          <div class="iso-honest">
+            <div class="iso-col iso-can">
+              <h4>What it does</h4>
+              <ul>
+                <li>Requires &amp; locks the native OS sandbox fleet-wide, beyond a developer's reach</li>
+                <li>Pins a deny floor (PHI/PII paths, egress) the developer can't widen</li>
+                <li>Scaffolds dev-container / VDI isolation for stricter postures</li>
+              </ul>
+            </div>
+            <div class="iso-col iso-cant">
+              <h4>What it doesn't — honestly</h4>
+              <ul>
+                <li>EmbedIQ produces the config; it is <strong>not</strong> the sandbox or the MDM — enforcement depends on Intune delivering it and the OS sandbox running</li>
+                <li>Nothing is locked until Intune actually pushes it; without an MDM it's a recommended local setting, not a lock</li>
+                <li>It's Claude Code-specific — other agents have no native sandbox, so isolate those via the dev-container / VDI environment instead</li>
+                <li>Opt-in: set no posture and no sandbox config is emitted. EmbedIQ doesn't provision Intune, the VDI, or the cloud — it ships the config + runbook; you operate the environment</li>
+              </ul>
+            </div>
+          </div>
+          <p class="iso-more">Deeper detail: <a href="https://github.com/asq-sheriff/embediq/blob/main/docs/evaluators/isolation-decision-guide.md">isolation decision guide</a> · <a href="https://github.com/asq-sheriff/embediq/blob/main/docs/operator-guide/azure-isolation-runbook.md">Azure / Intune runbook</a>.</p>
+        </div>
       </section>
     </section>
 
