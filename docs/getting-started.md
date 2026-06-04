@@ -114,8 +114,8 @@ drift documentation: [`user-guide/06-evaluation-and-drift.md`](user-guide/06-eva
 ## 5. Try multi-agent targets
 
 The same interview can produce configuration for Cursor, Copilot,
-Gemini, and Windsurf in addition to Claude Code. Re-run with a
-target list:
+Gemini, Windsurf, and `AGENTS.md` (read by Codex, Aider, and others) in
+addition to Claude Code. Re-run with a target list:
 
 ```bash
 EMBEDIQ_OUTPUT_TARGETS=claude,cursor,agents-md npm start

@@ -141,9 +141,10 @@ export EMBEDIQ_SESSION_DATA_KEY=$(cat /etc/embediq/session-data-key.txt)
 export EMBEDIQ_SESSION_TTL_MS=86400000   # 24h (HIPAA "minimum necessary")
 ```
 
-If you need to rotate keys, set `EMBEDIQ_SESSION_COOKIE_SECRET_PREV`
-to the previous value during the rotation window — sessions signed
-with the old key continue to decode until they expire.
+If you need to rotate the data key, set `EMBEDIQ_SESSION_DATA_KEY_PREV`
+to the previous value during the rotation window — sessions encrypted
+with the old key continue to decrypt until they expire. (The cookie/owner
+signing secret rotates the same way via `EMBEDIQ_SESSION_COOKIE_SECRET_PREV`.)
 
 See [`docs/operator-guide/session-backends.md`](operator-guide/session-backends.md).
 
@@ -310,7 +311,7 @@ checklist — one HTML file an auditor can keep.
 
 ```bash
 # Health
-curl -fsS http://localhost:3000/healthz
+curl -fsS http://localhost:3000/health
 
 # Verify the healthcare pack is loaded
 curl -s http://localhost:3000/api/skills | jq '.[] | select(.id == "healthcare.full")'
@@ -329,8 +330,9 @@ curl -fsS -H "X-EmbedIQ-Autopilot-Secret: $EMBEDIQ_AUTOPILOT_WEBHOOK_SECRET" \
 3. Rolling-restart the container
 4. After all existing sessions expire (TTL), remove `_PREV`
 
-(The active key rotation feature is on the v3.2.x follow-up roadmap;
-until it ships, the manual env-var swap above is the documented path.)
+(Side-by-side key rotation shipped in v3.6.1: set `EMBEDIQ_SESSION_DATA_KEY_PREV`
+to the old key so payloads encrypted under it keep decrypting through the
+rotation window, then drop `_PREV` once existing sessions have expired.)
 
 ### Force a compliance drift scan manually
 

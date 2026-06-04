@@ -113,7 +113,7 @@ See [user-guide/08-autopilot.md](../user-guide/08-autopilot.md) and
 
 | Env var | Default | Type | Purpose |
 |---|---|---|---|
-| `EMBEDIQ_OUTPUT_TARGETS` | `claude` | list | Comma/space-separated list of `claude` / `agents-md` / `cursor` / `copilot` / `gemini` / `windsurf`, or `all`. Case-insensitive. |
+| `EMBEDIQ_OUTPUT_TARGETS` | `claude` | list | Comma/space-separated list of any of the 16 target tokens — `claude` / `agents-md` / `cursor` / `copilot` / `gemini` / `windsurf` plus the local-AI / RAG / router / governance tokens (`continue-dev`, `aider`, `zed-ai`, `ollama`, `rag-scaffold`, `local-router`, `cyclonedx-aibom`, `oscal-component`, `oscal-ssp-fragment`, `provenance`) — or `all`. Case-insensitive. See [user-guide/05-multi-agent-targets.md](../user-guide/05-multi-agent-targets.md). |
 
 See [user-guide/05-multi-agent-targets.md](../user-guide/05-multi-agent-targets.md).
 

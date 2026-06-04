@@ -44,8 +44,8 @@ Orthogonal concerns plug into the pipeline via a **typed event bus**
 - **Event bus**: five default subscribers (audit, metrics, status,
   OTel, WebSocket) + the opt-in outbound-webhook subscriber. Every
   subsystem emits events; subscribers consume them independently.
-- **Integrations**: git PR flow (GitHub / GitLab / Bitbucket Cloud
-  adapters behind a shared `GitPlatform` interface), outbound webhook
+- **Integrations**: git PR flow (GitHub / GitLab / Bitbucket Cloud /
+  Azure Repos adapters behind a shared `GitPlatform` interface), outbound webhook
   formatters (Slack/Teams/generic), inbound compliance adapters
   (Drata/Vanta/generic) with optional HMAC-SHA256 signature
   verification.
@@ -62,7 +62,7 @@ Orthogonal concerns plug into the pipeline via a **typed event bus**
    before comparison).
 3. **No LLM in the pipeline.** Generators are pure TypeScript.
    Audit reproducibility and air-gap compatibility follow from this.
-4. **Role adaptation.** Eight roles, generators branch on role,
+4. **Role adaptation.** Nine roles, generators branch on role,
    non-technical roles get coworker-shaped output variants.
 5. **Pluggable everywhere.** Question bank via domain packs / skills,
    templates, webhook formatters, compliance adapters — all
@@ -163,7 +163,7 @@ is load-bearing:
   `GenerationResult`, `Priority`, `DimensionProgress`.
 - Enums: `Dimension` (7 values), `QuestionType` (5), `ConditionOperator`
   (10).
-- Type aliases: `UserRole` (8 roles), `TeamSize`, `BudgetTier`,
+- Type aliases: `UserRole` (9 roles), `TeamSize`, `BudgetTier`,
   `TechnicalProficiency`.
 
 Changes to these types ripple to every layer. When touching them,

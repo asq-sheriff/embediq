@@ -65,9 +65,42 @@ contributor, so the generated configuration carries a record of *who* answered
 *what*. Each generation also writes a versioned, hash-chained profile snapshot
 (see [session-and-resume](07-session-and-resume.md)).
 
+## Walking the three roles yourself — the gated handoff
+
+You don't have to involve three different people. In the **demo experience**
+(`EMBEDIQ_AUTH_STRATEGY=demo`) the welcome screen presents the three roles as a
+**gated stepper** so one operator can walk them in order:
+
+1. **Admin unlocks first.** Team Lead and Individual stay locked until the prior
+   slice is complete — the configuration has a dependency order (the Team Lead's
+   questions branch off the Admin's setup, and generation consumes all three), so
+   you can't start in the middle.
+2. **Each slice is scoped.** While filling the Admin slice you see *only* the
+   ~18 Admin questions; the Team Lead's ~40 and the Individual's per-seat
+   questions are hidden until it's their turn.
+3. **Each slice ends in a summary**, then a **"Continue as &lt;next&gt; →"**
+   button hands off to the next role. Completed roles stay clickable on the
+   stepper for review.
+4. **Generation runs only after the final (Individual) slice** — it consumes the
+   accumulated answers from all three.
+
+One owner identity carries the shared session through every role, so the answers
+accumulate into a true handoff. The slice scoping is presentational — the
+generated output is identical to answering everything in one pass.
+
+> The gated stepper is the single-operator walkthrough of the three-role model
+> (shown in the demo). For a real rollout across **different people**, use the
+> **link-based delegation** above — each delegate opens their own `?role=…` link.
+
 ## Single operator?
 
-Delegation is optional. With no `?role=` in the URL, the wizard is unscoped —
-one person sees and answers everything (the markers just flag which questions
-are usually someone else's). The generated output is identical regardless of how
-many people contributed.
+Delegation is optional, and there are two single-operator paths:
+
+- **Unscoped** — outside the demo, with no `?role=` in the URL, the wizard shows
+  one person everything; the ownership markers just flag which questions are
+  usually someone else's.
+- **Gated handoff** — in the demo experience, the stepper walks you through the
+  three roles in sequence (above).
+
+Either way, the generated output is identical regardless of how many people
+contributed.

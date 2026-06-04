@@ -16,7 +16,7 @@ matrices alone.
 
 | Tool | Scope |
 |---|---|
-| **EmbedIQ** | Generates a production-ready AI coding agent harness from an adaptive Q&A — across Claude Code, Cursor, Copilot, Gemini, Windsurf, and `AGENTS.md` — with compliance-aware output. |
+| **EmbedIQ** | Generates a production-ready AI coding agent harness from an adaptive Q&A — across Claude Code, Cursor, Copilot, Gemini, Codex, Windsurf, and `AGENTS.md` — with compliance-aware output. |
 | **Claude Code `/init`** | Built-in Anthropic command that asks a small number of questions and produces a `CLAUDE.md` (+ some basic settings) for a repo you're already in. |
 | **GitHub Spec Kit** | Spec-first workflow tool — describes *what to build* in a structured spec before implementation. Not primarily a config-generation tool. |
 | **AWS Kiro** | AWS's agent IDE with "steering rules" that live in Kiro proprietary format. |
@@ -33,12 +33,12 @@ Legend: ● full support, ◐ partial, ○ not supported, — not applicable.
 
 | Capability | EmbedIQ | Claude `/init` | Spec Kit | Kiro | Agent Rules Builder | Rulesync |
 |---|:-:|:-:|:-:|:-:|:-:|:-:|
-| Adaptive Q&A with branching | ● (74 q, 40 branches) | ◐ (few Qs) | ● (different purpose — spec interview) | ○ | ○ | — |
-| Role adaptation (dev / BA / PM / exec / …) | ● (8 roles) | ○ | ○ | ○ | ○ | — |
-| Multi-agent output from one interview | ● (6 target families) | ○ (Claude only) | ○ | ○ (Kiro only) | ● (one flat file) | — |
+| Adaptive Q&A with branching | ● (95 q, conditional branching) | ◐ (few Qs) | ● (different purpose — spec interview) | ○ | ○ | — |
+| Role adaptation (dev / BA / PM / exec / …) | ● (9 roles) | ○ | ○ | ○ | ○ | — |
+| Multi-agent output from one interview | ● (16 target formats) | ○ (Claude only) | ○ | ○ (Kiro only) | ● (one flat file) | — |
 | Compliance-aware DLP enforcement | ● (Python hooks, 18+ patterns) | ○ | ○ | ◐ (via AWS services) | ○ | — |
 | Rule templates per compliance framework | ● | ○ | ○ | ○ | ○ | — |
-| Post-generation compliance validation | ● (13 built-in checks) | ○ | ○ | ○ | ○ | — |
+| Post-generation compliance validation | ● (HIPAA · PCI-DSS · SOC 2 · GDPR checks) | ○ | ○ | ○ | ○ | — |
 | Domain packs (extensible) | ● (3 built-in + plugins) | ○ | ○ | ○ | ○ | — |
 | Composable skills | ● | ○ | ○ | ○ | ○ | — |
 | Configuration templates (org baselines) | ● | ○ | ○ | ○ | ○ | — |
@@ -47,7 +47,7 @@ Legend: ● full support, ◐ partial, ○ not supported, — not applicable.
 | Evaluation framework (golden-config replay) | ● | ○ | ○ | ○ | ○ | — |
 | Drift detection | ● | ○ | ○ | ○ | ○ | — |
 | Scheduled regeneration / autopilot | ● | ○ | ○ | ○ | ○ | — |
-| Git PR integration (opens PR with output) | ● (GitHub + GitLab + Bitbucket Cloud) | ○ | ● | ○ | ○ | — |
+| Git PR integration (opens PR with output) | ● (GitHub + GitLab + Bitbucket + Azure Repos) | ○ | ● | ○ | ○ | — |
 | Inbound compliance webhooks (Drata, Vanta) | ● | ○ | ○ | ○ | ○ | — |
 | Outbound notifications (Slack / Teams) | ● | ○ | ○ | ◐ | ○ | — |
 | Web UI + REST API | ● | ○ | ○ | ● (own IDE) | ◐ | — |

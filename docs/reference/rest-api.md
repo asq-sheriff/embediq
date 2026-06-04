@@ -22,10 +22,10 @@ Responses:
 
 ```json
 // GET /health
-{ "status": "ok", "version": "4.0.0", "uptime": 1234.5, "timestamp": "2026-05-26T…" }
+{ "status": "ok", "version": "4.0.6", "uptime": 1234.5, "timestamp": "2026-06-04T…" }
 
 // GET /ready
-{ "ready": true, "questionCount": 91 }
+{ "ready": true, "questionCount": 95 }
 ```
 
 ## Discovery
@@ -177,9 +177,10 @@ Mounted only when `EMBEDIQ_AUTOPILOT_ENABLED=true`. Shared secret
 auth: if `EMBEDIQ_AUTOPILOT_WEBHOOK_SECRET` is set, webhook routes
 require `X-EmbedIQ-Autopilot-Secret: <value>`. Compliance-platform
 adapters (Drata, Vanta) additionally support HMAC-SHA256 signature
-verification — opt in per adapter via `EMBEDIQ_DRATA_HMAC_SECRET`
-or `EMBEDIQ_VANTA_HMAC_SECRET`. When set, the adapter rejects
-payloads whose `X-Signature-256` header does not match.
+verification — opt in per adapter via `EMBEDIQ_COMPLIANCE_SECRET_DRATA`
+or `EMBEDIQ_COMPLIANCE_SECRET_VANTA`. When set, the adapter rejects
+payloads whose `X-Drata-Signature` (or `X-Vanta-Signature`) header
+does not match.
 
 | Method | Path | Auth | Purpose |
 |---|---|---|---|

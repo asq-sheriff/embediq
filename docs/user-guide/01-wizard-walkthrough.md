@@ -28,6 +28,25 @@ this chapter is the longer reference for each phase.
 4. **Generate** — pick the target directory, EmbedIQ writes the
    15–40 files and reports validation results.
 
+## The web wizard's role-scoped handoff
+
+The four phases above are the core flow. The **web UI** layers a three-role
+**handoff** on top: every question is owned by an Admin, Team Lead, or
+Individual, and the wizard can scope the interview to one role at a time.
+
+- **Single operator (demo experience)** — the welcome screen shows a **gated
+  stepper**: Admin unlocks first, then Team Lead, then Individual (each locked
+  until the prior slice is done). Each slice ends in a summary, hands off with a
+  **"Continue as &lt;next&gt; →"** button, and generation runs only after the
+  final slice. Completed roles stay reviewable.
+- **Multiple people** — the admin answers their slice, then delegates the Team
+  Lead and Individual slices via shareable `?role=…` links, each scoped to that
+  delegate's questions.
+
+Either path produces identical output. See
+[`13-three-role-delegation.md`](13-three-role-delegation.md) for the full
+handoff + delegation reference.
+
 ## See also
 
 - [`getting-started.md`](../getting-started.md) — 10-minute tour

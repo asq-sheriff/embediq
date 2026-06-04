@@ -247,7 +247,7 @@ for the full options surface.
 ## Known limitations
 
 - **No `addComment` yet.** The `GitPlatform` interface allows it
-  but none of the three adapters implement it today. Use the
+  but none of the four adapters implement it today. Use the
   PR/MR body for all context.
 - **No per-target PR splitting.** All targets land in one PR/MR.
   If your team wants separate PRs per target (e.g. Claude vs.
