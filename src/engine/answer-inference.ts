@@ -14,6 +14,7 @@
 /** Build tool per language (TECH_005 option keys). */
 const BUILD_TOOL_BY_LANGUAGE: Record<string, string> = {
   typescript: 'npm',
+  javascript: 'npm',
   python: 'pip',
   java: 'maven',
   csharp: 'dotnet',
@@ -26,6 +27,7 @@ const BUILD_TOOL_BY_LANGUAGE: Record<string, string> = {
 /** Test framework per language (TECH_006 option keys). */
 const TEST_FRAMEWORK_BY_LANGUAGE: Record<string, string> = {
   typescript: 'jest',
+  javascript: 'jest',
   python: 'pytest',
   java: 'junit',
   csharp: 'xunit',
@@ -36,6 +38,7 @@ const TEST_FRAMEWORK_BY_LANGUAGE: Record<string, string> = {
 /** Linter/formatter per language (TECH_011 option keys); a language may map to several. */
 const LINTERS_BY_LANGUAGE: Record<string, string[]> = {
   typescript: ['prettier', 'eslint'],
+  javascript: ['prettier', 'eslint'],
   python: ['ruff'],
   go: ['gofmt'],
   ruby: ['rubocop'],

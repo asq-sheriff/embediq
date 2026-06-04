@@ -215,6 +215,50 @@ export class RulesGenerator implements ConfigGenerator {
         md.bullet('Run `bundle exec rake test` (or `rspec`) on every change');
         return { relativePath: '.claude/rules/ruby.md', content: md.build(), description: 'Ruby rules (path-scoped)' };
       }
+      case 'cpp': {
+        const paths = ['**/*.cpp', '**/*.cc', '**/*.cxx', '**/*.hpp', '**/*.h'];
+        md.frontmatter({ description: 'C++ conventions', paths });
+        md.h1('C++ Conventions');
+        md.bullet('Target a modern standard (C++17/20); compile with `-Wall -Wextra -Werror`');
+        md.bullet('Use RAII and smart pointers (`unique_ptr` / `shared_ptr`); avoid raw `new` / `delete`');
+        md.bullet('Prefer `const`, `constexpr`, and pass-by-const-reference; mark overrides `override`');
+        md.bullet('Use the standard library (containers, algorithms, `std::optional`, `std::string_view`) over hand-rolled equivalents');
+        md.bullet('Run `clang-tidy` + `clang-format`, and build with AddressSanitizer / UBSan in CI');
+        return { relativePath: '.claude/rules/cpp.md', content: md.build(), description: 'C++ rules (path-scoped)' };
+      }
+      case 'sql': {
+        const paths = ['**/*.sql'];
+        md.frontmatter({ description: 'SQL conventions', paths });
+        md.h1('SQL Conventions');
+        md.bullet('Always use parameterized queries / bind variables — never string-concatenate user input (SQL injection)');
+        md.bullet('Change schema only through versioned, reversible migrations; never hand-edit a production schema');
+        md.bullet('Qualify columns and avoid `SELECT *` in application queries');
+        md.bullet('Index for the access patterns you run; review `EXPLAIN` plans for hot queries');
+        md.bullet('Wrap multi-statement changes in a transaction');
+        return { relativePath: '.claude/rules/sql.md', content: md.build(), description: 'SQL rules (path-scoped)' };
+      }
+      case 'spark': {
+        const paths = ['**/spark/**', '**/jobs/**', '**/etl/**', '**/*spark*.py', '**/*spark*.scala'];
+        md.frontmatter({ description: 'Apache Spark conventions', paths });
+        md.h1('Apache Spark Conventions');
+        md.bullet('Prefer the DataFrame / Dataset API over RDDs so Catalyst can optimize');
+        md.bullet('Never `.collect()` / `.toPandas()` a large dataset — it pulls everything onto the driver');
+        md.bullet('Filter and select columns early (predicate / projection pushdown); avoid unnecessary wide shuffles');
+        md.bullet('Use broadcast joins for small dimension tables; partition and `persist()` deliberately');
+        md.bullet('Make jobs idempotent and parameterized; write output atomically (to a temp path, then swap)');
+        return { relativePath: '.claude/rules/spark.md', content: md.build(), description: 'Apache Spark rules (path-scoped)' };
+      }
+      case 'javascript': {
+        const paths = ['**/*.js', '**/*.jsx', '**/*.mjs', '**/*.cjs'];
+        md.frontmatter({ description: 'JavaScript conventions', paths });
+        md.h1('JavaScript Conventions');
+        md.bullet('Use `const` by default, `let` only when reassigned; never `var`');
+        md.bullet('Prefer ES modules (`import` / `export`) over CommonJS in new code');
+        md.bullet('Use strict equality (`===`), optional chaining, and nullish coalescing (`??`)');
+        md.bullet('Always handle promise rejections; never leave async errors unhandled');
+        md.bullet('Lint with ESLint and format with Prettier');
+        return { relativePath: '.claude/rules/javascript.md', content: md.build(), description: 'JavaScript rules (path-scoped)' };
+      }
       default:
         return null;
     }

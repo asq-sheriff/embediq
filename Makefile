@@ -51,6 +51,14 @@ dev-web: ## Watch mode for web server
 otel-dev: ## Run web server with OpenTelemetry enabled
 	EMBEDIQ_OTEL_ENABLED=true npm run dev:web
 
+demo: ## Start the demo web server (demo auth + sessions + audit chain) in the background on :3000
+	@pkill -f "src/web/server.ts" 2>/dev/null; mkdir -p /tmp/embediq-demo/sessions; sleep 1
+	@PORT=3000 EMBEDIQ_AUTH_STRATEGY=demo EMBEDIQ_SESSION_BACKEND=json-file EMBEDIQ_SESSION_DIR=/tmp/embediq-demo/sessions EMBEDIQ_AUDIT_CHAIN_ENABLED=true EMBEDIQ_AUDIT_LOG=/tmp/embediq-demo/audit.jsonl EMBEDIQ_AUTOPILOT_ENABLED=true nohup npm run start:web >/tmp/embediq-demo/server.log 2>&1 & echo $$! >/tmp/embediq-demo/server.pid
+	@sleep 4; echo "✓ Demo server: http://localhost:3000  (logs: /tmp/embediq-demo/server.log) — stop with 'make demo-stop'"
+
+demo-stop: ## Stop the demo web server started by 'make demo'
+	@pkill -f "src/web/server.ts" 2>/dev/null && echo "✓ Demo server stopped" || echo "No demo server running"
+
 # ─── Evaluation ──────────────────────────────────────────────────────
 evaluate: ## Run evaluation harness against golden configs
 	npm run evaluate

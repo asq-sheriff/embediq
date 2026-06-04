@@ -28,7 +28,7 @@ root.
 | `.claude/rules/hipaa-compliance.md` | `rules` | HIPAA rules (path-scoped to `src/**`, `tests/**`). | `hipaa` in `complianceFrameworks`. |
 | `.claude/rules/pci-compliance.md` | `rules` | PCI-DSS rules. | `pci` in `complianceFrameworks`. |
 | `.claude/rules/typescript.md` | `rules` | Language rules (path-scoped). | `typescript` in `languages`. |
-| `.claude/rules/python.md` / `go.md` / `java.md` / `rust.md` | `rules` | Per-language rules. | Per-language trigger. |
+| `.claude/rules/python.md` / `javascript.md` / `go.md` / `java.md` / `rust.md` / `csharp.md` / `cpp.md` / `swift.md` / `ruby.md` / `sql.md` / `spark.md` | `rules` | Per-language rules, one per selected language (e.g. SQL → parameterized-query / migration guardrails; C++ → RAII + smart pointers; Spark → DataFrame-over-RDD). | Per-language trigger (`TECH_001`). |
 | `.claude/rules/<domain>.md` | `rules` | Domain-pack rule templates. | Domain pack active + `requiresFramework` satisfied. |
 | `.claude/commands/<name>.md` | `commands` | Slash-command prompts Claude Code exposes (`/review`, `/plan`, …). | Technical roles. |
 | `.claude/agents/security-reviewer.md` | `agents` | Security review agent. | Security concerns present. |

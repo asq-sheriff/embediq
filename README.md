@@ -8,7 +8,7 @@
 that make Claude Code, Cursor, Copilot, and other AI coding assistants follow
 your team's rules — consistently, and with an audit trail.*
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) · [Latest release: **v4.0.3**](https://github.com/asq-sheriff/embediq/releases/latest) · Deterministic & offline
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) · [Latest release: **v4.0.4**](https://github.com/asq-sheriff/embediq/releases/latest) · Deterministic & offline
 
 EmbedIQ interviews you once about your project, team, and compliance
 obligations, then generates a complete, governed agent harness — typically
@@ -177,7 +177,8 @@ developer role, strict security tier:
 ````
 
 That `CLAUDE.md` is one of about 16 files generated for this profile. Alongside
-it: rule files that apply to specific folders; Python "safety hooks" that scan
+it: per-language rule files scoped to each language's files (TypeScript, Python,
+Go, Java, Rust, C#, C++, SQL, Spark, and more); Python "safety hooks" that scan
 edits for sensitive data, log activity, and block risky commands; a permissions
 file limiting what the assistant may touch; a template for connecting external
 tools (`.mcp.json`); and controls on what it can reach over the network. Opt in

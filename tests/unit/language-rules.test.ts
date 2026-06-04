@@ -35,8 +35,12 @@ describe('RulesGenerator — language coverage', () => {
     ['java', 'java.md'],
     ['rust', 'rust.md'],
     ['csharp', 'csharp.md'],
+    ['cpp', 'cpp.md'],
     ['swift', 'swift.md'],
     ['ruby', 'ruby.md'],
+    ['javascript', 'javascript.md'],
+    ['sql', 'sql.md'],
+    ['spark', 'spark.md'],
   ];
 
   for (const [lang, file] of supported) {
@@ -48,7 +52,7 @@ describe('RulesGenerator — language coverage', () => {
 
   it('emits no language-specific rules when no recognized languages are selected', () => {
     const files = new RulesGenerator().generate(makeConfig(makeProfile([])));
-    const langFiles = files.filter((f) => /\.claude\/rules\/(typescript|python|go|java|rust|csharp|swift|ruby)\.md$/.test(f.relativePath));
+    const langFiles = files.filter((f) => /\.claude\/rules\/(typescript|javascript|python|go|java|rust|csharp|cpp|swift|ruby|sql|spark)\.md$/.test(f.relativePath));
     expect(langFiles).toHaveLength(0);
   });
 
@@ -128,5 +132,36 @@ describe('ruby.md content', () => {
     expect(ruby()).toContain('**/*.rb');
     expect(ruby()).toContain('Gemfile');
     expect(ruby()).toContain('Rakefile');
+  });
+});
+
+describe('new-language rule content (C++, SQL, Spark, JavaScript)', () => {
+  const ruleFor = (lang: string, file: string): string =>
+    findRule(new RulesGenerator().generate(makeConfig(makeProfile([lang]))), file)!.content;
+
+  it('cpp.md: smart pointers / RAII + clang-tidy, scoped to C++ sources', () => {
+    const c = ruleFor('cpp', 'cpp.md');
+    expect(c).toMatch(/smart pointers|RAII/);
+    expect(c).toContain('clang-tidy');
+    expect(c).toContain('**/*.cpp');
+  });
+
+  it('sql.md: parameterized queries (injection) + migrations, scoped to .sql', () => {
+    const c = ruleFor('sql', 'sql.md');
+    expect(c).toMatch(/parameterized queries|bind variables/);
+    expect(c).toContain('migrations');
+    expect(c).toContain('**/*.sql');
+  });
+
+  it('spark.md: DataFrame over RDDs, warns against .collect() on large data', () => {
+    const c = ruleFor('spark', 'spark.md');
+    expect(c).toMatch(/DataFrame.*RDD/);
+    expect(c).toContain('.collect()');
+  });
+
+  it('javascript.md: ESLint + const-by-default, scoped to .js', () => {
+    const c = ruleFor('javascript', 'javascript.md');
+    expect(c).toContain('ESLint');
+    expect(c).toContain('**/*.js');
   });
 });

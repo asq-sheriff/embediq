@@ -9,6 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.4] — 2026-06-04 — Expanded language coverage
+
+### Added
+- **More languages in the stack interview (`TECH_001`):** **C++**, **SQL**, and
+  **Apache Spark**, plus **JavaScript** split out from TypeScript into its own
+  option. Each drives a path-scoped rules file — SQL → parameterized-query /
+  migration guardrails; C++ → RAII + smart pointers + `clang-tidy`; Spark →
+  DataFrame-over-RDD, no `.collect()` on large data; JavaScript → ESLint +
+  const-by-default. JavaScript also wires into the build/test default-inference
+  (npm / jest / ESLint + Prettier).
+
+### Notes
+- Additive: existing answer sets don't select the new languages, so goldens
+  regenerate byte-identically.
+
 ## [4.0.3] — 2026-06-03 — Agent isolation & sandbox enforcement
 
 "Do we need a VM to run the coding agents?" — answered as both product capability
