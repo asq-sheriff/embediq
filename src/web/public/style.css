@@ -897,6 +897,196 @@ body {
   .iso-detail { padding: 28px 22px; }
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   Landing page — cohesive Apple-style system (welcome phase)
+   ═══════════════════════════════════════════════════════════════ */
+
+.lp-eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 14px;
+}
+
+/* ─── Hero ─── */
+.lp-hero {
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+  padding: clamp(52px, 8.5vh, 104px) 24px clamp(36px, 5vh, 64px);
+}
+.lp-hero-glow {
+  position: absolute;
+  top: -260px;
+  left: 50%;
+  width: 780px;
+  height: 580px;
+  max-width: 120vw;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse at center,
+    color-mix(in srgb, var(--accent) 15%, transparent), transparent 66%);
+  pointer-events: none;
+  z-index: 0;
+}
+.lp-hero-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 880px;
+  margin: 0 auto;
+}
+.lp-hero-inner > * {
+  animation: heroReveal 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.lp-hero-inner > .lp-eyebrow { animation-delay: 0.02s; }
+.lp-hero-inner > h1 { animation-delay: 0.06s; }
+.lp-hero-inner > .lp-subtitle { animation-delay: 0.10s; }
+.lp-hero-inner > .identity-banner { animation-delay: 0.16s; }
+.lp-hero-inner > .lp-cta { animation-delay: 0.20s; }
+.lp-hero-inner > .lp-glance { animation-delay: 0.28s; }
+@media (prefers-reduced-motion: reduce) { .lp-hero-inner > * { animation: none; } }
+
+.lp-hero h1 {
+  font-size: clamp(34px, 4.6vw, 50px);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.08;
+  color: var(--text-primary);
+  margin: 0 0 18px;
+}
+.lp-subtitle {
+  font-size: clamp(17px, 1.7vw, 20px);
+  line-height: 1.45;
+  color: var(--text-secondary);
+  max-width: 620px;
+  margin: 0 auto 28px;
+}
+.lp-hero .identity-banner { margin: 6px auto 24px; max-width: 600px; }
+.lp-cta { margin: 0; }
+
+/* glance strip */
+.lp-glance {
+  list-style: none;
+  margin: 52px auto 0;
+  padding: 0;
+  max-width: 900px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  text-align: left;
+}
+.lp-glance li {
+  background: var(--surface);
+  padding: 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.lp-glance-title { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.lp-glance-detail { font-size: 12.5px; line-height: 1.5; color: var(--text-tertiary); }
+
+/* ─── Sections ─── */
+.lp-section { padding: clamp(60px, 9vh, 108px) 24px; }
+.lp-section--tint {
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.lp-inner { max-width: 1040px; margin: 0 auto; }
+.lp-inner--narrow { max-width: 880px; }
+.lp-head { text-align: center; max-width: 680px; margin: 0 auto 44px; }
+.lp-head h2 {
+  font-size: clamp(26px, 3vw, 36px);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.12;
+  color: var(--text-primary);
+  margin: 0 0 12px;
+}
+.lp-lead { font-size: 17px; line-height: 1.5; color: var(--text-secondary); margin: 0; }
+
+/* ─── Feature cards ─── */
+.lp-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(232px, 1fr));
+  gap: 18px;
+}
+.lp-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 28px 24px;
+  transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
+}
+.lp-card:hover {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--accent) 38%, var(--border));
+  box-shadow: 0 16px 36px -20px rgba(0, 0, 0, 0.35);
+}
+.lp-card-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+.lp-card-icon svg { width: 22px; height: 22px; }
+.lp-card h3 {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 8px;
+}
+.lp-card p { font-size: 13.5px; line-height: 1.55; color: var(--text-secondary); margin: 0; }
+.lp-tag {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+  border-radius: 980px;
+  padding: 1px 7px;
+  margin-left: 6px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+/* ─── Closing CTA band ─── */
+.lp-final {
+  text-align: center;
+  padding: clamp(60px, 8.5vh, 100px) 24px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+}
+.lp-final h2 {
+  font-size: clamp(26px, 3vw, 36px);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  color: var(--text-primary);
+  margin: 0 0 12px;
+}
+.lp-final p {
+  font-size: 17px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  max-width: 540px;
+  margin: 0 auto 28px;
+}
+
+@media (max-width: 720px) {
+  .lp-glance { grid-template-columns: 1fr; max-width: 440px; }
+}
+
 .demo-badge {
   display: inline-block;
   font-size: 9px;

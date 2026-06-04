@@ -43,53 +43,71 @@
 
     <!-- Phase 0: Welcome -->
     <section id="phase-welcome" class="phase active">
-      <div class="hero">
-        <h1>Configure your AI coding agents</h1>
-        <p class="subtitle">Set up every AI coding agent from one interview — with guardrails that block secrets and PHI, an unalterable record of every decision, and audit-ready compliance evidence.</p>
-        <div class="hero-meta">
-          <div class="meta-feature">
-            <span class="meta-feature-title">Sets up every AI coding agent</span>
-            <span class="meta-feature-detail">Claude Code · Cursor · Copilot · Gemini · Codex · Windsurf</span>
+      <header class="lp-hero">
+        <div class="lp-hero-glow" aria-hidden="true"></div>
+        <div class="lp-hero-inner">
+          <p class="lp-eyebrow">The AI coding-agent setup wizard</p>
+          <h1>Configure your AI coding agents</h1>
+          <p class="lp-subtitle">Set up every AI coding agent from one interview — with guardrails that block secrets and PHI, an unalterable record of every decision, and audit-ready compliance evidence.</p>
+          <div id="identity-banner" class="identity-banner" style="display: none;"></div>
+          <div id="resume-banner" class="resume-banner" style="display: none"></div>
+          <button class="btn-primary lp-cta" onclick="startWizard()">Get Started</button>
+          <ul class="lp-glance">
+            <li>
+              <span class="lp-glance-title">Every AI coding agent</span>
+              <span class="lp-glance-detail">Claude Code · Cursor · Copilot · Gemini · Codex · Windsurf</span>
+            </li>
+            <li>
+              <span class="lp-glance-title">Your whole setup, written</span>
+              <span class="lp-glance-detail">15–40 ready-to-commit config files from one interview</span>
+            </li>
+            <li>
+              <span class="lp-glance-title">Compliant by default</span>
+              <span class="lp-glance-detail">Blocks PHI, PII &amp; secrets — HIPAA · PCI-DSS · SOC 2 · GDPR · FERPA</span>
+            </li>
+          </ul>
+        </div>
+      </header>
+
+      <section class="lp-section lp-section--tint" aria-label="What's built into every setup">
+        <div class="lp-inner">
+          <div class="lp-head">
+            <p class="lp-eyebrow">Built in, not bolted on</p>
+            <h2>Everything a regulated team needs</h2>
+            <p class="lp-lead">Every generated harness ships with the controls your security team expects — from day one.</p>
           </div>
-          <div class="meta-feature">
-            <span class="meta-feature-title">Writes your whole setup for you</span>
-            <span class="meta-feature-detail">15–40 ready-to-commit config files from one interview</span>
-          </div>
-          <div class="meta-feature">
-            <span class="meta-feature-title">Keeps the AI compliant</span>
-            <span class="meta-feature-detail">Blocks PHI, PII &amp; secrets — HIPAA · PCI-DSS · SOC 2 · GDPR · FERPA</span>
+          <div class="lp-cards">
+            <article class="lp-card">
+              <span class="lp-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></span>
+              <h3>Guardrails</h3>
+              <p>Blocks the agent from leaking secrets, PHI &amp; PII, running risky shell commands, or reaching the open internet — enforced automatically, not left to each developer to remember on every prompt.</p>
+            </article>
+            <article class="lp-card">
+              <span class="lp-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
+              <h3>Enforced sandboxing <span class="lp-tag">Claude Code</span></h3>
+              <p>Optionally locks the agent into the OS's native sandbox, delivered fleet-wide via MDM so it can't be switched off locally — plus dev-container and VDI options for stricter isolation.</p>
+            </article>
+            <article class="lp-card">
+              <span class="lp-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17H7A5 5 0 0 1 7 7h2"/><path d="M15 7h2a5 5 0 0 1 0 10h-2"/><line x1="8" y1="12" x2="16" y2="12"/></svg></span>
+              <h3>Tamper-evident audit trail</h3>
+              <p>Every decision is written to a hash-chained log. Alter or delete a past entry and the chain breaks — a verifier flags it — so the configuration history can't be quietly rewritten.</p>
+            </article>
+            <article class="lp-card">
+              <span class="lp-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m9 15 2 2 4-4"/></svg></span>
+              <h3>Audit-ready evidence</h3>
+              <p>Generates machine-readable compliance evidence (NIST OSCAL, AI bill-of-materials) that your security team's and auditors' tools can consume directly — turning “we have rules” into proof.</p>
+            </article>
           </div>
         </div>
-        <div id="identity-banner" class="identity-banner" style="display: none;"></div>
-        <div id="resume-banner" class="resume-banner" style="display: none"></div>
-        <button class="btn-primary" onclick="startWizard()">Get Started</button>
-      </div>
+      </section>
 
-      <section class="built-in" aria-label="What's built into every setup">
-        <h2 class="built-in-title">Built into every setup</h2>
-        <p class="built-in-sub">Every generated harness ships with the controls a regulated team needs — not bolted on later.</p>
-        <div class="built-in-grid">
-          <article class="built-in-card">
-            <h3>Guardrails</h3>
-            <p>Blocks the agent from leaking secrets, PHI &amp; PII, running risky shell commands, or reaching the open internet — enforced automatically, not left to each developer to remember on every prompt.</p>
-          </article>
-          <article class="built-in-card">
-            <h3>Enforced sandboxing</h3>
-            <p>Optionally locks the agent into the OS's native sandbox, delivered fleet-wide via MDM so it can't be switched off locally — plus dev-container and VDI options for stricter isolation. <span class="built-in-note">Claude Code</span></p>
-          </article>
-          <article class="built-in-card">
-            <h3>Tamper-evident audit trail</h3>
-            <p>Every decision is written to a hash-chained log. Alter or delete a past entry and the chain breaks — a verifier flags it — so the configuration history can't be quietly rewritten.</p>
-          </article>
-          <article class="built-in-card">
-            <h3>Audit-ready evidence</h3>
-            <p>Generates machine-readable compliance evidence (NIST OSCAL, AI bill-of-materials) that your security team's and auditors' tools can consume directly — turning “we have rules” into proof.</p>
-          </article>
-        </div>
-
-        <div class="iso-detail">
-          <h3 class="iso-detail-title">How agent isolation &amp; sandboxing actually works</h3>
-          <p class="iso-detail-lead">It's a handoff: <strong>EmbedIQ generates</strong> the enforcement config; your <strong>deployment environment</strong> and <strong>MDM</strong> enforce it. EmbedIQ is not itself a sandbox.</p>
+      <section class="lp-section" aria-label="How agent isolation and sandboxing works">
+        <div class="lp-inner lp-inner--narrow">
+          <div class="lp-head">
+            <p class="lp-eyebrow">Full transparency</p>
+            <h2>How agent isolation &amp; sandboxing actually works</h2>
+            <p class="lp-lead">It's a handoff: <strong>EmbedIQ generates</strong> the enforcement config; your <strong>deployment environment</strong> and <strong>MDM</strong> enforce it. EmbedIQ is not itself a sandbox.</p>
+          </div>
           <ol class="iso-steps">
             <li><strong>You choose the deployment environment + posture</strong> <span class="iso-who">admin, once</span><br>Where the agent runs — a managed laptop, a dev container, a virtual desktop (Azure Virtual Desktop / Windows 365), or an ephemeral cloud dev box. That choice <em>is</em> the isolation boundary.</li>
             <li><strong>EmbedIQ generates the config</strong> <span class="iso-who">EmbedIQ</span><br><code>deploy/claude-code/managed-settings.json</code> with <code>"sandbox": { "enabled": true }</code> and a non-wideable deny list (no PHI/PII path reads, no raw egress), plus a <code>.devcontainer</code> for the container posture.</li>
@@ -116,6 +134,14 @@
             </div>
           </div>
           <p class="iso-more">Deeper detail: <a href="https://github.com/asq-sheriff/embediq/blob/main/docs/evaluators/isolation-decision-guide.md">isolation decision guide</a> · <a href="https://github.com/asq-sheriff/embediq/blob/main/docs/operator-guide/azure-isolation-runbook.md">Azure / Intune runbook</a>.</p>
+        </div>
+      </section>
+
+      <section class="lp-final">
+        <div class="lp-inner">
+          <h2>Production-ready in one interview.</h2>
+          <p>Answer a few questions and walk away with a compliant, ready-to-commit setup for every agent your team uses.</p>
+          <button class="btn-primary" onclick="startWizard()">Get Started</button>
         </div>
       </section>
     </section>
