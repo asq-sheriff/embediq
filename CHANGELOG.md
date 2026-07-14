@@ -9,6 +9,68 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.1.0] — 2026-07-14 — Policy-driven egress control + audit evidence
+
+The routing layer is re-architected around a Policy Decision Point / Policy
+Enforcement Point split: one deterministic routing policy compiled to many native
+enforcement configs. The compliance gate becomes credential locality + route
+absence — never a filter — kept honest by drift.
+
+### Added
+- **Routing Policy Decision Point** (`src/synthesizer/policy/`) — one versioned,
+  deterministic `RoutingPolicy` compiled from the profile: a destination catalog
+  with a `covered[]` (BAA/DPA attestation) field and a fail-closed eligibility
+  lattice that answers *which destinations a given data class is eligible to
+  reach* before any cost/quality optimization. Regulated-class rules are
+  contributed by domain packs (`DomainPack.eligibilityContributions`), so adding
+  a vertical is pack data, not a core edit.
+- **LiteLLM gateway generator** (`--targets litellm`) — compiles
+  `litellm/config.yaml` from the routing policy; `model_list` holds only eligible
+  (BAA-covered) destinations, so on a regulated profile an uncovered provider is
+  absent entirely — air-gapped by construction, provable by reading the file.
+- **Egress guardrail generator** — an OSS custom-code LiteLLM guardrail
+  (`litellm/guardrails/embediq_phi_egress.py`) rendered from the compliance
+  pack's DLP patterns (one source of truth). Defence in depth; the control is
+  route absence + credential locality, not the filter.
+- **Egress-eligibility gate** (`npm run evaluate -- --mode router-eligibility`)
+  — replays an adversarial PHI/PCI corpus through the policy and proves no
+  regulated prompt can reach a forbidden destination, even under a classifier miss.
+- **Unified audit/evidence bundle** (`--targets audit-bundle`) —
+  `.embediq/audit-bundle/` manifest + README indexing every compliance artifact
+  (routing policy, gateway, guardrail, OSCAL, AIBOM, provenance, DLP hook) with a
+  content hash, the egress posture, and the runnable controls an auditor can execute.
+- **BAA-coverage metadata on the AIBOM** — each hosted model carries an
+  `embediq:baa-covered` property sourced from the routing policy.
+- `REG_019` BAA/DPA attestation question → `UserProfile.coveredProviders`;
+  `GATEWAY_BASE_URL` for the router.
+
+### Changed
+- **Local router is now decision-only** — it classifies a request and forwards
+  escalations to the LLM gateway; it holds no provider credentials and makes no
+  direct provider call, so the PHI/PII egress gate is unbypassable. The gateway
+  owns the keys and enforces the guardrail.
+- `GenerationContext` carrier refactor — the policy is derived once and threaded
+  to every generator, so the router / gateway / guardrail / ignore configs cannot
+  drift apart.
+- Drift detection now governs the local-AI output family (`router/`, `rag/`,
+  `litellm/`), previously ungoverned.
+- **36 generators across 18 target formats.**
+
+### Fixed
+- `flushSessionWrites()` registered the session write-back inside
+  `res.on('finish')`, which fires after the client request resolves — so the
+  flush (tests + graceful shutdown) could miss an in-flight write. A per-request
+  settlement promise is now registered synchronously.
+
+### Removed
+- The router's inline PHI redactor and hosted-client (`router/src/redactor.ts`,
+  `router/src/hosted-client.ts`) — egress DLP now lives at the gateway guardrail,
+  rendered from the compliance pack, closing the divergent second source of truth.
+
+### Notes
+- New capabilities are opt-in targets; existing goldens regenerate
+  byte-identically (14/14 at 100%). 1428 tests passing.
+
 ## [4.0.6] — 2026-06-04 — Landing redesign + isolation transparency + wizard polish
 
 ### Added
