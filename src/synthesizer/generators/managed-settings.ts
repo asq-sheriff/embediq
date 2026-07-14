@@ -1,6 +1,6 @@
 import type { ConfigGenerator } from '../generator.js';
 import { TargetFormat } from '../target-format.js';
-import type { SetupConfig, GeneratedFile, UserProfile } from '../../types/index.js';
+import type { GenerationContext, GeneratedFile, UserProfile } from '../../types/index.js';
 
 /**
  * Isolation models for which we emit a fleet-enforced `managed-settings.json`.
@@ -31,7 +31,7 @@ export class ManagedSettingsGenerator implements ConfigGenerator {
   name = 'managed-settings';
   target = TargetFormat.CLAUDE;
 
-  generate(config: SetupConfig): GeneratedFile[] {
+  generate(config: GenerationContext): GeneratedFile[] {
     const { profile } = config;
     if (['ba', 'pm', 'executive'].includes(profile.role)) return [];
     if (!SANDBOX_ENFORCED_MODELS.has(profile.devOps.isolationModel ?? '')) return [];

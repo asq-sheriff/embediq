@@ -6,7 +6,7 @@ The synthesizer turns a `UserProfile` into the final configuration.
 It's the only layer that writes to disk or opens PRs. Everything
 upstream is data; everything downstream is output.
 
-**Source**: [`src/synthesizer/`](../../src/synthesizer/) — 33 generator
+**Source**: [`src/synthesizer/`](../../src/synthesizer/) — 36 generator
 files under `generators/`, plus the orchestrator, validator,
 stamper, target-format enum, and diff analyzer. The orchestrator
 runs the regular generators in a parallel batch, then performs a
@@ -35,7 +35,7 @@ Every generator is **pure** — takes a `SetupConfig`, returns
 `GeneratedFile[]`. No I/O, no mutation, no event-bus emits. The
 orchestrator is the only piece with side effects.
 
-## The 33 generators
+## The 36 generators
 
 ### Parallel batch (filtered by `config.targets` + role)
 
@@ -68,7 +68,9 @@ orchestrator is the only piece with side effects.
 | ZedAiGenerator | `zed-ai` | `.zed/settings.json` |
 | OllamaSetupGenerator | `ollama` | `OLLAMA_SETUP.md` |
 | RagScaffoldGenerator | `rag-scaffold` | `rag/` (runnable RAG starter) + RAG-specific `.claude/rules/rag-*.md` |
-| LocalRouterGenerator | `local-router` | `router/` (runnable Express dispatch) + optional PHI redactor + optional confidence-escalation module |
+| LocalRouterGenerator | `local-router` | `router/` (decision-only Express dispatch — classifies then forwards escalations to the gateway, holds no credentials) + `router/routing-policy.yaml` + optional confidence-escalation module |
+| LiteLlmGatewayGenerator | `litellm` | `litellm/config.yaml` compiled from the routing policy — `model_list` holds only eligible (BAA-covered) destinations; uncovered externals are absent on a regulated profile |
+| LiteLlmGuardrailGenerator | `litellm` | `litellm/guardrails/embediq_phi_egress.py` — OSS custom-code PHI/PII egress guardrail rendered from the compliance pack's DLP patterns (only when the profile contributes patterns) |
 
 ### Post-pass (always or conditionally, after the batch)
 
@@ -78,7 +80,8 @@ orchestrator is the only piece with side effects.
 | `generateCycloneDxAibom` | `cyclonedx-aibom` | `.embediq/cyclonedx/aibom.json` | Opt-in via `--targets cyclonedx-aibom` |
 | `generateOscalComponentDefinition` | `oscal-component` | `.embediq/oscal/component-definition.json` | Opt-in via `--targets oscal-component` |
 | `generateOscalSspFragment` | `oscal-ssp-fragment` | `.embediq/oscal/ssp-fragment.json` | Opt-in via `--targets oscal-ssp-fragment` |
-| `generateProvenanceTrace` | `provenance` | `.embediq/provenance/manifest.json` | Opt-in via `--targets provenance` — fires LAST so the manifest covers every other output, including itself |
+| `generateProvenanceTrace` | `provenance` | `.embediq/provenance/manifest.json` | Opt-in via `--targets provenance` — fires after the batch so the manifest covers every generator output |
+| `generateAuditBundle` | `audit-bundle` | `.embediq/audit-bundle/manifest.json` + `README.md` | Opt-in via `--targets audit-bundle` — fires LAST; indexes every compliance artifact in the run (routing policy, gateway, guardrail, OSCAL, AIBOM, provenance, DLP hook) with a content hash + the egress posture + runnable controls |
 
 Canonical path list per target: see
 [reference/generated-files.md](../reference/generated-files.md).

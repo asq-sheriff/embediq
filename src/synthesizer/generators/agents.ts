@@ -1,13 +1,13 @@
 import type { ConfigGenerator } from '../generator.js';
 import { TargetFormat } from '../target-format.js';
-import type { SetupConfig, GeneratedFile } from '../../types/index.js';
+import type { GenerationContext, GeneratedFile } from '../../types/index.js';
 import { MarkdownBuilder } from '../../util/markdown-builder.js';
 
 export class AgentsGenerator implements ConfigGenerator {
   name = 'agents';
   target = TargetFormat.CLAUDE;
 
-  generate(config: SetupConfig): GeneratedFile[] {
+  generate(config: GenerationContext): GeneratedFile[] {
     const { profile } = config;
     const files: GeneratedFile[] = [];
     const wantsAgents = profile.answers.get('INNOV_007')?.value === true;

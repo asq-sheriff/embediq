@@ -1,13 +1,13 @@
 import type { ConfigGenerator } from '../generator.js';
 import { TargetFormat } from '../target-format.js';
-import type { SetupConfig, GeneratedFile } from '../../types/index.js';
+import type { GenerationContext, GeneratedFile } from '../../types/index.js';
 import { toYaml } from '../../util/yaml-writer.js';
 
 export class AssociationMapGenerator implements ConfigGenerator {
   name = 'association-map';
   target = TargetFormat.CLAUDE;
 
-  generate(config: SetupConfig): GeneratedFile[] {
+  generate(config: GenerationContext): GeneratedFile[] {
     const wantsMap = config.profile.answers.get('INNOV_003')?.value === true;
     if (!wantsMap) return [];
 
@@ -54,7 +54,7 @@ export class AssociationMapGenerator implements ConfigGenerator {
     }];
   }
 
-  private getCodePatterns(config: SetupConfig): string[] {
+  private getCodePatterns(config: GenerationContext): string[] {
     const patterns: string[] = [];
     const langs = config.profile.languages;
     if (langs.includes('typescript')) patterns.push('src/**/*.ts', 'src/**/*.tsx');
@@ -68,7 +68,7 @@ export class AssociationMapGenerator implements ConfigGenerator {
     return patterns;
   }
 
-  private getTestPatterns(config: SetupConfig): string[] {
+  private getTestPatterns(config: GenerationContext): string[] {
     const patterns: string[] = [];
     const frameworks = config.profile.devOps.testFrameworks;
     if (frameworks.includes('jest')) patterns.push('**/*.test.ts', '**/*.spec.ts', '**/__tests__/**');
@@ -81,7 +81,7 @@ export class AssociationMapGenerator implements ConfigGenerator {
     return patterns;
   }
 
-  private getInfraPatterns(config: SetupConfig): string[] {
+  private getInfraPatterns(config: GenerationContext): string[] {
     const patterns: string[] = [
       'Makefile',
       'Dockerfile',

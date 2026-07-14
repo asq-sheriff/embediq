@@ -1,6 +1,6 @@
 import type { ConfigGenerator } from '../generator.js';
 import { TargetFormat } from '../target-format.js';
-import type { SetupConfig, GeneratedFile, UserProfile } from '../../types/index.js';
+import type { GenerationContext, GeneratedFile, UserProfile } from '../../types/index.js';
 
 /**
  * CI pipeline generator. Emits a runnable pipeline file matched to the
@@ -24,7 +24,7 @@ export class CiPipelineGenerator implements ConfigGenerator {
   name = 'ci-pipeline';
   target = TargetFormat.CLAUDE;
 
-  generate(config: SetupConfig): GeneratedFile[] {
+  generate(config: GenerationContext): GeneratedFile[] {
     const { profile } = config;
     if (['ba', 'pm', 'executive'].includes(profile.role)) return [];
 

@@ -5,9 +5,9 @@
  * confident nor non-confident).
  *
  * HIPAA: the self-evaluation prompt is built from the original input,
- * but never leaves the local Ollama instance. Only the *re-dispatched*
- * follow-up (in server.ts) goes to a hosted LLM, and only after PHI
- * redaction.
+ * but never leaves the local Ollama instance. Only the *forwarded*
+ * follow-up (in server.ts) goes to the gateway, which routes solely to
+ * BAA-covered destinations and enforces the egress guardrail.
  */
 
 import { generateLocal } from './local-client.js';

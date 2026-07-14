@@ -1,4 +1,4 @@
-import type { SetupConfig, GeneratedFile, GenerationResult, UserProfile } from '../types/index.js';
+import type { SetupConfig, GenerationContext, GeneratedFile, GenerationResult, UserProfile } from '../types/index.js';
 import { validateOutput } from './output-validator.js';
 import { stampGeneratedFile } from './generation-header.js';
 import { withSpan } from '../observability/telemetry.js';
@@ -34,10 +34,14 @@ import { ZedAiGenerator } from './generators/zed-ai.js';
 import { OllamaSetupGenerator } from './generators/ollama-setup.js';
 import { RagScaffoldGenerator } from './generators/rag-scaffold.js';
 import { LocalRouterGenerator } from './generators/local-router.js';
+import { LiteLlmGatewayGenerator } from './generators/litellm-gateway.js';
+import { LiteLlmGuardrailGenerator } from './generators/litellm-guardrail.js';
+import { buildRoutingPolicy } from './policy/index.js';
 import { generateOscalComponentDefinition } from './generators/oscal-component.js';
 import { generateOscalSspFragment } from './generators/oscal-ssp-fragment.js';
 import { generateCycloneDxAibom } from './generators/cyclonedx-aibom.js';
 import { generateProvenanceTrace } from './generators/provenance-trace.js';
+import { generateAuditBundle } from './generators/audit-bundle.js';
 import { readFile } from 'node:fs/promises';
 
 export class SynthesizerOrchestrator {
@@ -91,6 +95,17 @@ export class SynthesizerOrchestrator {
       // PHI redactor; profiles that opt in to confidence escalation get
       // a self-evaluation module wired into the dispatch path.
       new LocalRouterGenerator(),
+      // 6M — LLM-gateway config compiled from the routing policy (the PDP).
+      // Opt-in target (`--targets litellm`); consumes ctx.policy so the
+      // gateway's model_list derives from the same eligibility lattice as the
+      // router. Uncovered external destinations are absent on a regulated
+      // profile (defence in depth).
+      new LiteLlmGatewayGenerator(),
+      // 6M — LLM-gateway egress guardrail. Rides the litellm target; emits the
+      // OSS custom-code DLP guardrail rendered from the compliance pack's DLP
+      // patterns (one source of truth), and no-ops when the profile contributes
+      // no patterns — so a non-regulated gateway selection stays byte-identical.
+      new LiteLlmGuardrailGenerator(),
     ];
   }
 
@@ -129,8 +144,14 @@ export class SynthesizerOrchestrator {
       // hybrid-dispatch service via TECH_019. Independent of localAiEnabled
       // because the router is the integration point — though in practice the
       // wizard only surfaces TECH_019 once TECH_013 is yes.
+      // 6M — the decision-only router forwards escalations to the LLM gateway,
+      // so opting into the router brings its gateway (LiteLLM config) and, on a
+      // regulated profile, the gateway's PHI/PII egress guardrail. The gateway
+      // and guardrail generators no-op on their own conditions, so this stays
+      // byte-identical for a non-regulated router (no guardrail rendered).
       if (config.profile.routerEnabled && !isNonTechnical) {
         targets.add(TargetFormat.LOCAL_ROUTER);
+        targets.add(TargetFormat.LITELLM_GATEWAY);
       }
 
       span.setAttribute('embediq.targets', Array.from(targets).sort().join(','));
@@ -154,7 +175,18 @@ export class SynthesizerOrchestrator {
       span.setAttribute('embediq.generator_count', applicable.length);
       this.bus.emit('generation:started', { generatorCount: applicable.length });
 
-      // Run all generators in parallel — each is pure (reads config, returns files).
+      // Derive the generator-facing context ONCE, here, before the fan-out.
+      // Every generator reads from this same object — the 6M routing policy is
+      // the PDP: one deterministic artifact the router / LLM-gateway / ignore
+      // generators are each compiled from, so their configs cannot diverge.
+      const ctx: GenerationContext = {
+        profile: config.profile,
+        domainPack: config.domainPack,
+        targets: config.targets,
+        policy: buildRoutingPolicy(config.profile),
+      };
+
+      // Run all generators in parallel — each is pure (reads ctx, returns files).
       // Emit file:generated per file as each generator completes so subscribers
       // see progress while others are still running.
       // v4.0 — Track per-generator attribution so the provenance
@@ -166,7 +198,7 @@ export class SynthesizerOrchestrator {
       const results = await Promise.all(
         applicable.map(generator =>
           withSpan(`generator.${generator.name}`, undefined, async () => {
-            const files = await generator.generate(config);
+            const files = await generator.generate(ctx);
             for (const file of files) {
               generatorByPath.set(file.relativePath, generator.name);
               targetByPath.set(file.relativePath, generator.target);
@@ -186,7 +218,7 @@ export class SynthesizerOrchestrator {
       // coworker-focused CLAUDE.md. Other targets emit their own role-aware
       // copy, so no equivalent overlay is needed there.
       if (isNonTechnical && targets.has(TargetFormat.CLAUDE)) {
-        const coworkerClaudeMd = this.generateCoworkerClaudeMd(config);
+        const coworkerClaudeMd = this.generateCoworkerClaudeMd(ctx);
         const idx = allFiles.findIndex(f => f.relativePath === 'CLAUDE.md');
         if (idx >= 0) {
           allFiles[idx] = coworkerClaudeMd;
@@ -217,7 +249,7 @@ export class SynthesizerOrchestrator {
       const hasAgentTarget = agentTargets.some((t) => targets.has(t));
       if (hasAgentTarget) {
         const setupGen = new SetupInstructionsGenerator();
-        const setupFiles = setupGen.generate(config);
+        const setupFiles = setupGen.generate(ctx);
         for (const f of setupFiles) {
           allFiles.push(f);
           generatorByPath.set(f.relativePath, 'setup-instructions');
@@ -243,11 +275,12 @@ export class SynthesizerOrchestrator {
       const needsEmbediqVersion = targets.has(TargetFormat.OSCAL_COMPONENT)
         || targets.has(TargetFormat.OSCAL_SSP_FRAGMENT)
         || targets.has(TargetFormat.CYCLONEDX_AIBOM)
-        || targets.has(TargetFormat.PROVENANCE);
+        || targets.has(TargetFormat.PROVENANCE)
+        || targets.has(TargetFormat.AUDIT_BUNDLE);
       const embediqVersion = needsEmbediqVersion ? await resolveEmbediqVersion() : '';
 
       if (targets.has(TargetFormat.CYCLONEDX_AIBOM)) {
-        const aibom = generateCycloneDxAibom(config, allFiles, embediqVersion);
+        const aibom = generateCycloneDxAibom(ctx, allFiles, embediqVersion);
         allFiles.push(aibom);
         generatorByPath.set(aibom.relativePath, 'cyclonedx-aibom');
         targetByPath.set(aibom.relativePath, TargetFormat.CYCLONEDX_AIBOM);
@@ -258,7 +291,7 @@ export class SynthesizerOrchestrator {
       }
 
       if (targets.has(TargetFormat.OSCAL_COMPONENT)) {
-        const componentDef = generateOscalComponentDefinition(config, allFiles, embediqVersion);
+        const componentDef = generateOscalComponentDefinition(ctx, allFiles, embediqVersion);
         allFiles.push(componentDef);
         generatorByPath.set(componentDef.relativePath, 'oscal-component');
         targetByPath.set(componentDef.relativePath, TargetFormat.OSCAL_COMPONENT);
@@ -269,7 +302,7 @@ export class SynthesizerOrchestrator {
       }
 
       if (targets.has(TargetFormat.OSCAL_SSP_FRAGMENT)) {
-        const sspFragment = generateOscalSspFragment(config, allFiles, embediqVersion);
+        const sspFragment = generateOscalSspFragment(ctx, allFiles, embediqVersion);
         allFiles.push(sspFragment);
         generatorByPath.set(sspFragment.relativePath, 'oscal-ssp-fragment');
         targetByPath.set(sspFragment.relativePath, TargetFormat.OSCAL_SSP_FRAGMENT);
@@ -296,7 +329,7 @@ export class SynthesizerOrchestrator {
         };
         const filesForTrace: readonly GeneratedFile[] = [...allFiles, placeholder];
         const provenance = generateProvenanceTrace(
-          config,
+          ctx,
           filesForTrace,
           generatorByPath,
           targetByPath,
@@ -308,6 +341,21 @@ export class SynthesizerOrchestrator {
           relativePath: provenance.relativePath,
           size: provenance.content.length,
         });
+      }
+
+      // Unified audit / evidence bundle — the "govern" layer. Fires LAST, after
+      // every other output (including the provenance trace), so its manifest can
+      // index the whole run. Composes shipped evidence; enforces nothing itself.
+      if (targets.has(TargetFormat.AUDIT_BUNDLE)) {
+        for (const file of generateAuditBundle(ctx, allFiles, embediqVersion)) {
+          allFiles.push(file);
+          generatorByPath.set(file.relativePath, 'audit-bundle');
+          targetByPath.set(file.relativePath, TargetFormat.AUDIT_BUNDLE);
+          this.bus.emit('file:generated', {
+            relativePath: file.relativePath,
+            size: file.content.length,
+          });
+        }
       }
 
       span.setAttribute('embediq.files_generated', allFiles.length);
@@ -369,8 +417,8 @@ export class SynthesizerOrchestrator {
     );
   }
 
-  private generateCoworkerClaudeMd(config: SetupConfig): GeneratedFile {
-    const { profile } = config;
+  private generateCoworkerClaudeMd(ctx: GenerationContext): GeneratedFile {
+    const { profile } = ctx;
     const roleTitle = this.getRoleTitle(profile.role);
 
     const lines: string[] = [

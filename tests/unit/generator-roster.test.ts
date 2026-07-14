@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
 /**
- * Count guard: the documented "33 generators" claim (README, CLAUDE.md,
+ * Count guard: the documented "34 generators" claim (README, CLAUDE.md,
  * ARCHITECTURE, VISION, synthesizer.md, the web UI, …) has no other automated
  * check. Each file under generators/ is exactly one generator (the four
  * governance generators are functions, each in its own file; SETUP.md likewise).
@@ -13,7 +13,7 @@ import { dirname, resolve } from 'node:path';
  * the same change — this test is the tripwire that makes the docs drift visible.
  */
 const GENERATOR_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '../../src/synthesizer/generators');
-const EXPECTED_GENERATORS = 33;
+const EXPECTED_GENERATORS = 36;
 
 describe('synthesizer generator roster', () => {
   it(`has exactly ${EXPECTED_GENERATORS} generators — keep docs in sync`, () => {

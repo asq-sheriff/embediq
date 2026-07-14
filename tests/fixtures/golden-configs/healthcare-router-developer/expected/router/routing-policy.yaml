@@ -1,0 +1,56 @@
+version: 1.0.0
+strategy: cascade
+destinations:
+  - id: ollama:qwen2.5-coder:32b
+    locality: local
+    provider: ollama
+    covered: []
+    retainsData: false
+    contextWindow: 32000
+  - id: ollama:nomic-embed-text
+    locality: local
+    provider: ollama
+    covered: []
+    retainsData: false
+    contextWindow: 8192
+  - id: anthropic:claude-sonnet-4-6
+    locality: external
+    provider: anthropic
+    covered: []
+    retainsData: false
+    contextWindow: 200000
+eligibility:
+  - dataClass: public
+    allow:
+      - local
+      - external-covered
+      - external-uncovered
+    redactionCanPromote: false
+    minimizeOnEgress: "off"
+  - dataClass: internal
+    allow:
+      - local
+      - external-covered
+    redactionCanPromote: false
+    minimizeOnEgress: "off"
+  - dataClass: restricted
+    allow:
+      - local
+    redactionCanPromote: false
+    minimizeOnEgress: "off"
+  - dataClass: unknown
+    allow:
+      - local
+    redactionCanPromote: false
+    minimizeOnEgress: "off"
+  - dataClass: phi
+    allow:
+      - local
+      - external-covered
+    requiresCoverage:
+      - hipaa
+    redactionCanPromote: false
+    minimizeOnEgress: "off"
+confidenceThreshold: 6
+tokenBudgetOverflow: 32000
+failMode: closed

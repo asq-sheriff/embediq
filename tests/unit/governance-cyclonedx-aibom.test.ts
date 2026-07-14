@@ -183,6 +183,31 @@ describe('buildAibom — hosted API providers', () => {
     expect(cohere.supplier).toBeUndefined();
     expect((cohere.properties ?? []).some((p) => p.name === 'embediq:hosted-provider-id')).toBe(true);
   });
+
+  it('stamps each hosted model with its BAA coverage from the policy', () => {
+    const doc = buildAibom({
+      profile: { industry: 'healthcare', role: 'developer', complianceFrameworks: ['hipaa'], externalApis: ['anthropic', 'openai'] },
+      frameworks: [],
+      generatedFiles: files(),
+      embediqVersion: '4.0.6',
+      coveredByProvider: { anthropic: ['hipaa'], openai: [] },
+    });
+    const anthropic = doc.components.find((c) => c['bom-ref'] === 'embediq:hosted:anthropic')!;
+    const openai = doc.components.find((c) => c['bom-ref'] === 'embediq:hosted:openai')!;
+    expect((anthropic.properties ?? []).find((p) => p.name === 'embediq:baa-covered')?.value).toBe('hipaa');
+    expect((openai.properties ?? []).find((p) => p.name === 'embediq:baa-covered')?.value).toBe('none');
+  });
+
+  it('defaults BAA coverage to none when no policy coverage is supplied', () => {
+    const doc = buildAibom({
+      profile: { industry: 'tech', role: 'developer', complianceFrameworks: [], externalApis: ['anthropic'] },
+      frameworks: [],
+      generatedFiles: files(),
+      embediqVersion: '4.0.6',
+    });
+    const anthropic = doc.components.find((c) => c['bom-ref'] === 'embediq:hosted:anthropic')!;
+    expect((anthropic.properties ?? []).find((p) => p.name === 'embediq:baa-covered')?.value).toBe('none');
+  });
 });
 
 describe('buildAibom — IDE agents + local router', () => {

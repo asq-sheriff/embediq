@@ -1,13 +1,13 @@
 import type { ConfigGenerator } from '../generator.js';
 import { TargetFormat } from '../target-format.js';
-import type { SetupConfig, GeneratedFile } from '../../types/index.js';
+import type { GenerationContext, GeneratedFile } from '../../types/index.js';
 import { MarkdownBuilder } from '../../util/markdown-builder.js';
 
 export class CommandsGenerator implements ConfigGenerator {
   name = 'commands';
   target = TargetFormat.CLAUDE;
 
-  generate(config: SetupConfig): GeneratedFile[] {
+  generate(config: GenerationContext): GeneratedFile[] {
     const { profile } = config;
     const files: GeneratedFile[] = [];
     const wantsRouting = profile.answers.get('FIN_002')?.value === true;

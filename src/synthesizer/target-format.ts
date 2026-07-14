@@ -32,6 +32,13 @@ export enum TargetFormat {
   // local Ollama and escalates complex tasks (or low-confidence answers)
   // to a hosted LLM after optional PHI redaction.
   LOCAL_ROUTER = 'local-router',
+  // 6M — LiteLLM gateway config compiled from the routing policy (the PDP).
+  // Opt-in only (never auto-included, so existing goldens stay byte-identical).
+  // Emits `litellm/config.yaml`: a `model_list` from the policy's eligible
+  // destinations (local + BAA-covered external) plus `context_window_fallbacks`
+  // from the cascade budget. On a regulated profile an uncovered external
+  // provider is absent from the file entirely — the gateway has no route to it.
+  LITELLM_GATEWAY = 'litellm',
   // v4.0 — OSCAL Component Definition export. Opt-in only (never
   // auto-included so existing goldens stay byte-identical). When selected,
   // a post-pass step in the orchestrator emits
@@ -71,6 +78,17 @@ export enum TargetFormat {
   // last in the post-pass chain so its manifest can include every
   // other governance output (the v4.0 governance phases).
   PROVENANCE = 'provenance',
+  // Unified audit / evidence bundle. Opt-in only. When selected, a
+  // post-pass step (LAST in the chain) emits `.embediq/audit-bundle/`
+  // — a policy-versioned manifest + auditor-facing README that indexes
+  // every compliance artifact produced in the run (routing policy,
+  // gateway config, egress guardrail, OSCAL, AIBOM, provenance, DLP
+  // hook) with a content hash each, summarizes the egress posture from
+  // the routing policy, and lists the runnable controls (egress
+  // eligibility gate, drift, hook enforcement) an auditor can execute.
+  // Composes shipped outputs — no new runtime. Only credible because the
+  // eligibility gate exists to anchor it.
+  AUDIT_BUNDLE = 'audit-bundle',
 }
 
 export const ALL_TARGETS: readonly TargetFormat[] = [
@@ -86,10 +104,12 @@ export const ALL_TARGETS: readonly TargetFormat[] = [
   TargetFormat.OLLAMA,
   TargetFormat.RAG_SCAFFOLD,
   TargetFormat.LOCAL_ROUTER,
+  TargetFormat.LITELLM_GATEWAY,
   TargetFormat.OSCAL_COMPONENT,
   TargetFormat.OSCAL_SSP_FRAGMENT,
   TargetFormat.CYCLONEDX_AIBOM,
   TargetFormat.PROVENANCE,
+  TargetFormat.AUDIT_BUNDLE,
 ];
 
 /** When the caller supplies nothing, we emit the native Claude Code setup only. */

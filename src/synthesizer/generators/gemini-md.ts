@@ -1,6 +1,6 @@
 import type { ConfigGenerator } from '../generator.js';
 import { TargetFormat } from '../target-format.js';
-import type { SetupConfig, GeneratedFile, UserProfile } from '../../types/index.js';
+import type { GenerationContext, GeneratedFile, UserProfile } from '../../types/index.js';
 import {
   buildCommandBullets,
   buildConventionBullets,
@@ -18,7 +18,7 @@ export class GeminiMdGenerator implements ConfigGenerator {
   name = 'GEMINI.md';
   target = TargetFormat.GEMINI;
 
-  generate(config: SetupConfig): GeneratedFile[] {
+  generate(config: GenerationContext): GeneratedFile[] {
     const { profile } = config;
     const isNonTechnical = ['ba', 'pm', 'executive'].includes(profile.role);
     const content = isNonTechnical

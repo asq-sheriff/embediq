@@ -1,6 +1,6 @@
 import type { ConfigGenerator } from '../generator.js';
 import { TargetFormat } from '../target-format.js';
-import type { SetupConfig, GeneratedFile, UserProfile } from '../../types/index.js';
+import type { GenerationContext, GeneratedFile, UserProfile } from '../../types/index.js';
 
 /**
  * Cursor rules generator — emits `.cursor/rules/*.mdc` files with MDC
@@ -18,7 +18,7 @@ export class CursorRulesGenerator implements ConfigGenerator {
   name = 'cursor-rules';
   target = TargetFormat.CURSOR;
 
-  generate(config: SetupConfig): GeneratedFile[] {
+  generate(config: GenerationContext): GeneratedFile[] {
     const { profile } = config;
     const isNonTechnical = ['ba', 'pm', 'executive'].includes(profile.role);
     if (isNonTechnical) return [this.nonTechnicalProjectRule(profile)];

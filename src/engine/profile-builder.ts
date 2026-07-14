@@ -164,6 +164,12 @@ export class ProfileBuilder {
     const apis = this.getStringArray(answers, 'TECH_020').filter((a) => a);
     if (apis.length > 0) profile.externalApis = apis;
 
+    // BAA/DPA-attested providers (REG_019) — customer-attested, never inferred.
+    // 'none' or unanswered leaves coveredProviders unset → no covered external
+    // destination → regulated classes stay local (air-gapped by construction).
+    const covered = this.getStringArray(answers, 'REG_019').filter((c) => c && c !== 'none');
+    if (covered.length > 0) profile.coveredProviders = covered;
+
     if (this.getBool(answers, 'TECH_021')) profile.confidenceEscalation = true;
   }
 

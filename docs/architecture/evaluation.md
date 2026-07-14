@@ -196,7 +196,7 @@ non-zero regressions.
 ## Performance
 
 All three built-in archetypes evaluate in well under one second.
-Per-archetype cost is dominated by the synthesizer (12–33 generators
+Per-archetype cost is dominated by the synthesizer (12–36 generators
 in parallel). The scorer itself is O(files × characters) — fine for
 dozens of files per archetype.
 

@@ -1532,6 +1532,28 @@ export const questions: Question[] = [
     ],
     tags: ['network_egress', 'exfiltration', 'ciso', 'security'],
   },
+  {
+    id: 'REG_019',
+    dimension: Dimension.REGULATORY_COMPLIANCE,
+    text: 'Which external AI providers do you have a signed BAA / DPA covering your selected compliance frameworks?',
+    helpText: 'A BAA (or DPA) is a legal fact, not a technical one — so we ask rather than infer it. Only the providers you list here may receive regulated data (e.g. PHI). Leave all unchecked, or pick "None", to keep regulated data local-only — the generated routing config will then contain no external destination for it.',
+    purposeText: 'Populates the routing policy\'s destination-catalog `covered[]` field. A provider attested here becomes an eligible destination for regulated data classes; an unattested provider is uncovered, so PHI/PCI can never be routed to it. With none attested, the generated gateway config has zero external destinations — the system is air-gapped by construction.',
+    type: QuestionType.MULTI_CHOICE,
+    options: [
+      { key: 'anthropic', label: 'Anthropic (Claude API)', relevantFor: ['TECH_020:anthropic'] },
+      { key: 'openai', label: 'OpenAI API', relevantFor: ['TECH_020:openai'] },
+      { key: 'none', label: 'None — no BAA/DPA with any external provider (keep regulated data local)' },
+    ],
+    required: false,
+    order: 22,
+    showConditions: [
+      { questionId: 'TECH_019', operator: ConditionOperator.EQUALS, value: true },
+      { questionId: 'TECH_020', operator: ConditionOperator.ANY_OF, value: ['anthropic', 'openai'] },
+      { questionId: 'REG_001', operator: ConditionOperator.EQUALS, value: true },
+      { questionId: 'STRAT_000b', operator: ConditionOperator.EQUALS, value: 'admin' },
+    ],
+    tags: ['compliance', 'baa', 'router', 'egress', 'phi'],
+  },
 
   // ═══════════════════════════════════════════════════════════════
   // DIMENSION 6: FINANCIAL CONSTRAINTS
@@ -1813,7 +1835,7 @@ export const RESPONDENT_BY_ID: Readonly<Record<string, Respondent>> = {
   REG_004: 'lead', REG_005: 'admin', REG_006: 'lead', REG_007: 'admin', REG_008: 'admin',
   REG_009: 'admin', REG_010: 'lead', REG_011: 'admin', REG_012: 'admin', REG_012a: 'admin',
   REG_012b: 'lead', REG_013: 'admin', REG_014: 'admin', REG_014a: 'admin', REG_015: 'admin',
-  REG_016: 'admin', REG_017: 'admin', REG_018: 'admin',
+  REG_016: 'admin', REG_017: 'admin', REG_018: 'admin', REG_019: 'admin',
 
   // ── Financial — all admin (budget / cost policy) ──
   FIN_001: 'admin', FIN_002: 'admin', FIN_003: 'admin', FIN_004: 'admin', FIN_005: 'admin',

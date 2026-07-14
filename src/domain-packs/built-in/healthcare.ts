@@ -448,4 +448,25 @@ transforms clinical data in standard formats.
         ),
     },
   ],
+
+  // Routing-policy contribution: PHI may reach a BAA-covered destination only
+  // (never uncovered); regex redaction never promotes; minimization defaults
+  // off. Air-gapping when no BAA exists falls out of the destination catalog
+  // having no covered entry — the rule does not need to know about it. Activates
+  // on explicit HIPAA selection OR a healthcare-family industry.
+  eligibilityContributions: [
+    {
+      framework: 'hipaa',
+      industries: ['healthcare', 'health_tech', 'pharma'],
+      rules: [
+        {
+          dataClass: 'phi',
+          allow: ['local', 'external-covered'],
+          requiresCoverage: ['hipaa'],
+          redactionCanPromote: false,
+          minimizeOnEgress: 'off',
+        },
+      ],
+    },
+  ],
 };

@@ -24,7 +24,7 @@ if (!HASH_KEY) {
 
 export interface RoutingAuditEntry {
   promptForAudit: string;
-  destination: 'local' | 'hosted' | 'error';
+  destination: 'local' | 'gateway' | 'error';
   reason: string;
   model: string;
   latencyMs: number;

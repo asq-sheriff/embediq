@@ -2,7 +2,7 @@ import {
   buildComponentDefinition,
   serializeComponentDefinition,
 } from '../../governance/oscal/component-definition.js';
-import type { SetupConfig, GeneratedFile } from '../../types/index.js';
+import type { GenerationContext, GeneratedFile } from '../../types/index.js';
 
 /**
  * v4.0 — OSCAL Component Definition emitter.
@@ -22,7 +22,7 @@ import type { SetupConfig, GeneratedFile } from '../../types/index.js';
  * the component's `props` for audit-tool ingestion.
  */
 export function generateOscalComponentDefinition(
-  config: SetupConfig,
+  config: GenerationContext,
   allFiles: readonly GeneratedFile[],
   embediqVersion: string,
 ): GeneratedFile {

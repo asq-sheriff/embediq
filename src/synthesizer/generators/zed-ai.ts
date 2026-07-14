@@ -1,6 +1,6 @@
 import type { ConfigGenerator } from '../generator.js';
 import { TargetFormat } from '../target-format.js';
-import type { SetupConfig, GeneratedFile, UserProfile } from '../../types/index.js';
+import type { GenerationContext, GeneratedFile, UserProfile } from '../../types/index.js';
 
 /**
  * Zed AI generator — emits `.zed/settings.json`. Registers an Ollama
@@ -13,7 +13,7 @@ export class ZedAiGenerator implements ConfigGenerator {
   name = 'zed-ai';
   target = TargetFormat.ZED_AI;
 
-  generate(config: SetupConfig): GeneratedFile[] {
+  generate(config: GenerationContext): GeneratedFile[] {
     const { profile } = config;
     const models = (profile.ollamaModels ?? []).filter((m) => !m.includes('embed'));
     const defaultModel = profile.defaultLocalModel ?? models[0] ?? 'llama3.1:8b';

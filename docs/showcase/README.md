@@ -4,9 +4,11 @@
 
 Customer-facing documentation for evaluators, sales conversations, and pilot kickoffs. Each document is independently shippable — start with the one that matches your role.
 
+**What EmbedIQ is, in one line:** it turns your compliance policy into *enforced controls* around AI coding agents — and produces the machine-readable *proof* that those controls fire. Not "better agents." Governed agents. The value is **enforce → prove → govern**; the buyer is the compliance / security owner.
+
 ## If you are evaluating EmbedIQ for the first time
 
-Start with the **[Executive Brief](EXECUTIVE-BRIEF.md)** (5-minute read). It covers what EmbedIQ is, who it is for, what you get from one wizard run, what makes it defensible, the commercial model, and how to engage. Persona-agnostic; the right first document for a CIO, CISO, or procurement lead.
+Start with the **[Executive Brief](EXECUTIVE-BRIEF.md)** (5-minute read). It covers what EmbedIQ enforces, how it proves those controls to an auditor, who it is for, what makes it defensible (the "prove it" gap no other tool fills), the commercial model, and how to engage. Persona-agnostic; the right first document for a CIO, CISO, or compliance lead.
 
 ## If you map to a specific persona
 

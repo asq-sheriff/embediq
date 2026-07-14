@@ -1,17 +1,17 @@
 /**
- * Decide whether a prompt should be answered locally or escalated to a
- * hosted LLM. Heuristics only — designed to be replaced with a learned
+ * Decide whether a prompt should be answered locally or escalated to the
+ * gateway. Heuristics only — designed to be replaced with a learned
  * classifier as evaluation data accrues.
  */
 
 export interface RouteDecision {
-  destination: 'local' | 'hosted';
+  destination: 'local' | 'escalate';
   reason: string;
 }
 
 const APPROX_CHARS_PER_TOKEN = 4;
 
-// Cheap signals that suggest a hosted LLM is needed: long-form
+// Cheap signals that suggest escalation to the gateway is needed: long-form
 // reasoning markers, multi-step instructions, or explicit "deep" cues.
 const ESCALATION_HINTS = [
   /step[- ]by[- ]step/i,
@@ -25,12 +25,12 @@ export function classify(prompt: string): RouteDecision {
   const approxTokens = Math.ceil(prompt.length / APPROX_CHARS_PER_TOKEN);
 
   if (approxTokens > maxLocal) {
-    return { destination: 'hosted', reason: `prompt over ${maxLocal} tokens` };
+    return { destination: 'escalate', reason: `prompt over ${maxLocal} tokens` };
   }
 
   for (const hint of ESCALATION_HINTS) {
     if (hint.test(prompt)) {
-      return { destination: 'hosted', reason: `escalation hint: ${hint}` };
+      return { destination: 'escalate', reason: `escalation hint: ${hint}` };
     }
   }
 

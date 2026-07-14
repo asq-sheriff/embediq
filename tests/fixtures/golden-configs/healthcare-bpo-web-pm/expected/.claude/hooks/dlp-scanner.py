@@ -15,11 +15,11 @@ PATTERNS = [
     (r'(?:AKIA|ABIA|ACCA)[A-Z0-9]{16}', 'CRITICAL', 'AWS access key detected'),
     (r'-----BEGIN (?:RSA |EC |DSA )?PRIVATE KEY-----', 'CRITICAL', 'Private key detected'),
     # PII/PHI patterns
-    (r'\\b\\d{3}-\\d{2}-\\d{4}\\b', 'CRITICAL', 'Social Security Number detected'),
-    (r'\\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13})\\b', 'CRITICAL', 'Credit card number detected'),
+    (r'\b\d{3}-\d{2}-\d{4}\b', 'CRITICAL', 'Social Security Number detected'),
+    (r'\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13})\b', 'CRITICAL', 'Credit card number detected'),
     # PHI-specific patterns
-    (r'\\b(?:MRN|mrn|Medical Record)[\s#:-]*\\d{5,}\\b', 'CRITICAL', 'Medical Record Number detected'),
-    (r'\\b(?:patient[_\s]?(?:name|id|dob))[\s]*[=:]', 'HIGH', 'Patient data field detected'),
+    (r'\b(?:MRN|mrn|Medical Record)[\s#:-]*\d{5,}\b', 'CRITICAL', 'Medical Record Number detected'),
+    (r'\b(?:patient[_\s]?(?:name|id|dob))[\s]*[=:]', 'HIGH', 'Patient data field detected'),
     # Healthcare (HIPAA/HITECH) domain patterns
     (r'\b(?:MRN|Med\s*Rec)\s*[:#]?\s*\d{6,10}\b', 'CRITICAL', 'Detects medical record numbers which are direct patient identifiers under HIPAA.'),
     (r'\b(?:HPBN|Beneficiary|Member\s*ID)\s*[:#]?\s*[A-Z0-9]{8,15}\b', 'CRITICAL', 'Detects health plan beneficiary and member ID numbers used in insurance claims.'),

@@ -1,4 +1,4 @@
-import type { SetupConfig, UserProfile } from '../../types/index.js';
+import type { GenerationContext, UserProfile } from '../../types/index.js';
 import type { ProvenanceDriver } from './types.js';
 
 /**
@@ -17,10 +17,10 @@ export interface HeuristicRule {
   /** Regex that matches the file's relative path. */
   pattern: RegExp;
   /** Build the driver list given the matched config + regex match groups. */
-  drivers: (config: SetupConfig, match: RegExpMatchArray) => ProvenanceDriver[];
+  drivers: (config: GenerationContext, match: RegExpMatchArray) => ProvenanceDriver[];
 }
 
-const profile = (config: SetupConfig): UserProfile => config.profile;
+const profile = (config: GenerationContext): UserProfile => config.profile;
 
 // ─── Helpers ────────────────────────────────────────────────────────────
 
@@ -346,7 +346,7 @@ export const DRIVER_HEURISTICS: readonly HeuristicRule[] = [
  */
 export function matchHeuristic(
   relativePath: string,
-  config: SetupConfig,
+  config: GenerationContext,
 ): { rule: HeuristicRule; drivers: readonly ProvenanceDriver[] } | null {
   for (const rule of DRIVER_HEURISTICS) {
     const match = rule.pattern.exec(relativePath);

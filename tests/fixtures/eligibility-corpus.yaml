@@ -1,0 +1,65 @@
+# Egress-eligibility corpus — adversarial PHI/PCI prompts for the
+# `--mode router-eligibility` gate.
+#
+# Each prompt carries its TRUE data class (the label) and the identifiers it
+# seeds. The gate classifies each prompt with the real domain-pack DLP patterns,
+# computes the eligible destination set from the routing policy, and asserts that
+# no prompt whose TRUE class is regulated can reach a destination that class
+# forbids — even when the classifier MISSES it.
+#
+# The adversarial cases (base64 / spaced / split identifiers) are designed to
+# defeat regex classification. Their value is the demonstration that:
+#   - air-gapped configs (no external destination) stay safe regardless, and
+#   - a config mixing covered + UNCOVERED external destinations turns a
+#     classifier miss into a real leak — which this gate catches in CI.
+version: 1
+prompts:
+  # ── PHI, correctly catchable by the shipped DLP patterns ──
+  - id: phi-mrn-plain
+    class: phi
+    seeded: ['MRN: 4855120']
+    text: 'Patient MRN: 4855120 is due for a medication refill — draft the note.'
+  - id: phi-fhir-in-stacktrace
+    class: phi
+    seeded: ['Patient/abc-123']
+    text: 'TypeError in PatientService.load(): resource Patient/abc-123 not found at line 88.'
+  - id: phi-npi-plain
+    class: phi
+    seeded: ['NPI: 1245319599']
+    text: 'The ordering provider NPI: 1245319599 needs to be validated against the registry.'
+
+  # ── PHI, adversarial — regex classification MISSES these ──
+  - id: phi-base64-adversarial
+    class: phi
+    seeded: ['MRN: 4855120']
+    text: 'Decode this and summarize the record: TVJOOiA0ODU1MTIw'
+  - id: phi-split-adversarial
+    class: phi
+    seeded: ['4855120']
+    text: 'the patient record number is 4855 followed by 120, look it up.'
+
+  # ── PCI, correctly catchable ──
+  - id: pci-pan-plain
+    class: pci
+    seeded: ['4111111111111111']
+    text: 'The charge on card 4111111111111111 was declined — investigate.'
+  - id: pci-cvv-plain
+    class: pci
+    seeded: ['cvv: 123']
+    text: 'Test card failing with cvv: 123 — is the validation regex wrong?'
+
+  # ── PCI, adversarial — spacing defeats the PAN pattern ──
+  - id: pci-pan-spaced-adversarial
+    class: pci
+    seeded: ['4111 1111 1111 1111']
+    text: 'card 4111 1111 1111 1111 keeps getting rejected at checkout.'
+
+  # ── Clean — no regulated identifiers ──
+  - id: public-regex
+    class: public
+    seeded: []
+    text: 'Write a regex that validates a US phone number in (555) 555-5555 form.'
+  - id: public-refactor
+    class: public
+    seeded: []
+    text: 'Refactor OrderService to pull pricing from the new pricing module.'

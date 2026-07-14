@@ -250,7 +250,7 @@ Rate limits are in addition to any limits at your ingress or CDN.
 | Healthcare BPO / regulated services | Air-gapped or controlled-outbound topology with HIPAA domain pack, encrypted SQLite sessions, autopilot + compliance feedback loop, 6-year audit retention. See [`docs/HEALTHCARE-BPO-DEPLOYMENT.md`](../HEALTHCARE-BPO-DEPLOYMENT.md). |
 | Multi-tenant SaaS | Horizontal scaling: stateless API needs no sticky-session ingress when using the Postgres session backend. Autopilot scales horizontally too — every scheduler replica reads the same `embediq_autopilot_schedules` table and `claimSchedule()` ensures each due schedule fires exactly once. |
 
-CPU cost is dominated by synthesizer runs (up to 33 generators in parallel — 12 Claude Code + 3 Azure/Microsoft + 2 agent-isolation + 5 multi-agent + 4 local-AI + 1 RAG scaffold + 1 local-router + 4 v4.0 governance post-pass + 1 SETUP.md when active).
+CPU cost is dominated by synthesizer runs (up to 36 generators in parallel — 12 Claude Code + 3 Azure/Microsoft + 2 agent-isolation + 5 multi-agent + 4 local-AI + 1 RAG scaffold + 1 local-router + 1 litellm-gateway + 1 litellm-guardrail + 4 v4.0 governance post-pass + 1 audit bundle + 1 SETUP.md when active).
 Typical generation: tens of milliseconds. Memory usage is bounded by
 the answer set + session cache (a few KB per session).
 

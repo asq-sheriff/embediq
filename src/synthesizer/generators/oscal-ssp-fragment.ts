@@ -2,7 +2,7 @@ import {
   buildSspFragment,
   serializeSspFragment,
 } from '../../governance/oscal/ssp-fragment.js';
-import type { SetupConfig, GeneratedFile } from '../../types/index.js';
+import type { GenerationContext, GeneratedFile } from '../../types/index.js';
 
 /**
  * v4.0 — OSCAL System Security Plan (SSP) FRAGMENT emitter.
@@ -25,7 +25,7 @@ import type { SetupConfig, GeneratedFile } from '../../types/index.js';
  *   - EMBEDIQ_OSCAL_SSP_SENSITIVITY  — `fips-199-low` / `moderate` / `high`
  */
 export function generateOscalSspFragment(
-  config: SetupConfig,
+  config: GenerationContext,
   allFiles: readonly GeneratedFile[],
   embediqVersion: string,
   env: NodeJS.ProcessEnv = process.env,

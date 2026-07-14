@@ -154,7 +154,7 @@ For a referral target:
 ## Common interruptions and the answer
 
 **"Is this just a wrapper around `/init`?"**
-> "Claude Code's `/init` produces a generic developer-friendly CLAUDE.md. EmbedIQ produces a compliance-aware harness across sixteen target formats, plus the OSCAL evidence, plus the AIBOM, plus the provenance trace, plus the tamper-evident audit chain. Different artifact, different problem."
+> "Claude Code's `/init` produces a generic developer-friendly CLAUDE.md. EmbedIQ produces a compliance-aware harness across seventeen target formats, plus the OSCAL evidence, plus the AIBOM, plus the provenance trace, plus the tamper-evident audit chain. Different artifact, different problem."
 
 **"Why not just use Drata or Vanta directly?"**
 > "Drata and Vanta manage your compliance posture at the policy level. EmbedIQ produces the developer-side evidence those platforms ingest. They are complementary — we are upstream of them."

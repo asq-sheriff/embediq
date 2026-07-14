@@ -35,7 +35,7 @@ Legend: ● full support, ◐ partial, ○ not supported, — not applicable.
 |---|:-:|:-:|:-:|:-:|:-:|:-:|
 | Adaptive Q&A with branching | ● (95 q, conditional branching) | ◐ (few Qs) | ● (different purpose — spec interview) | ○ | ○ | — |
 | Role adaptation (dev / BA / PM / exec / …) | ● (9 roles) | ○ | ○ | ○ | ○ | — |
-| Multi-agent output from one interview | ● (16 target formats) | ○ (Claude only) | ○ | ○ (Kiro only) | ● (one flat file) | — |
+| Multi-agent output from one interview | ● (18 target formats) | ○ (Claude only) | ○ | ○ (Kiro only) | ● (one flat file) | — |
 | Compliance-aware DLP enforcement | ● (Python hooks, 18+ patterns) | ○ | ○ | ◐ (via AWS services) | ○ | — |
 | Rule templates per compliance framework | ● | ○ | ○ | ○ | ○ | — |
 | Post-generation compliance validation | ● (HIPAA · PCI-DSS · SOC 2 · GDPR checks) | ○ | ○ | ○ | ○ | — |

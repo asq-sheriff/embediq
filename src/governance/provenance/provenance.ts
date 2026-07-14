@@ -1,4 +1,4 @@
-import type { SetupConfig, GeneratedFile } from '../../types/index.js';
+import type { GenerationContext, GeneratedFile } from '../../types/index.js';
 import { matchHeuristic } from './driver-heuristics.js';
 import type {
   ProvenanceTrace,
@@ -17,7 +17,7 @@ const METHODOLOGY_NOTE =
   + 'usually custom domain pack output, external skills, or post-pass overlays.';
 
 export interface BuildProvenanceInput {
-  config: SetupConfig;
+  config: GenerationContext;
   /** Every file emitted in the synthesizer run (the same `allFiles` the orchestrator computed). */
   files: readonly GeneratedFile[];
   /** Authoritative map of `relativePath → generatorName` built by the orchestrator. */
@@ -74,7 +74,7 @@ export function serializeProvenanceTrace(trace: ProvenanceTrace): string {
   return JSON.stringify(trace, null, 2) + '\n';
 }
 
-function summarizeProfile(config: SetupConfig): ProvenanceProfileSummary {
+function summarizeProfile(config: GenerationContext): ProvenanceProfileSummary {
   const p = config.profile;
   return {
     role: p.role,

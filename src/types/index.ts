@@ -175,6 +175,14 @@ export interface UserProfile {
   routerEnabled?: boolean;
   /** External LLM APIs available for escalation: anthropic / openai (TECH_020). */
   externalApis?: string[];
+  /**
+   * External providers the org has a signed BAA/DPA covering its selected
+   * compliance frameworks (customer-attested — never inferred). Drives the
+   * routing catalog's `covered[]`: a provider not listed here is uncovered,
+   * so regulated data classes cannot be routed to it. Empty/undefined means
+   * "no covered external destinations" → the generated config is air-gapped.
+   */
+  coveredProviders?: string[];
   /** True when the router should self-evaluate and escalate below a threshold (TECH_021). */
   confidenceEscalation?: boolean;
   /**
@@ -186,15 +194,38 @@ export interface UserProfile {
   inferredDefaults?: Record<string, string[]>;
 }
 
-export interface SetupConfig {
-  profile: UserProfile;
-  targetDir: string;
-  domainPack?: import('../domain-packs/index.js').DomainPack;
+/**
+ * The pure, generator-facing inputs the orchestrator derives ONCE, before the
+ * parallel fan-out. Every field is a function of the answer set — nothing here
+ * is client-suppliable, and there is no I/O concern (no `targetDir`). Generators
+ * read the fields they need and ignore the rest; an unread field is not a dead
+ * parameter, it is an unused field of an object they already receive.
+ *
+ * Additive by construction: a new derivation phase (e.g. the routing policy)
+ * adds a field here, and only the generators that consume it change.
+ */
+export interface GenerationContext {
+  readonly profile: UserProfile;
+  readonly domainPack?: import('../domain-packs/index.js').DomainPack;
   /**
    * Output targets to generate for (e.g. Claude Code, Cursor, Copilot).
    * Omitted means "Claude only" — preserves the v2.x default.
    */
-  targets?: import('../synthesizer/target-format.js').TargetFormat[];
+  readonly targets?: import('../synthesizer/target-format.js').TargetFormat[];
+  /**
+   * The routing Policy Decision Point — derived once from the profile via
+   * `buildRoutingPolicy()`. Policy-aware generators (router, LLM-gateway,
+   * ignore) read this same object so their configs cannot drift apart.
+   */
+  readonly policy?: import('../synthesizer/policy/types.js').RoutingPolicy;
+}
+
+/**
+ * The I/O-boundary wrapper the CLI / web layer builds: a {@link GenerationContext}
+ * plus the one thing generators must never see — where output is written.
+ */
+export interface SetupConfig extends GenerationContext {
+  targetDir: string;
 }
 
 export interface GeneratedFile {

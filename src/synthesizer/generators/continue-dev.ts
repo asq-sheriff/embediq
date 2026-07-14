@@ -1,6 +1,6 @@
 import type { ConfigGenerator } from '../generator.js';
 import { TargetFormat } from '../target-format.js';
-import type { SetupConfig, GeneratedFile, UserProfile } from '../../types/index.js';
+import type { GenerationContext, GeneratedFile, UserProfile } from '../../types/index.js';
 
 /**
  * Continue.dev generator — emits `.continue/config.json`. Configures the
@@ -15,7 +15,7 @@ export class ContinueDevGenerator implements ConfigGenerator {
   name = 'continue-dev';
   target = TargetFormat.CONTINUE_DEV;
 
-  generate(config: SetupConfig): GeneratedFile[] {
+  generate(config: GenerationContext): GeneratedFile[] {
     const { profile } = config;
     const models = profile.ollamaModels ?? [];
     const defaultModel = profile.defaultLocalModel ?? models[0] ?? 'llama3.1:8b';

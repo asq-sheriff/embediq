@@ -1,6 +1,6 @@
 import type { ConfigGenerator } from '../generator.js';
 import { TargetFormat } from '../target-format.js';
-import type { SetupConfig, GeneratedFile, UserProfile } from '../../types/index.js';
+import type { GenerationContext, GeneratedFile, UserProfile } from '../../types/index.js';
 
 /**
  * Ollama setup generator — emits a root-level `OLLAMA_SETUP.md` runbook
@@ -14,7 +14,7 @@ export class OllamaSetupGenerator implements ConfigGenerator {
   name = 'ollama-setup';
   target = TargetFormat.OLLAMA;
 
-  generate(config: SetupConfig): GeneratedFile[] {
+  generate(config: GenerationContext): GeneratedFile[] {
     const { profile } = config;
     const models = profile.ollamaModels ?? [];
     const ides = profile.ideIntegrations ?? [];

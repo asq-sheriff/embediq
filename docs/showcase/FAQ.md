@@ -6,7 +6,7 @@ The fifteen questions that come up most often when an evaluator looks at EmbedIQ
 
 ## 1. Is this just a wrapper around Claude Code's `/init`?
 
-No. `/init` produces a developer-friendly `CLAUDE.md`. EmbedIQ produces a compliance-aware harness across **sixteen target formats** (Claude Code, Cursor, Copilot, Gemini, Windsurf, AGENTS.md, plus four local-AI integrations, plus an industry-agnostic RAG scaffold, plus a PHI-safe local router, plus four governance output targets), plus a per-agent `SETUP.md` install guide, plus an OSCAL evidence package, plus a CycloneDX-ML AIBOM, plus a per-file provenance trace, plus an optional tamper-evident audit chain. **Twenty-eight parallel generators across sixteen target formats.**
+No. `/init` produces a developer-friendly `CLAUDE.md`. EmbedIQ produces a compliance-aware harness across **seventeen target formats** (Claude Code, Cursor, Copilot, Gemini, Windsurf, AGENTS.md, plus four local-AI integrations, plus an industry-agnostic RAG scaffold, plus a PHI-safe local router, plus four governance output targets), plus a per-agent `SETUP.md` install guide, plus an OSCAL evidence package, plus a CycloneDX-ML AIBOM, plus a per-file provenance trace, plus an optional tamper-evident audit chain. **Thirty-four parallel generators across seventeen target formats.**
 
 The right comparison is not `/init` versus EmbedIQ. It is "a quick-start developer aid" versus "an audit-defensible configuration system."
 

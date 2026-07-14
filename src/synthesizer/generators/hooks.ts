@@ -1,12 +1,12 @@
 import type { ConfigGenerator } from '../generator.js';
 import { TargetFormat } from '../target-format.js';
-import type { SetupConfig, GeneratedFile } from '../../types/index.js';
+import type { GenerationContext, GeneratedFile } from '../../types/index.js';
 
 export class HooksGenerator implements ConfigGenerator {
   name = 'hooks';
   target = TargetFormat.CLAUDE;
 
-  generate(config: SetupConfig): GeneratedFile[] {
+  generate(config: GenerationContext): GeneratedFile[] {
     const { profile } = config;
     const files: GeneratedFile[] = [];
 
@@ -51,7 +51,7 @@ export class HooksGenerator implements ConfigGenerator {
     return files;
   }
 
-  private generateDlpScanner(config: SetupConfig): string {
+  private generateDlpScanner(config: GenerationContext): string {
     const { profile } = config;
     const patterns: string[] = [];
 
@@ -63,14 +63,14 @@ export class HooksGenerator implements ConfigGenerator {
 
     if (profile.securityConcerns.includes('phi') || profile.securityConcerns.includes('pii')) {
       patterns.push(`    # PII/PHI patterns`);
-      patterns.push(`    (r'\\\\b\\\\d{3}-\\\\d{2}-\\\\d{4}\\\\b', 'CRITICAL', 'Social Security Number detected'),`);
-      patterns.push(`    (r'\\\\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13})\\\\b', 'CRITICAL', 'Credit card number detected'),`);
+      patterns.push(`    (r'\\b\\d{3}-\\d{2}-\\d{4}\\b', 'CRITICAL', 'Social Security Number detected'),`);
+      patterns.push(`    (r'\\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13})\\b', 'CRITICAL', 'Credit card number detected'),`);
     }
 
     if (profile.securityConcerns.includes('phi')) {
       patterns.push(`    # PHI-specific patterns`);
-      patterns.push(`    (r'\\\\b(?:MRN|mrn|Medical Record)[\\s#:-]*\\\\d{5,}\\\\b', 'CRITICAL', 'Medical Record Number detected'),`);
-      patterns.push(`    (r'\\\\b(?:patient[_\\s]?(?:name|id|dob))[\\s]*[=:]', 'HIGH', 'Patient data field detected'),`);
+      patterns.push(`    (r'\\b(?:MRN|mrn|Medical Record)[\\s#:-]*\\d{5,}\\b', 'CRITICAL', 'Medical Record Number detected'),`);
+      patterns.push(`    (r'\\b(?:patient[_\\s]?(?:name|id|dob))[\\s]*[=:]', 'HIGH', 'Patient data field detected'),`);
     }
 
     // Custom patterns from REG_012b
@@ -189,7 +189,7 @@ if __name__ == '__main__':
 `;
   }
 
-  private generateAuditLogger(config: SetupConfig): string {
+  private generateAuditLogger(config: GenerationContext): string {
     const logDest = config.profile.answers.get('REG_014a')?.value as string || 'local_file';
 
     return `#!/usr/bin/env python3

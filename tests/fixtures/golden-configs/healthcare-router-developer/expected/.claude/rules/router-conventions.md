@@ -8,7 +8,7 @@ This rule applies to code under `router/`. It complements the broader routing ru
 
 - **Default to local.** Only escalate when the classifier or the confidence step asks for it. Every escalation has a measurable cost; the local path is the one we audit, harden, and trust.
 - **Never bypass the classifier.** Adding a new "always escalate" code path is a load-bearing decision — add a classifier signal instead.
-- **Never escalate raw input.** The hosted-client call site assumes its `prompt` has already been redacted (where redaction applies).
+- **Escalations forward to the gateway, never to a provider.** This router holds no credentials; `dispatch.ts` POSTs to `GATEWAY_BASE_URL`. The gateway owns keys and the egress guardrail — do not add a direct provider call here.
 
 ## Audit
 
@@ -18,24 +18,24 @@ This rule applies to code under `router/`. It complements the broader routing ru
 
 ## PHI handling
 
-- **All escalations pass through `redactor.ts`.** A new escalation path that skips redaction is a HIPAA violation by construction.
-- **Treat the redactor as defense in depth.** Real de-identification is the responsibility of the upstream pipeline (45 CFR 164.514).
-- **Test the redactor with synthetic PHI fixtures** every time the pattern list changes — golden fixtures in `tests/fixtures/synthetic-phi/`.
+- **PHI egress is enforced at the gateway, not here.** This router holds no credentials and cannot reach a provider — it only decides local-vs-escalate and forwards. The gateway routes only to BAA-covered destinations and applies the DLP guardrail. Do not add a direct provider call or a local filter that pretends to be one.
+- **The BAA-covered route is the control, not a filter.** Redaction at the gateway is minimum-necessary hygiene, never de-identification (45 CFR 164.514).
+- **Verify egress with the eligibility gate.** Run `--mode router-eligibility` against the corpus whenever the policy or the gateway config changes.
 
-## Hosted-LLM clients
+## Gateway dispatch
 
-- **API keys never live in source.** They live in `.env` (gitignored) in dev, and in a real secrets manager in production.
-- **Timeouts and retries are caller-defined.** `generateHosted()` is a leaf function — the route handler owns budget and retry policy.
-- **Errors from the hosted client surface verbatim.** Do not silently fall back to the local model when the hosted call fails — that hides a failure mode the operator needs to see.
+- **This router holds no provider keys.** `dispatch.ts` forwards to `GATEWAY_BASE_URL`; credentials live in the gateway's secrets manager, never here.
+- **Timeouts and retries are caller-defined.** `forwardToGateway()` is a leaf function — the route handler owns budget and retry policy.
+- **Errors from the gateway surface verbatim.** Do not silently fall back to the local model when the gateway call fails — that hides a failure mode the operator needs to see.
 
 ## Confidence self-evaluation
 
-- **Self-evaluation runs on the local model** by design — it does not leave the host. Do not re-implement it against the hosted LLM unless you also re-derive the threshold against measured outcomes.
+- **Self-evaluation runs on the local model** by design — it does not leave the host. Do not re-implement it against the gateway unless you also re-derive the threshold against measured outcomes.
 - **Parse the score loosely.** Local models sometimes return prose. The loose-regex fallback to 0.5 is intentional.
 
 ## What this rule does *not* substitute for
 
 - The full `ROUTER_RUNBOOK.md` — production hardening, smoke tests, compliance obligations.
 - A real HIPAA de-identification process (45 CFR 164.514).
-- A BAA with any hosted LLM provider used by this router.
+- A BAA with any provider the gateway routes to.
 - The broader project compliance rules under `.claude/rules/`.

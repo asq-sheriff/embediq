@@ -243,7 +243,7 @@ and never see the local-AI options.
 │  Branch evaluation · profile building · priorities │
 ├────────────────────────────────────────────────────┤
 │  Layer 3: Unified Synthesizer                      │
-│  33 generators · 16 target formats · validation    │
+│  36 generators · 18 target formats · validation    │
 └────────────────────────────────────────────────────┘
 ```
 

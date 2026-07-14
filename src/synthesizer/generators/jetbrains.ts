@@ -1,6 +1,6 @@
 import type { ConfigGenerator } from '../generator.js';
 import { TargetFormat } from '../target-format.js';
-import type { SetupConfig, GeneratedFile, UserProfile } from '../../types/index.js';
+import type { GenerationContext, GeneratedFile, UserProfile } from '../../types/index.js';
 import { MarkdownBuilder } from '../../util/markdown-builder.js';
 import {
   buildCommandBullets,
@@ -31,7 +31,7 @@ export class JetBrainsGenerator implements ConfigGenerator {
   name = 'jetbrains';
   target = TargetFormat.CLAUDE;
 
-  generate(config: SetupConfig): GeneratedFile[] {
+  generate(config: GenerationContext): GeneratedFile[] {
     const { profile } = config;
     if (['ba', 'pm', 'executive'].includes(profile.role)) return [];
     if (!(profile.devOps.ide ?? []).includes('jetbrains')) return [];

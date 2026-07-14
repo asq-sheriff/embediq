@@ -78,16 +78,35 @@ export function sessionMiddleware(backend: SessionBackend) {
       }
     }
 
+    // Register a settlement promise for THIS request synchronously, before
+    // next() runs. The write itself is only known at 'finish' (after the
+    // response is sent), which fires on the server *after* the client's request
+    // promise resolves — so registering the write inside 'finish' left a race
+    // where flushSessionWrites() (tests + graceful shutdown) could run in the
+    // gap and miss the just-triggered write. Registering the settlement promise
+    // up front closes that race: the flush always sees every in-flight request.
+    let settle!: () => void;
+    const settled = new Promise<void>((resolve) => { settle = resolve; });
+    pendingWrites.add(settled);
+    settled.finally(() => pendingWrites.delete(settled));
+
+    let done = false;
     res.on('finish', () => {
-      if (!store.isDirty()) return;
-      if (res.statusCode >= 500) return;
+      if (done) return;
+      done = true;
+      if (!store.isDirty() || res.statusCode >= 500) { settle(); return; }
       const snap = store.snapshot();
-      if (!snap) return;
-      const write = backend.put(snap).catch((err) => {
-        console.error('Session persist failed:', err);
-      });
-      pendingWrites.add(write);
-      write.finally(() => pendingWrites.delete(write));
+      if (!snap) { settle(); return; }
+      backend.put(snap)
+        .catch((err) => { console.error('Session persist failed:', err); })
+        .finally(() => settle());
+    });
+    // A 'close' without a preceding 'finish' means the connection aborted — no
+    // write, but the settlement promise must still resolve so the flush can't hang.
+    res.on('close', () => {
+      if (done) return;
+      done = true;
+      settle();
     });
 
     next();

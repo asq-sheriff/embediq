@@ -3,7 +3,8 @@ import {
   LocalRouterGenerator,
   shouldEmitLocalRouter,
 } from '../../src/synthesizer/generators/local-router.js';
-import { createEmptyProfile, type UserProfile, type SetupConfig } from '../../src/types/index.js';
+import { buildRoutingPolicy } from '../../src/synthesizer/policy/index.js';
+import { createEmptyProfile, type UserProfile, type GenerationContext } from '../../src/types/index.js';
 
 function makeProfile(overrides: Partial<UserProfile> = {}): UserProfile {
   const p = createEmptyProfile();
@@ -28,8 +29,8 @@ function makeProfile(overrides: Partial<UserProfile> = {}): UserProfile {
   return { ...p, ...overrides };
 }
 
-function makeConfig(profile: UserProfile): SetupConfig {
-  return { profile, targetDir: '/test' };
+function makeConfig(profile: UserProfile): GenerationContext {
+  return { profile, policy: buildRoutingPolicy(profile) };
 }
 
 describe('LocalRouterGenerator', () => {
@@ -49,7 +50,7 @@ describe('LocalRouterGenerator', () => {
       expect(paths).toContain('router/src/server.ts');
       expect(paths).toContain('router/src/classifier.ts');
       expect(paths).toContain('router/src/local-client.ts');
-      expect(paths).toContain('router/src/hosted-client.ts');
+      expect(paths).toContain('router/src/dispatch.ts');
       expect(paths).toContain('router/src/audit.ts');
       expect(paths).toContain('ROUTER_RUNBOOK.md');
       expect(paths).toContain('.claude/rules/router-conventions.md');
@@ -62,42 +63,58 @@ describe('LocalRouterGenerator', () => {
     });
   });
 
-  describe('PHI redactor (HIPAA gate)', () => {
-    it('emits router/src/redactor.ts when HIPAA is in the compliance frameworks', () => {
+  describe('decision-only — no credentials, no direct provider call', () => {
+    it('emits dispatch.ts and never a hosted-client or redactor', () => {
       const profile = makeProfile({ complianceFrameworks: ['hipaa'] });
-      const files = new LocalRouterGenerator().generate(makeConfig(profile));
-      const paths = files.map((f) => f.relativePath);
-      expect(paths).toContain('router/src/redactor.ts');
-    });
-
-    it('omits redactor when HIPAA is not declared', () => {
-      const files = new LocalRouterGenerator().generate(makeConfig(makeProfile()));
-      const paths = files.map((f) => f.relativePath);
+      const paths = new LocalRouterGenerator()
+        .generate(makeConfig(profile))
+        .map((f) => f.relativePath);
+      expect(paths).toContain('router/src/dispatch.ts');
+      expect(paths).not.toContain('router/src/hosted-client.ts');
       expect(paths).not.toContain('router/src/redactor.ts');
     });
 
-    it('redactor body matches SSN / phone / email / MRN / DOB / ZIP', () => {
-      const profile = makeProfile({ complianceFrameworks: ['hipaa'] });
-      const files = new LocalRouterGenerator().generate(makeConfig(profile));
-      const redactor = files.find((f) => f.relativePath === 'router/src/redactor.ts')!;
-      expect(redactor.content).toContain("label: 'SSN'");
-      expect(redactor.content).toContain("label: 'PHONE'");
-      expect(redactor.content).toContain("label: 'EMAIL'");
-      expect(redactor.content).toContain("label: 'MRN'");
-      expect(redactor.content).toContain("label: 'DOB'");
-      expect(redactor.content).toContain("label: 'ZIP5'");
+    it('dispatch.ts forwards to GATEWAY_BASE_URL and holds no provider keys', () => {
+      const files = new LocalRouterGenerator().generate(makeConfig(makeProfile()));
+      const dispatch = files.find((f) => f.relativePath === 'router/src/dispatch.ts')!;
+      expect(dispatch.content).toMatch(/forwardToGateway/);
+      expect(dispatch.content).toMatch(/GATEWAY_BASE_URL/);
+      expect(dispatch.content).not.toMatch(/ANTHROPIC_API_KEY/);
+      expect(dispatch.content).not.toMatch(/OPENAI_API_KEY/);
+      expect(dispatch.content).not.toMatch(/api\.anthropic\.com/);
+      expect(dispatch.content).not.toMatch(/api\.openai\.com/);
     });
 
-    it('server.ts imports redactPhi only when HIPAA is active', () => {
-      const hipaaServer = new LocalRouterGenerator()
+    it('server.ts forwards escalations to the gateway, never redacts or calls a provider', () => {
+      const server = new LocalRouterGenerator()
         .generate(makeConfig(makeProfile({ complianceFrameworks: ['hipaa'] })))
         .find((f) => f.relativePath === 'router/src/server.ts')!;
-      expect(hipaaServer.content).toMatch(/import\s+\{\s*redactPhi\s*\}/);
+      expect(server.content).toMatch(/import\s+\{\s*forwardToGateway\s*\}/);
+      expect(server.content).not.toMatch(/redactPhi/);
+      expect(server.content).not.toMatch(/hosted-client/);
+    });
 
-      const plainServer = new LocalRouterGenerator()
-        .generate(makeConfig(makeProfile()))
-        .find((f) => f.relativePath === 'router/src/server.ts')!;
-      expect(plainServer.content).not.toMatch(/redactPhi/);
+    it('env template carries GATEWAY_BASE_URL and no provider keys', () => {
+      const env = new LocalRouterGenerator()
+        .generate(makeConfig(makeProfile({ externalApis: ['anthropic', 'openai'] })))
+        .find((f) => f.relativePath === 'router/.env.example')!;
+      expect(env.content).toMatch(/GATEWAY_BASE_URL/);
+      expect(env.content).not.toMatch(/ANTHROPIC_API_KEY/);
+      expect(env.content).not.toMatch(/OPENAI_API_KEY/);
+    });
+  });
+
+  describe('routing policy artifact', () => {
+    it('emits router/routing-policy.yaml when the context carries a policy', () => {
+      const files = new LocalRouterGenerator().generate(makeConfig(makeProfile()));
+      const paths = files.map((f) => f.relativePath);
+      expect(paths).toContain('router/routing-policy.yaml');
+    });
+
+    it('omits the policy artifact when the context has no policy', () => {
+      const files = new LocalRouterGenerator().generate({ profile: makeProfile() });
+      const paths = files.map((f) => f.relativePath);
+      expect(paths).not.toContain('router/routing-policy.yaml');
     });
   });
 
@@ -115,59 +132,18 @@ describe('LocalRouterGenerator', () => {
       expect(paths).not.toContain('router/src/confidence.ts');
     });
 
-    it('server.ts wires the score → re-dispatch path when confidence is enabled', () => {
+    it('server.ts wires the score → gateway-forward path when confidence is enabled', () => {
       const files = new LocalRouterGenerator().generate(makeConfig(makeProfile()));
       const server = files.find((f) => f.relativePath === 'router/src/server.ts')!;
       expect(server.content).toMatch(/scoreConfidence\(/);
       expect(server.content).toMatch(/ROUTER_CONFIDENCE_THRESHOLD/);
+      expect(server.content).toMatch(/forwardToGateway\(/);
     });
 
     it('env template includes the confidence threshold knob when enabled', () => {
       const files = new LocalRouterGenerator().generate(makeConfig(makeProfile()));
       const env = files.find((f) => f.relativePath === 'router/.env.example')!;
       expect(env.content).toMatch(/ROUTER_CONFIDENCE_THRESHOLD/);
-    });
-  });
-
-  describe('hosted-client wiring', () => {
-    it('emits a stub when no externalApis are declared', () => {
-      const profile = makeProfile({ externalApis: [] });
-      const files = new LocalRouterGenerator().generate(makeConfig(profile));
-      const hosted = files.find((f) => f.relativePath === 'router/src/hosted-client.ts')!;
-      expect(hosted.content).toMatch(/Hosted LLM not configured/);
-      expect(hosted.content).toMatch(/statusCode: 501/);
-    });
-
-    it('wires the Anthropic branch when anthropic is in externalApis', () => {
-      const profile = makeProfile({ externalApis: ['anthropic'] });
-      const files = new LocalRouterGenerator().generate(makeConfig(profile));
-      const hosted = files.find((f) => f.relativePath === 'router/src/hosted-client.ts')!;
-      expect(hosted.content).toMatch(/api\.anthropic\.com\/v1\/messages/);
-      expect(hosted.content).toMatch(/ANTHROPIC_API_KEY/);
-    });
-
-    it('wires the OpenAI branch when openai is in externalApis', () => {
-      const profile = makeProfile({ externalApis: ['openai'] });
-      const files = new LocalRouterGenerator().generate(makeConfig(profile));
-      const hosted = files.find((f) => f.relativePath === 'router/src/hosted-client.ts')!;
-      expect(hosted.content).toMatch(/api\.openai\.com\/v1\/chat\/completions/);
-      expect(hosted.content).toMatch(/OPENAI_API_KEY/);
-    });
-
-    it('wires both branches when both APIs are declared', () => {
-      const profile = makeProfile({ externalApis: ['anthropic', 'openai'] });
-      const files = new LocalRouterGenerator().generate(makeConfig(profile));
-      const hosted = files.find((f) => f.relativePath === 'router/src/hosted-client.ts')!;
-      expect(hosted.content).toMatch(/callAnthropic/);
-      expect(hosted.content).toMatch(/callOpenai/);
-    });
-
-    it('env template includes only the keys for the declared APIs', () => {
-      const onlyAnthropic = new LocalRouterGenerator()
-        .generate(makeConfig(makeProfile({ externalApis: ['anthropic'] })))
-        .find((f) => f.relativePath === 'router/.env.example')!;
-      expect(onlyAnthropic.content).toMatch(/ANTHROPIC_API_KEY/);
-      expect(onlyAnthropic.content).not.toMatch(/OPENAI_API_KEY/);
     });
   });
 
@@ -213,6 +189,13 @@ describe('LocalRouterGenerator', () => {
       expect(classifier.content).toMatch(/ROUTER_MAX_LOCAL_TOKENS/);
       expect(classifier.content).toMatch(/ESCALATION_HINTS/);
     });
+
+    it('decides between local and escalate — never a provider-named destination', () => {
+      const files = new LocalRouterGenerator().generate(makeConfig(makeProfile()));
+      const classifier = files.find((f) => f.relativePath === 'router/src/classifier.ts')!;
+      expect(classifier.content).toMatch(/'local' \| 'escalate'/);
+      expect(classifier.content).not.toMatch(/'hosted'/);
+    });
   });
 
   describe('rule + runbook', () => {
@@ -224,17 +207,18 @@ describe('LocalRouterGenerator', () => {
       expect(rule.content).toMatch(/pathScope: router\/\*\*/);
     });
 
-    it('runbook includes hosted-API hardening when externalApis are configured', () => {
+    it('runbook documents gateway dispatch and holds no provider keys', () => {
       const files = new LocalRouterGenerator().generate(makeConfig(makeProfile()));
       const runbook = files.find((f) => f.relativePath === 'ROUTER_RUNBOOK.md')!;
-      expect(runbook.content).toMatch(/ANTHROPIC_API_KEY/);
+      expect(runbook.content).toMatch(/GATEWAY_BASE_URL/);
+      expect(runbook.content).not.toMatch(/ANTHROPIC_API_KEY/);
     });
 
-    it('runbook includes HIPAA hardening when HIPAA is active', () => {
+    it('runbook includes HIPAA egress enforcement when HIPAA is active', () => {
       const profile = makeProfile({ complianceFrameworks: ['hipaa'] });
       const files = new LocalRouterGenerator().generate(makeConfig(profile));
       const runbook = files.find((f) => f.relativePath === 'ROUTER_RUNBOOK.md')!;
-      expect(runbook.content).toMatch(/PHI redaction \(HIPAA\)/);
+      expect(runbook.content).toMatch(/PHI egress enforcement \(HIPAA\)/);
       expect(runbook.content).toMatch(/six years/);
     });
   });

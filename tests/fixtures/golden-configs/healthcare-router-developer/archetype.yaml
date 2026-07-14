@@ -1,12 +1,15 @@
 id: healthcare-router-developer
 title: Healthcare Developer with Local Router + Confidence Escalation
 description: |
-  Healthcare developer profile that opts into the v3.3 local router with
-  confidence-based escalation and Anthropic as the hosted escalation
-  backend. Exercises:
-    - The PHI redactor that runs before any escalation (HIPAA branch)
+  Healthcare developer profile that opts into the decision-only local
+  router with confidence-based escalation. The router classifies a
+  request and either answers locally (Ollama) or forwards the escalation
+  to the LLM gateway — it holds no provider credentials. Exercises:
+    - The serialized routing policy (router/routing-policy.yaml) — the
+      eligibility lattice + destination catalog, diffable + drift-scanned
+    - The gateway-dispatch module (router/src/dispatch.ts) that forwards
+      escalations and holds no keys (HIPAA egress enforced at the gateway)
     - The confidence self-evaluation module (TECH_021 yes)
-    - The Anthropic branch of the hosted-client wiring
     - Explicit model chaining in Aider / Continue.dev (Ollama for
       autocomplete, hosted Claude for heavy chat)
   Pairs with `healthcare-rag-developer` (RAG scaffold, no router) to

@@ -1,0 +1,12 @@
+# Neutral control task — no compliance angle. Measures whether the config helps
+# or hurts (and its token cost) on ordinary work. Self-contained + dependency
+# free: the hidden verifier runs plain node.
+id: slugify-fix
+description: Fix the buggy slugify() implementation.
+archetype: minimal-developer
+verifyCommand: node verify.mjs
+prompt: >
+  slugify.mjs has a buggy slugify() function. Fix it so that, given any string,
+  it returns a URL slug: lowercased, trimmed, with every run of non-alphanumeric
+  characters replaced by a single hyphen and no leading or trailing hyphens.
+  Edit slugify.mjs only.

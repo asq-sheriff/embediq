@@ -369,4 +369,23 @@ protecting nonpublic personal information (NPI) of consumers.
       requiresFramework: 'sox',
     },
   ],
+
+  // Routing-policy contribution: cardholder data may reach a covered destination
+  // only; no promotion. Activates on explicit PCI selection — deliberately NOT
+  // implied by a finance industry alone, since not every finance app touches
+  // cardholder data (the PCI wizard question, FIN_D001, gates that).
+  eligibilityContributions: [
+    {
+      framework: 'pci',
+      rules: [
+        {
+          dataClass: 'pci',
+          allow: ['local', 'external-covered'],
+          requiresCoverage: ['pci'],
+          redactionCanPromote: false,
+          minimizeOnEgress: 'off',
+        },
+      ],
+    },
+  ],
 };

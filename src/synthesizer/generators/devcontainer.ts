@@ -1,6 +1,6 @@
 import type { ConfigGenerator } from '../generator.js';
 import { TargetFormat } from '../target-format.js';
-import type { SetupConfig, GeneratedFile, UserProfile } from '../../types/index.js';
+import type { GenerationContext, GeneratedFile, UserProfile } from '../../types/index.js';
 
 /** Primary-language → devcontainer base image. Falls back to a plain Ubuntu base. */
 const IMAGE_BY_LANGUAGE: Record<string, string> = {
@@ -27,7 +27,7 @@ export class DevContainerGenerator implements ConfigGenerator {
   name = 'devcontainer';
   target = TargetFormat.CLAUDE;
 
-  generate(config: SetupConfig): GeneratedFile[] {
+  generate(config: GenerationContext): GeneratedFile[] {
     const { profile } = config;
     if (['ba', 'pm', 'executive'].includes(profile.role)) return [];
     if ((profile.devOps.isolationModel ?? '') !== 'dev_container') return [];

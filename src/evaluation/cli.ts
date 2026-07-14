@@ -5,13 +5,28 @@ import { Benchmark } from './benchmark.js';
 import { renderText, renderJson, writeReport } from './reporter.js';
 import { EvaluationError } from './types.js';
 import type { EvaluationReport, ProgressEvent } from './types.js';
+import {
+  loadCorpus,
+  runEligibilityGate,
+  renderEligibilityReport,
+  scenarioProfile,
+  type EligibilityScenario,
+} from './eligibility-gate.js';
 
 const USAGE = `Usage:
   npm run evaluate -- [options]
   npm run benchmark -- --candidate <path> --label <name> [options]
 
+  npm run evaluate -- --mode router-eligibility [--scenario airgapped|covered|mixed]
+
 Options:
-  --mode evaluate|benchmark      Run mode (default: evaluate)
+  --mode evaluate|benchmark|router-eligibility
+                                 Run mode (default: evaluate)
+  --corpus <path>                (router-eligibility) Corpus YAML
+                                 (default: tests/fixtures/eligibility-corpus.yaml)
+  --scenario airgapped|covered|mixed
+                                 (router-eligibility) Egress posture to verify
+                                 (default: airgapped). Exit 1 on any violation.
   --archetypes-root <path>       Directory of archetype fixtures
                                  (default: tests/fixtures/golden-configs)
   --archetype <id>               Restrict to a specific archetype id (repeatable)
@@ -46,7 +61,9 @@ Exit codes:
 `;
 
 interface ParsedArgs {
-  mode: 'evaluate' | 'benchmark';
+  mode: 'evaluate' | 'benchmark' | 'router-eligibility';
+  corpus?: string;
+  scenario: EligibilityScenario;
   archetypesRoot: string;
   archetypes: string[];
   threshold?: number;
@@ -77,6 +94,10 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<numb
       return 0;
     }
 
+    if (args.mode === 'router-eligibility') {
+      return runEligibilityMode(args);
+    }
+
     const report = args.mode === 'benchmark'
       ? await runBenchmark(args)
       : await runEvaluate(args);
@@ -93,6 +114,22 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<numb
     );
     return 2;
   }
+}
+
+function runEligibilityMode(args: ParsedArgs): number {
+  const corpusPath = resolve(args.corpus ?? 'tests/fixtures/eligibility-corpus.yaml');
+  let corpus;
+  try {
+    corpus = loadCorpus(corpusPath);
+  } catch (err) {
+    throw new EvaluationError(
+      `cannot load eligibility corpus at ${corpusPath}: ${err instanceof Error ? err.message : String(err)}`,
+    );
+  }
+  const report = runEligibilityGate(corpus, scenarioProfile(args.scenario));
+  report.scenario = args.scenario;
+  process.stdout.write(renderEligibilityReport(report));
+  return report.passed ? 0 : 1;
 }
 
 async function runEvaluate(args: ParsedArgs): Promise<EvaluationReport> {
@@ -191,6 +228,7 @@ function progressPrinter(args: ParsedArgs): ((event: ProgressEvent) => void) | u
 function parseArgs(argv: string[]): ParsedArgs {
   const out: ParsedArgs = {
     mode: 'evaluate',
+    scenario: 'airgapped',
     archetypesRoot: 'tests/fixtures/golden-configs',
     archetypes: [],
     candidateLayout: 'per-archetype',
@@ -211,7 +249,13 @@ function parseArgs(argv: string[]): ParsedArgs {
         out.help = true;
         break;
       case '--mode':
-        out.mode = expectEnum(argv[++i], ['evaluate', 'benchmark'], '--mode');
+        out.mode = expectEnum(argv[++i], ['evaluate', 'benchmark', 'router-eligibility'], '--mode');
+        break;
+      case '--corpus':
+        out.corpus = expectValue(argv[++i], '--corpus');
+        break;
+      case '--scenario':
+        out.scenario = expectEnum(argv[++i], ['airgapped', 'covered', 'mixed'], '--scenario');
         break;
       case '--archetypes-root':
         out.archetypesRoot = expectValue(argv[++i], '--archetypes-root');

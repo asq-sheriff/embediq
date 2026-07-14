@@ -1,4 +1,5 @@
 import type { Question, GeneratedFile, UserProfile } from '../types/index.js';
+import type { EligibilityContribution } from '../synthesizer/policy/types.js';
 
 export interface DomainPack {
   id: string;
@@ -12,6 +13,13 @@ export interface DomainPack {
   ruleTemplates: RuleTemplateDef[];
   ignorePatterns: string[];
   validationChecks: DomainValidationCheck[];
+  /**
+   * Regulated-class eligibility rules this pack contributes to the routing
+   * policy (the PDP). Composed by `buildRoutingPolicy` when the pack's framework
+   * is selected or the profile's industry implies it — so adding a vertical's
+   * egress policy is pack data, not an edit to the eligibility core.
+   */
+  eligibilityContributions?: readonly EligibilityContribution[];
 }
 
 export interface ComplianceFrameworkDef {

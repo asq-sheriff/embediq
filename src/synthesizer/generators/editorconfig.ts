@@ -1,6 +1,6 @@
 import type { ConfigGenerator } from '../generator.js';
 import { TargetFormat } from '../target-format.js';
-import type { SetupConfig, GeneratedFile, UserProfile } from '../../types/index.js';
+import type { GenerationContext, GeneratedFile, UserProfile } from '../../types/index.js';
 
 /**
  * Emits a root `.editorconfig` when the team uses Visual Studio
@@ -19,7 +19,7 @@ export class EditorConfigGenerator implements ConfigGenerator {
   name = 'editorconfig';
   target = TargetFormat.CLAUDE;
 
-  generate(config: SetupConfig): GeneratedFile[] {
+  generate(config: GenerationContext): GeneratedFile[] {
     const { profile } = config;
     if (['ba', 'pm', 'executive'].includes(profile.role)) return [];
     if (!(profile.devOps.ide ?? []).includes('visual_studio')) return [];

@@ -34,6 +34,19 @@ const MANAGED_TREES: readonly string[] = [
   '.mcp.json.template',
   'azure-pipelines.yml',
   'SETUP.md',
+  // Local-AI output family — the router and RAG scaffolds plus the local-IDE
+  // integration files. These were previously ungoverned, so a hand-edit (e.g.
+  // adding an uncovered provider to the router) went undetected by drift.
+  'router',
+  'rag',
+  'litellm',
+  '.continue',
+  '.zed',
+  '.aider.conf.yml',
+  '.aiderignore',
+  'OLLAMA_SETUP.md',
+  'ROUTER_RUNBOOK.md',
+  'RAG_RUNBOOK.md',
 ];
 
 export type DriftStatus =

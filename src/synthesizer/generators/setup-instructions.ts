@@ -1,6 +1,6 @@
 import type { ConfigGenerator } from '../generator.js';
 import { TargetFormat } from '../target-format.js';
-import type { SetupConfig, GeneratedFile, UserProfile } from '../../types/index.js';
+import type { GenerationContext, GeneratedFile, UserProfile } from '../../types/index.js';
 import { MarkdownBuilder } from '../../util/markdown-builder.js';
 
 /**
@@ -21,7 +21,7 @@ export class SetupInstructionsGenerator implements ConfigGenerator {
   name = 'SETUP.md';
   target = TargetFormat.CLAUDE;
 
-  generate(config: SetupConfig): GeneratedFile[] {
+  generate(config: GenerationContext): GeneratedFile[] {
     const { profile, targets } = config;
     const selected = new Set(targets ?? []);
     const content = this.render(profile, selected);

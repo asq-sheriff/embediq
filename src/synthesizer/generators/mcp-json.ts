@@ -1,12 +1,12 @@
 import type { ConfigGenerator } from '../generator.js';
 import { TargetFormat } from '../target-format.js';
-import type { SetupConfig, GeneratedFile } from '../../types/index.js';
+import type { GenerationContext, GeneratedFile } from '../../types/index.js';
 
 export class McpJsonGenerator implements ConfigGenerator {
   name = 'mcp-json';
   target = TargetFormat.CLAUDE;
 
-  generate(config: SetupConfig): GeneratedFile[] {
+  generate(config: GenerationContext): GeneratedFile[] {
     const { profile } = config;
     const mcpPrefs = profile.answers.get('TECH_015');
     const selected = Array.isArray(mcpPrefs?.value) ? mcpPrefs.value as string[] : [];

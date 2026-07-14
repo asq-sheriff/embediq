@@ -105,9 +105,12 @@ describe('SynthesizerOrchestrator', () => {
       expect(dlp).toBeDefined();
     });
 
-    it('DLP scanner contains SSN pattern', () => {
+    it('DLP scanner contains a correctly-escaped SSN pattern (single backslash — actually matches)', () => {
       const dlp = files.find(f => f.relativePath.includes('dlp-scanner'));
-      expect(dlp!.content).toContain('\\\\d{3}-\\\\d{2}-\\\\d{4}');
+      // Must be \d (one backslash), not \\d — double-escaping made the regex
+      // match a literal backslash and silently never fire. See hook-enforcement.test.ts.
+      expect(dlp!.content).toContain('\\d{3}-\\d{2}-\\d{4}');
+      expect(dlp!.content).not.toContain('\\\\d{3}');
     });
 
     it('DLP scanner contains MRN pattern', () => {

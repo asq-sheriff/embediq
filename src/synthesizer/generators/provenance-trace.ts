@@ -2,7 +2,7 @@ import {
   buildProvenanceTrace,
   serializeProvenanceTrace,
 } from '../../governance/provenance/index.js';
-import type { SetupConfig, GeneratedFile } from '../../types/index.js';
+import type { GenerationContext, GeneratedFile } from '../../types/index.js';
 
 /**
  * v4.0 — Provenance Trace emitter.
@@ -25,7 +25,7 @@ import type { SetupConfig, GeneratedFile } from '../../types/index.js';
  *     file.
  */
 export function generateProvenanceTrace(
-  config: SetupConfig,
+  config: GenerationContext,
   allFiles: readonly GeneratedFile[],
   generatorByPath: ReadonlyMap<string, string>,
   targetByPath: ReadonlyMap<string, string>,

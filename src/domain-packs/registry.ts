@@ -241,17 +241,14 @@ export class DomainPackRegistry {
   }
 }
 
-import { healthcarePack } from './built-in/healthcare.js';
-import { financePack } from './built-in/finance.js';
-import { educationPack } from './built-in/education.js';
-import { nistAiRmfPack } from './built-in/nist-ai-rmf.js';
+import { BUILT_IN_PACKS } from './built-in/index.js';
 
 export const domainPackRegistry = new DomainPackRegistry();
-domainPackRegistry.register(healthcarePack);
-domainPackRegistry.register(financePack);
-domainPackRegistry.register(educationPack);
-// v4.0 — NIST AI RMF + AI 600-1 Generative AI Profile. Cross-industry
-// pack; not in INDUSTRY_TO_PACK. Compose with the operator's industry pack
-// via DomainPackRegistry.composeFromPacks(['healthcare','nist-ai-rmf'], ...)
-// when AI RMF coverage is wanted alongside HIPAA / PCI / FERPA / etc.
-domainPackRegistry.register(nistAiRmfPack);
+// Register the built-in packs in order (first-wins on compose). The list is the
+// single source shared with the routing-policy builder's eligibility
+// composition — healthcare/finance carry HIPAA/PCI egress rules, and the
+// cross-industry NIST AI RMF pack (not in INDUSTRY_TO_PACK) composes via
+// DomainPackRegistry.composeFromPacks(['healthcare','nist-ai-rmf'], ...).
+for (const pack of BUILT_IN_PACKS) {
+  domainPackRegistry.register(pack);
+}

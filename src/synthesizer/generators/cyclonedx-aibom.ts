@@ -1,5 +1,5 @@
 import { buildAibom, serializeAibom } from '../../governance/cyclonedx/index.js';
-import type { SetupConfig, GeneratedFile } from '../../types/index.js';
+import type { GenerationContext, GeneratedFile } from '../../types/index.js';
 
 /**
  * v4.0 — CycloneDX-ML AI Bill of Materials emitter.
@@ -20,11 +20,18 @@ import type { SetupConfig, GeneratedFile } from '../../types/index.js';
  * The harness itself appears as the BOM subject in `metadata.component`.
  */
 export function generateCycloneDxAibom(
-  config: SetupConfig,
+  config: GenerationContext,
   allFiles: readonly GeneratedFile[],
   embediqVersion: string,
 ): GeneratedFile {
   const frameworks = config.domainPack?.complianceFrameworks ?? [];
+
+  // Coverage per external provider, from the routing policy's destination
+  // catalog — so each hosted model in the BOM carries its BAA/DPA coverage.
+  const coveredByProvider: Record<string, readonly string[]> = {};
+  for (const d of config.policy?.destinations ?? []) {
+    if (d.locality === 'external') coveredByProvider[d.provider] = d.covered;
+  }
 
   const doc = buildAibom({
     profile: {
@@ -42,6 +49,7 @@ export function generateCycloneDxAibom(
     frameworks,
     generatedFiles: allFiles,
     embediqVersion,
+    coveredByProvider,
   });
 
   return {

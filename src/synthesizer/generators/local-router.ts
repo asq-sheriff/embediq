@@ -1,41 +1,39 @@
+import { stringify as stringifyYaml } from 'yaml';
 import type { ConfigGenerator } from '../generator.js';
 import { TargetFormat } from '../target-format.js';
-import type { SetupConfig, GeneratedFile, UserProfile } from '../../types/index.js';
+import type { GenerationContext, GeneratedFile, UserProfile } from '../../types/index.js';
 
 /**
  * Local Router generator — emits a runnable Express dispatch service
  * under `router/` plus a root-level `ROUTER_RUNBOOK.md` and a
  * path-scoped rule file at `.claude/rules/router-conventions.md`.
  *
- * The service routes incoming chat / completion requests between a
- * local Ollama model and an optional hosted LLM (Anthropic or OpenAI),
- * choosing the destination via three layered signals:
+ * Decision-only: the router classifies a request, checks eligibility, and
+ * either answers it locally (Ollama) or FORWARDS the escalation to the LLM
+ * gateway (LiteLLM). It holds NO provider credentials and makes no direct
+ * provider call — the gateway holds the keys and enforces the PHI/PII egress
+ * guardrail, which is what makes the compliance gate unbypassable.
  *
- *   1. A classifier (token count, language hints, simple regex
- *      heuristics) — short / simple requests stay local.
- *   2. Optional PHI redaction before any escalation when the active
- *      profile includes HIPAA. The redacted prompt is what gets sent
- *      to the hosted LLM, never the original.
- *   3. Optional confidence-based re-route — the local model
- *      self-scores its own answer; below a threshold the request is
- *      re-dispatched to the hosted LLM with redaction applied first.
+ *   1. A classifier (token count, language hints, simple regex heuristics) —
+ *      short / simple requests stay local.
+ *   2. Optional confidence-based re-route — the local model self-scores its own
+ *      answer; below a threshold the request is forwarded to the gateway.
  *
  * Gating: the orchestrator only includes the LOCAL_ROUTER target when
- * `profile.routerEnabled === true`. `externalApis` controls which
- * hosted-LLM clients are wired up; with neither set, the service runs
- * local-only and the escalation path returns 501.
+ * `profile.routerEnabled === true`. The serialized routing policy is emitted as
+ * `router/routing-policy.yaml` for diffing and drift scanning.
  *
  * Files (TypeScript scaffold):
  *   router/package.json
- *   router/.env.example
+ *   router/.env.example           — no provider keys; GATEWAY_BASE_URL only
  *   router/README.md
  *   router/src/server.ts          — Express entrypoint
- *   router/src/classifier.ts      — local-vs-hosted decision
+ *   router/src/classifier.ts      — local-vs-escalate decision
  *   router/src/local-client.ts    — Ollama client
- *   router/src/hosted-client.ts   — Anthropic / OpenAI client
- *   router/src/audit.ts           — JSONL routing audit log
- *   router/src/redactor.ts        — PHI redactor (HIPAA only)
+ *   router/src/dispatch.ts        — forwards escalations to the gateway (no keys)
+ *   router/src/audit.ts           — JSONL routing decision trace
  *   router/src/confidence.ts      — self-evaluation module (opt-in)
+ *   router/routing-policy.yaml    — serialized routing policy
  *   ROUTER_RUNBOOK.md             — operator runbook
  *   .claude/rules/router-conventions.md
  */
@@ -43,13 +41,12 @@ export class LocalRouterGenerator implements ConfigGenerator {
   name = 'local-router';
   target = TargetFormat.LOCAL_ROUTER;
 
-  generate(config: SetupConfig): GeneratedFile[] {
+  generate(config: GenerationContext): GeneratedFile[] {
     const { profile } = config;
     if (!shouldEmitLocalRouter(profile)) return [];
 
     const hipaa = profile.complianceFrameworks.includes('hipaa');
     const confidence = profile.confidenceEscalation === true;
-    const externalApis = profile.externalApis ?? [];
 
     const files: GeneratedFile[] = [
       {
@@ -83,9 +80,9 @@ export class LocalRouterGenerator implements ConfigGenerator {
         description: 'Local router — Ollama client (router/src/local-client.ts)',
       },
       {
-        relativePath: 'router/src/hosted-client.ts',
-        content: hostedClientTs(externalApis),
-        description: 'Local router — hosted LLM client (router/src/hosted-client.ts)',
+        relativePath: 'router/src/dispatch.ts',
+        content: dispatchTs(),
+        description: 'Local router — gateway dispatch, holds no credentials (router/src/dispatch.ts)',
       },
       {
         relativePath: 'router/src/audit.ts',
@@ -104,11 +101,17 @@ export class LocalRouterGenerator implements ConfigGenerator {
       },
     ];
 
-    if (hipaa) {
+    if (config.policy) {
       files.push({
-        relativePath: 'router/src/redactor.ts',
-        content: redactorTs(),
-        description: 'Local router — PHI redactor (router/src/redactor.ts)',
+        relativePath: 'router/routing-policy.yaml',
+        // Serialize under the YAML 1.1 schema so `minimizeOnEgress: off` is
+        // quoted ("off"). Under 1.2-core `off` is a plain string and stays
+        // bare, but 1.1 parsers (PyYAML et al.) read a bare `off` as boolean
+        // false — this keeps the policy round-tripping to the same string
+        // everywhere. Only the `off` values change; booleans/other strings are
+        // untouched.
+        content: stringifyYaml(config.policy, { schema: 'yaml-1.1' }),
+        description: 'Local router — serialized routing policy, diffable + drift-scanned (router/routing-policy.yaml)',
       });
     }
 
@@ -173,23 +176,12 @@ function envExample(profile: UserProfile): string {
   lines.push(`OLLAMA_HOST=http://localhost:11434`);
   lines.push(`OLLAMA_LOCAL_MODEL=${profile.defaultLocalModel ?? 'llama3.1:8b'}`);
   lines.push('');
-
-  const apis = profile.externalApis ?? [];
-  if (apis.includes('anthropic')) {
-    lines.push(`# Anthropic — required when escalation is enabled and the request`);
-    lines.push(`# selects the anthropic backend. Provision a key with the minimum`);
-    lines.push(`# capability and rotate quarterly.`);
-    lines.push(`ANTHROPIC_API_KEY=`);
-    lines.push(`ANTHROPIC_MODEL=claude-sonnet-4-6`);
-    lines.push('');
-  }
-  if (apis.includes('openai')) {
-    lines.push(`# OpenAI — required when escalation is enabled and the request`);
-    lines.push(`# selects the openai backend.`);
-    lines.push(`OPENAI_API_KEY=`);
-    lines.push(`OPENAI_MODEL=gpt-4o`);
-    lines.push('');
-  }
+  lines.push(`# LLM gateway (LiteLLM) base URL. This router holds NO provider`);
+  lines.push(`# credentials: it classifies a request, checks eligibility, and forwards`);
+  lines.push(`# the chosen destination here. The gateway holds the keys and enforces`);
+  lines.push(`# the egress guardrail — see litellm/config.yaml.`);
+  lines.push(`GATEWAY_BASE_URL=http://localhost:4000`);
+  lines.push('');
 
   lines.push(`# Routing audit log. JSONL, append-only. Rotate via logrotate.`);
   lines.push(`ROUTER_AUDIT_LOG_PATH=./router-audit.jsonl`);
@@ -204,7 +196,7 @@ function envExample(profile: UserProfile): string {
   if (profile.confidenceEscalation) {
     lines.push('');
     lines.push(`# Confidence-escalation threshold (0..1). Local answers scoring`);
-    lines.push(`# below this get redacted (if HIPAA) and re-dispatched to a hosted LLM.`);
+    lines.push(`# below this are forwarded to the gateway for escalation.`);
     lines.push(`ROUTER_CONFIDENCE_THRESHOLD=0.55`);
   }
 
@@ -212,16 +204,16 @@ function envExample(profile: UserProfile): string {
 }
 
 function readme(profile: UserProfile): string {
-  const hipaa = profile.complianceFrameworks.includes('hipaa');
-  const apis = profile.externalApis ?? [];
   const confidence = profile.confidenceEscalation === true;
 
   const lines: string[] = [];
   lines.push(`# Local Router`);
   lines.push('');
   lines.push(`Hybrid-dispatch service for the **${profile.businessDomain || 'project'}**. ` +
-    `Routes inbound chat / completion requests between a local Ollama model and an ` +
-    `optional hosted LLM, choosing the destination from a layered set of signals.`);
+    `Routes inbound chat / completion requests between a local Ollama model and the ` +
+    `LLM gateway, choosing the destination from a layered set of signals. This router ` +
+    `makes the decision and forwards escalations to the gateway; it holds no provider ` +
+    `credentials and never calls a provider directly.`);
   lines.push('');
   lines.push(`> **Read [ROUTER_RUNBOOK.md](../ROUTER_RUNBOOK.md) at the project root first.** ` +
     `It covers compliance obligations, the smoke test, and the production-hardening checklist.`);
@@ -245,11 +237,11 @@ function readme(profile: UserProfile): string {
   lines.push(`| File | Purpose |`);
   lines.push(`|---|---|`);
   lines.push(`| \`src/server.ts\` | Express entry point — exposes \`POST /route\` |`);
-  lines.push(`| \`src/classifier.ts\` | Token / regex heuristics — local-vs-hosted decision |`);
+  lines.push(`| \`src/classifier.ts\` | Token / regex heuristics — local-vs-escalate decision |`);
   lines.push(`| \`src/local-client.ts\` | Ollama client |`);
-  lines.push(`| \`src/hosted-client.ts\` | ${apis.length === 0 ? 'Hosted-LLM stub (returns 501 — wire one up via .env)' : apis.map((a) => a === 'anthropic' ? 'Anthropic' : 'OpenAI').join(' / ') + ' client'} |`);
+  lines.push(`| \`src/dispatch.ts\` | Forwards escalations to the LLM gateway — holds NO provider credentials |`);
   lines.push(`| \`src/audit.ts\` | Per-request JSONL audit log (prompt hash, decision, latency) |`);
-  if (hipaa) lines.push(`| \`src/redactor.ts\` | PHI redactor — runs before any escalation |`);
+  lines.push(`| \`routing-policy.yaml\` | Serialized routing policy (eligibility + destinations) — diffable, drift-scanned |`);
   if (confidence) lines.push(`| \`src/confidence.ts\` | Self-evaluation — re-routes low-confidence answers |`);
   lines.push('');
   lines.push(`See \`ROUTER_RUNBOOK.md\` for what to harden before any sensitive ` +
@@ -261,46 +253,37 @@ function readme(profile: UserProfile): string {
 // ─── Server entrypoint ───────────────────────────────────────────────────
 
 function serverTs(profile: UserProfile): string {
-  const hipaa = profile.complianceFrameworks.includes('hipaa');
   const confidence = profile.confidenceEscalation === true;
 
   const imports = [
     `import express from 'express';`,
     `import { classify } from './classifier.js';`,
     `import { generateLocal } from './local-client.js';`,
-    `import { generateHosted } from './hosted-client.js';`,
+    `import { forwardToGateway } from './dispatch.js';`,
     `import { logRouting } from './audit.js';`,
   ];
-  if (hipaa) imports.push(`import { redactPhi } from './redactor.js';`);
   if (confidence) imports.push(`import { scoreConfidence } from './confidence.js';`);
-
-  const redactCall = hipaa
-    ? `      const redacted = redactPhi(prompt);`
-    : `      const redacted = prompt;`;
 
   const confidenceBlock = confidence
     ? `
-      // Confidence self-evaluation — re-route when the local answer's
-      // self-score falls below ROUTER_CONFIDENCE_THRESHOLD.
+      // Confidence self-evaluation — re-route when the local answer's self-score
+      // falls below ROUTER_CONFIDENCE_THRESHOLD. The escalation goes to the
+      // GATEWAY, which holds the credentials and enforces the egress guardrail —
+      // this router never sees a provider key or the raw egress path.
       if (decision.destination === 'local') {
-        const score = await scoreConfidence({
-          prompt,
-          answer: response.text,
-          model: response.model,
-        });
+        const score = await scoreConfidence({ prompt, answer: response.text, model: response.model });
         const threshold = Number.parseFloat(process.env.ROUTER_CONFIDENCE_THRESHOLD ?? '0.55');
         if (score < threshold) {
-${hipaa ? '          const escalatePrompt = redactPhi(prompt);' : '          const escalatePrompt = prompt;'}
-          const escalated = await generateHosted({ prompt: escalatePrompt, backend: req.body.backend });
+          const escalated = await forwardToGateway({ prompt, model: req.body.model });
           logRouting({
             promptForAudit: prompt,
-            destination: 'hosted',
+            destination: 'gateway',
             reason: 'confidence-escalation',
             confidence: score,
             latencyMs: Date.now() - started,
             model: escalated.model,
           });
-          res.json({ text: escalated.text, route: 'hosted', confidence: score });
+          res.json({ text: escalated.text, route: 'gateway', confidence: score });
           return;
         }
       }
@@ -315,7 +298,7 @@ app.use(express.json({ limit: '1mb' }));
 
 interface RouteRequestBody {
   prompt: string;
-  backend?: 'anthropic' | 'openai';
+  model?: string;
 }
 
 app.get('/health', (_req, res) => {
@@ -324,7 +307,7 @@ app.get('/health', (_req, res) => {
 
 app.post('/route', async (req, res) => {
   const started = Date.now();
-  const { prompt, backend }: RouteRequestBody = req.body ?? {};
+  const { prompt, model }: RouteRequestBody = req.body ?? {};
   if (typeof prompt !== 'string' || prompt.length === 0) {
     res.status(400).json({ error: 'prompt is required' });
     return;
@@ -346,17 +329,18 @@ ${confidenceBlock}      logRouting({
       return;
     }
 
-    // Hosted path — redact before any escalation.
-${redactCall}
-    const response = await generateHosted({ prompt: redacted, backend });
+    // Escalation path — forward to the gateway. This router holds no
+    // credentials and makes no direct provider call; the gateway executes the
+    // request and enforces the PHI/PII egress guardrail before any egress.
+    const response = await forwardToGateway({ prompt, model });
     logRouting({
       promptForAudit: prompt,
-      destination: 'hosted',
+      destination: 'gateway',
       reason: decision.reason,
       latencyMs: Date.now() - started,
       model: response.model,
     });
-    res.json({ text: response.text, route: 'hosted' });
+    res.json({ text: response.text, route: 'gateway' });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     logRouting({
@@ -378,23 +362,66 @@ app.listen(port, () => {
 `;
 }
 
+// ─── Gateway dispatch (holds no credentials) ─────────────────────────────
+
+function dispatchTs(): string {
+  return `/**
+ * Forwards an escalated request to the LLM gateway (LiteLLM), which holds the
+ * provider credentials and enforces the PHI/PII egress guardrail. This router
+ * never imports a provider SDK and never sees a key — that is what makes the
+ * compliance gate unbypassable: any path that wants to reach a provider must go
+ * through the gateway.
+ */
+
+const GATEWAY_BASE_URL = process.env.GATEWAY_BASE_URL ?? 'http://localhost:4000';
+
+export interface GatewayInput {
+  prompt: string;
+  /** Gateway model_name to target; the gateway falls back to its default. */
+  model?: string;
+}
+
+export interface GatewayOutput {
+  text: string;
+  model: string;
+}
+
+export async function forwardToGateway(input: GatewayInput): Promise<GatewayOutput> {
+  const res = await fetch(GATEWAY_BASE_URL + '/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      model: input.model ?? 'escalation',
+      messages: [{ role: 'user', content: input.prompt }],
+    }),
+  });
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error('gateway error ' + res.status + ': ' + body);
+  }
+  const payload = (await res.json()) as { model?: string; choices?: Array<{ message?: { content?: string } }> };
+  return { text: payload.choices?.[0]?.message?.content ?? '', model: payload.model ?? 'gateway' };
+}
+`;
+}
+
 // ─── Classifier ──────────────────────────────────────────────────────────
 
 function classifierTs(): string {
   return `/**
- * Decide whether a prompt should be answered locally or escalated to a
- * hosted LLM. Heuristics only — designed to be replaced with a learned
+ * Decide whether a prompt should be answered locally or escalated to the
+ * gateway. Heuristics only — designed to be replaced with a learned
  * classifier as evaluation data accrues.
  */
 
 export interface RouteDecision {
-  destination: 'local' | 'hosted';
+  destination: 'local' | 'escalate';
   reason: string;
 }
 
 const APPROX_CHARS_PER_TOKEN = 4;
 
-// Cheap signals that suggest a hosted LLM is needed: long-form
+// Cheap signals that suggest escalation to the gateway is needed: long-form
 // reasoning markers, multi-step instructions, or explicit "deep" cues.
 const ESCALATION_HINTS = [
   /step[- ]by[- ]step/i,
@@ -408,12 +435,12 @@ export function classify(prompt: string): RouteDecision {
   const approxTokens = Math.ceil(prompt.length / APPROX_CHARS_PER_TOKEN);
 
   if (approxTokens > maxLocal) {
-    return { destination: 'hosted', reason: \`prompt over \${maxLocal} tokens\` };
+    return { destination: 'escalate', reason: \`prompt over \${maxLocal} tokens\` };
   }
 
   for (const hint of ESCALATION_HINTS) {
     if (hint.test(prompt)) {
-      return { destination: 'hosted', reason: \`escalation hint: \${hint}\` };
+      return { destination: 'escalate', reason: \`escalation hint: \${hint}\` };
     }
   }
 
@@ -459,159 +486,6 @@ export async function generateLocal(input: LocalGenerateInput): Promise<LocalGen
 `;
 }
 
-// ─── Hosted client ───────────────────────────────────────────────────────
-
-function hostedClientTs(externalApis: string[]): string {
-  const hasAnthropic = externalApis.includes('anthropic');
-  const hasOpenai = externalApis.includes('openai');
-
-  if (!hasAnthropic && !hasOpenai) {
-    return `/**
- * No external LLM APIs were declared in the wizard. The router is
- * configured local-only — any request the classifier escalates returns
- * 501 (Not Implemented) until you wire up a hosted backend.
- *
- * To enable: set ANTHROPIC_API_KEY or OPENAI_API_KEY in router/.env,
- * then replace this stub with a real client.
- */
-
-export interface HostedGenerateInput {
-  prompt: string;
-  backend?: 'anthropic' | 'openai';
-}
-
-export interface HostedGenerateOutput {
-  text: string;
-  model: string;
-}
-
-export async function generateHosted(_input: HostedGenerateInput): Promise<HostedGenerateOutput> {
-  throw Object.assign(
-    new Error('Hosted LLM not configured for this router. Set ANTHROPIC_API_KEY or OPENAI_API_KEY and replace src/hosted-client.ts.'),
-    { statusCode: 501 },
-  );
-}
-`;
-  }
-
-  const defaultBackend = hasAnthropic ? 'anthropic' : 'openai';
-  const branches: string[] = [];
-  if (hasAnthropic) branches.push(anthropicBranch());
-  if (hasOpenai) branches.push(openaiBranch());
-
-  return `/**
- * Hosted-LLM client. Picks a backend from the request body (when
- * provided), falls back to the configured default. Returns 501 when
- * the chosen backend has no API key set.
- *
- * Every call assumes the prompt has already been redacted upstream
- * (see redactor.ts / server.ts) when running under HIPAA. Do not
- * re-introduce raw PHI into this path.
- */
-
-export interface HostedGenerateInput {
-  prompt: string;
-  backend?: 'anthropic' | 'openai';
-}
-
-export interface HostedGenerateOutput {
-  text: string;
-  model: string;
-}
-
-const DEFAULT_BACKEND: 'anthropic' | 'openai' = '${defaultBackend}';
-
-export async function generateHosted(input: HostedGenerateInput): Promise<HostedGenerateOutput> {
-  const backend = input.backend ?? DEFAULT_BACKEND;
-${branches.join('\n')}
-  throw Object.assign(
-    new Error(\`Unknown backend: \${backend}\`),
-    { statusCode: 400 },
-  );
-}
-${hasAnthropic ? anthropicHelper() : ''}${hasOpenai ? openaiHelper() : ''}`;
-}
-
-function anthropicBranch(): string {
-  return `  if (backend === 'anthropic') {
-    return callAnthropic(input.prompt);
-  }`;
-}
-
-function openaiBranch(): string {
-  return `  if (backend === 'openai') {
-    return callOpenai(input.prompt);
-  }`;
-}
-
-function anthropicHelper(): string {
-  return `
-async function callAnthropic(prompt: string): Promise<HostedGenerateOutput> {
-  const key = process.env.ANTHROPIC_API_KEY;
-  if (!key) {
-    throw Object.assign(
-      new Error('ANTHROPIC_API_KEY is unset — cannot escalate to Anthropic.'),
-      { statusCode: 501 },
-    );
-  }
-  const model = process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6';
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      'x-api-key': key,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify({
-      model,
-      max_tokens: 1024,
-      messages: [{ role: 'user', content: prompt }],
-    }),
-  });
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(\`anthropic error \${res.status}: \${body}\`);
-  }
-  const payload = await res.json() as { content?: Array<{ text?: string }> };
-  const text = (payload.content ?? []).map((c) => c.text ?? '').join('');
-  return { text, model };
-}
-`;
-}
-
-function openaiHelper(): string {
-  return `
-async function callOpenai(prompt: string): Promise<HostedGenerateOutput> {
-  const key = process.env.OPENAI_API_KEY;
-  if (!key) {
-    throw Object.assign(
-      new Error('OPENAI_API_KEY is unset — cannot escalate to OpenAI.'),
-      { statusCode: 501 },
-    );
-  }
-  const model = process.env.OPENAI_MODEL ?? 'gpt-4o';
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      authorization: \`Bearer \${key}\`,
-    },
-    body: JSON.stringify({
-      model,
-      messages: [{ role: 'user', content: prompt }],
-    }),
-  });
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(\`openai error \${res.status}: \${body}\`);
-  }
-  const payload = await res.json() as { choices?: Array<{ message?: { content?: string } }> };
-  const text = payload.choices?.[0]?.message?.content ?? '';
-  return { text, model };
-}
-`;
-}
-
 // ─── Audit logger ────────────────────────────────────────────────────────
 
 function auditTs(profile: UserProfile): string {
@@ -645,7 +519,7 @@ if (!HASH_KEY) {
 
 export interface RoutingAuditEntry {
   promptForAudit: string;
-  destination: 'local' | 'hosted' | 'error';
+  destination: 'local' | 'gateway' | 'error';
   reason: string;
   model: string;
   latencyMs: number;
@@ -678,66 +552,14 @@ export function logRouting(entry: RoutingAuditEntry): void {
 `;
 }
 
-// ─── PHI redactor (HIPAA only) ───────────────────────────────────────────
-
-function redactorTs(): string {
-  return `/**
- * PHI redactor — runs before any prompt is escalated to a hosted LLM.
- *
- * This is a defense-in-depth filter, not a replacement for a real
- * de-identification pipeline (45 CFR 164.514 Safe Harbor / Expert
- * Determination). It catches the most common PHI shapes — SSN,
- * MRN-style identifiers, US phone numbers, email addresses, dates of
- * birth, and 5+-digit ZIPs — and replaces them with type-tagged
- * placeholders so the hosted LLM can still reason about the prompt's
- * structure.
- *
- * IMPORTANT: review and harden this list against your data corpus
- * before any real PHI flows through the router.
- */
-
-interface RedactionPattern {
-  label: string;
-  pattern: RegExp;
-}
-
-const PATTERNS: RedactionPattern[] = [
-  { label: 'SSN', pattern: /\\b\\d{3}-\\d{2}-\\d{4}\\b/g },
-  { label: 'PHONE', pattern: /\\b(?:\\+?1[-. ]?)?\\(?\\d{3}\\)?[-. ]?\\d{3}[-. ]?\\d{4}\\b/g },
-  { label: 'EMAIL', pattern: /\\b[\\w.+-]+@[\\w-]+\\.[\\w.-]+\\b/g },
-  { label: 'MRN', pattern: /\\bMRN[#: ]*\\d{4,}\\b/gi },
-  { label: 'DOB', pattern: /\\b(?:0?[1-9]|1[0-2])[\\/-](?:0?[1-9]|[12]\\d|3[01])[\\/-](?:19|20)\\d{2}\\b/g },
-  { label: 'ZIP5', pattern: /\\b\\d{5}(?:-\\d{4})?\\b/g },
-];
-
-export function redactPhi(input: string): string {
-  let out = input;
-  for (const { label, pattern } of PATTERNS) {
-    out = out.replace(pattern, \`[REDACTED:\${label}]\`);
-  }
-  return out;
-}
-
-/** Exposed for tests — returns the set of redaction labels triggered. */
-export function detectPhiLabels(input: string): string[] {
-  const hits = new Set<string>();
-  for (const { label, pattern } of PATTERNS) {
-    if (pattern.test(input)) hits.add(label);
-    pattern.lastIndex = 0;
-  }
-  return Array.from(hits).sort();
-}
-`;
-}
-
 // ─── Confidence self-evaluation ──────────────────────────────────────────
 
 function confidenceTs(hipaa: boolean): string {
   const note = hipaa
     ? ` *\n * HIPAA: the self-evaluation prompt is built from the original input,\n` +
-      ` * but never leaves the local Ollama instance. Only the *re-dispatched*\n` +
-      ` * follow-up (in server.ts) goes to a hosted LLM, and only after PHI\n` +
-      ` * redaction.`
+      ` * but never leaves the local Ollama instance. Only the *forwarded*\n` +
+      ` * follow-up (in server.ts) goes to the gateway, which routes solely to\n` +
+      ` * BAA-covered destinations and enforces the egress guardrail.`
     : ` *\n * The self-evaluation prompt stays on the local Ollama instance.`;
 
   return `/**
@@ -793,7 +615,6 @@ export async function scoreConfidence(input: ConfidenceInput): Promise<number> {
 function runbook(profile: UserProfile): string {
   const hipaa = profile.complianceFrameworks.includes('hipaa');
   const confidence = profile.confidenceEscalation === true;
-  const apis = profile.externalApis ?? [];
 
   const lines: string[] = [];
   lines.push(`# Local Router Runbook`);
@@ -803,19 +624,16 @@ function runbook(profile: UserProfile): string {
     `setup, the smoke test, the routing policy, and the production-hardening checklist.`);
   lines.push('');
   lines.push(`The service exposes a single HTTP endpoint — \`POST /route\` — and ` +
-    `decides per request whether to answer locally (Ollama) or escalate to a hosted LLM.`);
+    `decides per request whether to answer locally (Ollama) or escalate to the gateway.`);
   lines.push('');
   lines.push(`## Prerequisites`);
   lines.push('');
   lines.push(`- **Ollama** installed and running locally. See \`OLLAMA_SETUP.md\` for ` +
     `the install runbook generated alongside this router.`);
   lines.push(`- A model pulled locally: \`ollama pull ${profile.defaultLocalModel ?? 'llama3.1:8b'}\`.`);
-  if (apis.includes('anthropic')) {
-    lines.push(`- An Anthropic API key with the minimum capability required for your workload.`);
-  }
-  if (apis.includes('openai')) {
-    lines.push(`- An OpenAI API key with the minimum capability required for your workload.`);
-  }
+  lines.push(`- The **LLM gateway** (LiteLLM) reachable at \`GATEWAY_BASE_URL\`. The router ` +
+    `forwards escalations there; the gateway holds the provider credentials and enforces ` +
+    `the egress guardrail. See \`litellm/config.yaml\`.`);
   lines.push(`- A generated HMAC secret for prompt-hash audit: \`openssl rand -hex 32\`.`);
   lines.push('');
   lines.push(`## Setup`);
@@ -825,7 +643,7 @@ function runbook(profile: UserProfile): string {
   lines.push(`$EDITOR router/.env`);
   lines.push(`# Set at least:`);
   lines.push(`#   ROUTER_AUDIT_HASH_KEY (REQUIRED — openssl rand -hex 32)`);
-  if (apis.length > 0) lines.push(`#   ${apis.map((a) => (a === 'anthropic' ? 'ANTHROPIC_API_KEY' : 'OPENAI_API_KEY')).join(' / ')}`);
+  lines.push(`#   GATEWAY_BASE_URL     (REQUIRED — where escalations are forwarded)`);
   lines.push('');
   lines.push(`cd router && npm install`);
   lines.push(`npm run dev`);
@@ -842,13 +660,11 @@ function runbook(profile: UserProfile): string {
   lines.push(`     -H 'content-type: application/json' \\`);
   lines.push(`     -d '{"prompt":"Write a regex for a US phone number."}'`);
   lines.push('');
-  if (apis.length > 0) {
-    lines.push(`# Long prompt — expect route: "hosted" (over the token threshold)`);
-    lines.push(`curl -s http://localhost:8787/route \\`);
-    lines.push(`     -H 'content-type: application/json' \\`);
-    lines.push(`     -d "$(node -e 'process.stdout.write(JSON.stringify({prompt:"explain ".repeat(800)}))')"`);
-    lines.push('');
-  }
+  lines.push(`# Long prompt — expect route: "gateway" (over the token threshold, forwarded)`);
+  lines.push(`curl -s http://localhost:8787/route \\`);
+  lines.push(`     -H 'content-type: application/json' \\`);
+  lines.push(`     -d "$(node -e 'process.stdout.write(JSON.stringify({prompt:"explain ".repeat(800)}))')"`);
+  lines.push('');
   lines.push('```');
   lines.push('');
   lines.push(`## Routing policy`);
@@ -862,23 +678,25 @@ function runbook(profile: UserProfile): string {
     `escalation regardless of length.`);
   if (confidence) {
     lines.push(`3. **Confidence self-evaluation.** Local answers are scored by the local model; ` +
-      `anything below \`ROUTER_CONFIDENCE_THRESHOLD\` (default 0.55) is re-dispatched to the hosted LLM.`);
+      `anything below \`ROUTER_CONFIDENCE_THRESHOLD\` (default 0.55) is forwarded to the gateway.`);
   } else {
     lines.push(`3. **Confidence self-evaluation.** Not enabled for this profile. ` +
       `Set \`TECH_021\` in the wizard to enable.`);
   }
   lines.push('');
   if (hipaa) {
-    lines.push(`### PHI redaction (HIPAA)`);
+    lines.push(`### PHI egress enforcement (HIPAA)`);
     lines.push('');
-    lines.push(`Every escalated prompt passes through \`redactor.ts\` before it leaves ` +
-      `the host. The redactor catches SSN, MRN-style identifiers, US phone, email, ` +
-      `date-of-birth, and 5+-digit ZIP codes by default — review the pattern list against ` +
-      `your data before any real PHI flows through.`);
+    lines.push(`This router holds **no provider credentials** and makes no direct provider ` +
+      `call — it forwards escalations to the gateway. PHI/PII egress is enforced at the ` +
+      `**gateway**, not here: the gateway's \`model_list\` contains only BAA-covered ` +
+      `destinations (an uncovered provider has no route at all), and its guardrail applies ` +
+      `the compliance pack's DLP patterns before any outbound call. Because the router has ` +
+      `no way to reach a provider, an escalation cannot bypass that enforcement.`);
     lines.push('');
-    lines.push(`This redactor is **defense in depth**, not a replacement for a real ` +
-      `de-identification process per 45 CFR 164.514 (Safe Harbor / Expert ` +
-      `Determination).`);
+    lines.push(`Gateway-side redaction is **minimum-necessary hygiene, not de-identification** ` +
+      `per 45 CFR 164.514 (Safe Harbor / Expert Determination). The compliance control is ` +
+      `the BAA-covered route, not the filter.`);
     lines.push('');
   }
   lines.push(`## Compliance obligations`);
@@ -892,14 +710,16 @@ function runbook(profile: UserProfile): string {
       `**${profile.complianceFrameworks.join(', ').toUpperCase()}**.`);
     if (hipaa) {
       lines.push('');
-      lines.push(`- **HIPAA**: every escalation passes through \`redactor.ts\` before leaving the host.`);
+      lines.push(`- **HIPAA**: PHI egress is enforced at the gateway — only BAA-covered ` +
+        `destinations are routable, and the gateway guardrail applies the DLP patterns.`);
       lines.push(`- **HIPAA**: audit log retains for the required six years.`);
-      lines.push(`- **HIPAA**: BAA in place with any hosted LLM you route to.`);
+      lines.push(`- **HIPAA**: BAA in place with any provider the gateway routes to.`);
     }
     if (profile.complianceFrameworks.includes('soc2')) {
       lines.push('');
       lines.push(`- **SOC 2**: centralize the routing audit log (SIEM / Splunk / Loki).`);
-      lines.push(`- **SOC 2**: quarterly access review on the API keys configured in \`router/.env\`.`);
+      lines.push(`- **SOC 2**: quarterly access review on the gateway credentials (this router ` +
+        `holds none — the gateway owns them).`);
     }
     if (profile.complianceFrameworks.includes('pci')) {
       lines.push('');
@@ -914,28 +734,26 @@ function runbook(profile: UserProfile): string {
   lines.push('');
   lines.push(`- [ ] \`ROUTER_AUDIT_HASH_KEY\` set to a 32-byte random value, stored in a ` +
     `secrets manager — **not** in an .env file checked into source.`);
-  if (apis.includes('anthropic')) {
-    lines.push(`- [ ] \`ANTHROPIC_API_KEY\` stored in a secrets manager with quarterly rotation.`);
-  }
-  if (apis.includes('openai')) {
-    lines.push(`- [ ] \`OPENAI_API_KEY\` stored in a secrets manager with quarterly rotation.`);
-  }
+  lines.push(`- [ ] \`GATEWAY_BASE_URL\` points at the hardened gateway; provider keys live ` +
+    `in the **gateway's** secrets manager, never in this router.`);
   lines.push(`- [ ] Filesystem encryption verified on the host (LUKS / FileVault / BitLocker / EBS).`);
   lines.push(`- [ ] Network policy locked: Ollama bound to localhost; the router itself ` +
     `bound to an internal interface, never the public internet without a reverse proxy + auth.`);
   lines.push(`- [ ] Audit log rotation configured (logrotate / Loki / Splunk).`);
   lines.push(`- [ ] Rate-limit \`POST /route\` at the reverse proxy (e.g., 60 req/min per user).`);
   if (hipaa) {
-    lines.push(`- [ ] **HIPAA**: redactor pattern list reviewed against the data corpus.`);
-    lines.push(`- [ ] **HIPAA**: smoke-tested with synthetic-PHI payloads ` +
-      `— confirm \`redactor.ts\` catches every shape your data contains.`);
-    lines.push(`- [ ] **HIPAA**: BAA in place with any hosted LLM provider used here.`);
+    lines.push(`- [ ] **HIPAA**: gateway \`model_list\` reviewed — confirm every routable ` +
+      `destination is BAA-covered and no uncovered provider has a route.`);
+    lines.push(`- [ ] **HIPAA**: gateway guardrail smoke-tested with synthetic-PHI payloads ` +
+      `— confirm it blocks the shapes your data contains. Run \`--mode router-eligibility\`.`);
+    lines.push(`- [ ] **HIPAA**: BAA in place with any provider the gateway routes to.`);
   }
   lines.push('');
   lines.push(`## What this scaffold is *not*`);
   lines.push('');
-  lines.push(`- **Not a production-grade redactor.** The PHI redactor is defense in depth ` +
-    `over a real de-identification process.`);
+  lines.push(`- **Not the egress guardrail.** PHI/PII filtering and BAA-scoped routing live ` +
+    `at the gateway (\`litellm/config.yaml\`), not in this router. The router only decides ` +
+    `local-vs-escalate and forwards; it cannot reach a provider.`);
   lines.push(`- **Not a multi-tenant router.** Single-tenant by design; add per-tenant ` +
     `scoping at the API boundary if you need it.`);
   lines.push(`- **Not opinionated about authentication.** No auth ships in the scaffold — ` +
@@ -968,8 +786,9 @@ function routerRule(profile: UserProfile): string {
     `path is the one we audit, harden, and trust.`);
   lines.push(`- **Never bypass the classifier.** Adding a new "always escalate" code path ` +
     `is a load-bearing decision — add a classifier signal instead.`);
-  lines.push(`- **Never escalate raw input.** The hosted-client call site assumes its ` +
-    `\`prompt\` has already been redacted (where redaction applies).`);
+  lines.push(`- **Escalations forward to the gateway, never to a provider.** This router ` +
+    `holds no credentials; \`dispatch.ts\` POSTs to \`GATEWAY_BASE_URL\`. The gateway owns ` +
+    `keys and the egress guardrail — do not add a direct provider call here.`);
   lines.push('');
   lines.push(`## Audit`);
   lines.push('');
@@ -982,28 +801,30 @@ function routerRule(profile: UserProfile): string {
   if (hipaa) {
     lines.push(`## PHI handling`);
     lines.push('');
-    lines.push(`- **All escalations pass through \`redactor.ts\`.** A new escalation path ` +
-      `that skips redaction is a HIPAA violation by construction.`);
-    lines.push(`- **Treat the redactor as defense in depth.** Real de-identification is ` +
-      `the responsibility of the upstream pipeline (45 CFR 164.514).`);
-    lines.push(`- **Test the redactor with synthetic PHI fixtures** every time the pattern ` +
-      `list changes — golden fixtures in \`tests/fixtures/synthetic-phi/\`.`);
+    lines.push(`- **PHI egress is enforced at the gateway, not here.** This router holds no ` +
+      `credentials and cannot reach a provider — it only decides local-vs-escalate and ` +
+      `forwards. The gateway routes only to BAA-covered destinations and applies the DLP ` +
+      `guardrail. Do not add a direct provider call or a local filter that pretends to be one.`);
+    lines.push(`- **The BAA-covered route is the control, not a filter.** Redaction at the ` +
+      `gateway is minimum-necessary hygiene, never de-identification (45 CFR 164.514).`);
+    lines.push(`- **Verify egress with the eligibility gate.** Run \`--mode router-eligibility\` ` +
+      `against the corpus whenever the policy or the gateway config changes.`);
     lines.push('');
   }
-  lines.push(`## Hosted-LLM clients`);
+  lines.push(`## Gateway dispatch`);
   lines.push('');
-  lines.push(`- **API keys never live in source.** They live in \`.env\` (gitignored) in ` +
-    `dev, and in a real secrets manager in production.`);
-  lines.push(`- **Timeouts and retries are caller-defined.** \`generateHosted()\` is a leaf ` +
+  lines.push(`- **This router holds no provider keys.** \`dispatch.ts\` forwards to ` +
+    `\`GATEWAY_BASE_URL\`; credentials live in the gateway's secrets manager, never here.`);
+  lines.push(`- **Timeouts and retries are caller-defined.** \`forwardToGateway()\` is a leaf ` +
     `function — the route handler owns budget and retry policy.`);
-  lines.push(`- **Errors from the hosted client surface verbatim.** Do not silently fall ` +
-    `back to the local model when the hosted call fails — that hides a failure mode ` +
+  lines.push(`- **Errors from the gateway surface verbatim.** Do not silently fall ` +
+    `back to the local model when the gateway call fails — that hides a failure mode ` +
     `the operator needs to see.`);
   lines.push('');
   lines.push(`## Confidence self-evaluation`);
   lines.push('');
   lines.push(`- **Self-evaluation runs on the local model** by design — it does not leave ` +
-    `the host. Do not re-implement it against the hosted LLM unless you also re-derive the ` +
+    `the host. Do not re-implement it against the gateway unless you also re-derive the ` +
     `threshold against measured outcomes.`);
   lines.push(`- **Parse the score loosely.** Local models sometimes return prose. The ` +
     `loose-regex fallback to 0.5 is intentional.`);
@@ -1014,7 +835,7 @@ function routerRule(profile: UserProfile): string {
     `compliance obligations.`);
   if (hipaa) {
     lines.push(`- A real HIPAA de-identification process (45 CFR 164.514).`);
-    lines.push(`- A BAA with any hosted LLM provider used by this router.`);
+    lines.push(`- A BAA with any provider the gateway routes to.`);
   }
   lines.push(`- The broader project compliance rules under \`.claude/rules/\`.`);
   lines.push('');

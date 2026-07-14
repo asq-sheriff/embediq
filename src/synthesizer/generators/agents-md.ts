@@ -1,6 +1,6 @@
 import type { ConfigGenerator } from '../generator.js';
 import { TargetFormat } from '../target-format.js';
-import type { SetupConfig, GeneratedFile, UserProfile } from '../../types/index.js';
+import type { GenerationContext, GeneratedFile, UserProfile } from '../../types/index.js';
 import { MarkdownBuilder } from '../../util/markdown-builder.js';
 
 /**
@@ -18,7 +18,7 @@ export class AgentsMdGenerator implements ConfigGenerator {
   name = 'AGENTS.md';
   target = TargetFormat.AGENTS_MD;
 
-  generate(config: SetupConfig): GeneratedFile[] {
+  generate(config: GenerationContext): GeneratedFile[] {
     const { profile } = config;
     const isNonTechnical = ['ba', 'pm', 'executive'].includes(profile.role);
     const content = isNonTechnical
