@@ -8,7 +8,7 @@
 that make Claude Code, Cursor, Copilot, and other AI coding assistants follow
 your team's rules — consistently, and with an audit trail.*
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) · [Latest release: **v4.0.6**](https://github.com/asq-sheriff/embediq/releases/latest) · Deterministic & offline
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) · [Latest release: **v4.1.0**](https://github.com/asq-sheriff/embediq/releases/latest) · Deterministic & offline
 
 EmbedIQ interviews you once about your project, team, and compliance
 obligations, then generates a complete, governed agent harness — typically
@@ -127,7 +127,8 @@ upside of AI doesn't come with new compliance risk.
 
 **Governance & compliance** — *keeps the AI inside the rules, and produces the paperwork to prove it.*
 - Before any file is written, EmbedIQ checks it and *refuses* output that would break HIPAA, PCI-DSS, SOC 2, or GDPR.
-- Generates audit evidence in the formats audit tools read directly — OSCAL documents, a CycloneDX "bill of materials" listing every AI in use, and a per-file record of what produced it — ready for Drata, Vanta, FedRAMP, and Dependency-Track.
+- **Controls where regulated data is allowed to go.** For teams that route AI prompts across local and hosted models, EmbedIQ compiles one egress policy — which model tiers a data class like PHI may reach, and which require a signed BAA — into the router and gateway configs. The router holds no API keys and forwards to a gateway that can only reach approved endpoints, so an un-covered provider has *no route at all*; a CI gate (`--mode router-eligibility`) proves no regulated prompt can escape, even if the classifier misses it.
+- Generates audit evidence in the formats audit tools read directly — OSCAL documents, a CycloneDX "bill of materials" listing every AI in use, and a per-file record of what produced it — collected into one policy-versioned **audit evidence bundle** ready for Drata, Vanta, FedRAMP, and Dependency-Track.
 - Built-in support for the NIST AI RMF AI-risk framework, mixable with healthcare (HIPAA), payments (PCI), and education (FERPA) rule sets.
 
 **Deterministic & audit-ready** — *the same answers always produce exactly the same files — no AI surprises.*
@@ -158,8 +159,8 @@ npm install
 npm start                  # interactive CLI wizard
 npm run start:web          # or the web UI — same wizard, same output, http://localhost:3000
 
-# Generate with the governance evidence set
-npm start -- --targets claude,cyclonedx-aibom,oscal-component,oscal-ssp-fragment,provenance
+# Generate with the governance evidence set (+ the unified audit bundle)
+npm start -- --targets claude,cyclonedx-aibom,oscal-component,oscal-ssp-fragment,provenance,audit-bundle
 
 # Already generated? Drift-check a project
 npm run drift -- --target ./my-project --archetype minimal-developer
@@ -197,8 +198,9 @@ developer role, strict security tier:
 ````
 
 That `CLAUDE.md` is one of about 16 files generated for this profile. Alongside
-it: per-language rule files scoped to each language's files (TypeScript, Python,
-Go, Java, Rust, C#, C++, SQL, Spark, and more); Python "safety hooks" that scan
+it: per-language rule files scoped to each language's files (TypeScript,
+JavaScript, Python, Go, Java, Rust, C#, C++, SQL, Spark, and more); Python
+"safety hooks" that scan
 edits for sensitive data, log activity, and block risky commands; a permissions
 file limiting what the assistant may touch; a template for connecting external
 tools (`.mcp.json`); and controls on what it can reach over the network. Opt in
@@ -223,8 +225,8 @@ setting); the default is Claude Code.
 | `gemini` | `GEMINI.md` |
 | `windsurf` | `.windsurfrules` |
 
-- **Local AI** — opting into the local-AI branch adds Continue.dev, Aider, Zed AI, and Ollama configs plus a runnable RAG scaffold. → [`docs/user-guide/05-multi-agent-targets.md`](docs/user-guide/05-multi-agent-targets.md)
-- **Governance evidence** — `cyclonedx-aibom`, `oscal-component`, `oscal-ssp-fragment`, and `provenance` are opt-in post-pass outputs; existing output regenerates byte-identically without them. → [`docs/extension-guide/`](docs/extension-guide/)
+- **Local AI** — opting into the local-AI branch adds Continue.dev, Aider, Zed AI, and Ollama configs, a runnable RAG scaffold, and a policy-driven router + LiteLLM gateway that keep regulated prompts on approved model endpoints. → [`docs/user-guide/05-multi-agent-targets.md`](docs/user-guide/05-multi-agent-targets.md)
+- **Governance evidence** — `cyclonedx-aibom`, `oscal-component`, `oscal-ssp-fragment`, `provenance`, and a unified `audit-bundle` are opt-in post-pass outputs; existing output regenerates byte-identically without them. → [`docs/extension-guide/`](docs/extension-guide/)
 
 Non-technical roles (business analysts, product managers, executives) get a
 simpler assistant aimed at research, analysis, and writing — not code setup —
@@ -237,7 +239,7 @@ and never see the local-AI options.
 ```
 ┌────────────────────────────────────────────────────┐
 │  Layer 1: Universal Question Bank                  │
-│  95 questions · 7 dimensions · purposeText schema  │
+│  96 questions · 7 dimensions · purposeText schema  │
 ├────────────────────────────────────────────────────┤
 │  Layer 2: Adaptive Logic Engine                    │
 │  Branch evaluation · profile building · priorities │
